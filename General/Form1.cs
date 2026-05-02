@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
-namespace WindowsFormsApp2
+namespace General
 {
     public class Animation{
         public string name;
         public List<Bitmap> frames = new List<Bitmap>();
-        public int frameDelay = 5;
+        public int frameDelay = 1;
 
         public void addFrame(Bitmap img)
         {
@@ -35,43 +35,39 @@ namespace WindowsFormsApp2
             animations.Add(anim);
         }
 
-        public void changeAnimation(string name , int index)
+        public void changeAnimation(string name, int index)
         {
-            int idx = -1;
-            // changeAnimation("" , idx); use either
-            //or 
-            // changeAnimation("walk" , -1);
-            if(name == "")
-            {
-                if (index != -1)
-                {
-                    if (idx < animations.Count)
-                    {
-                        currAnim = idx;
-                        currIdx = 0;
-                        return;
-                    }
-                }
-                MessageBox.Show("IDX  " + idx.ToString() + " doesnt exist");
+            int newAnim = -1;
 
+            if (name == "")
+            {
+                if (index >= 0 && index < animations.Count)
+                    newAnim = index;
             }
             else
             {
-                for(int i =0; i< animations.Count; i++)
+                for (int i = 0; i < animations.Count; i++)
                 {
-                    Animation ptrav = animations[i];
-                    if(ptrav.name == name)
+                    if (animations[i].name == name)
                     {
-                        currAnim = i;
-                        currIdx = 0;
-                        return;
+                        newAnim = i;
+                        break;
                     }
                 }
-                MessageBox.Show("Couldnt Find animation with name " + name);
             }
 
-            MessageBox.Show("no name or idx parameters");
+            if (newAnim == -1)
+            {
+                MessageBox.Show("Animation not found");
+                return;
+            }
 
+            if (currAnim != newAnim)
+            {
+                currAnim = newAnim;
+                currIdx = 0;
+                frameDelayCount = 0;
+            }
         }
         public Bitmap playFrame()
         {
@@ -103,40 +99,84 @@ namespace WindowsFormsApp2
 
     public class rect
     {
-        public int x , y;
-        public int width, height;
-        public rect(int x, int y, int width, int height)
-        {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
+        public float x , y;
+        public float width, height;
+      
     }
 
         
 
     public class Hero
     {
-        public rect R;
-        public float speed = 0f;
+        public rect R = new rect();
+        public float speed = 6f;
+
+        public char moving = ' ';
         public bool isJumping = false;
+        public bool isRunning = false;
+
         public int jumpHeight = 30;
 
         public AnimationController anim = new AnimationController();
 
-        public Bitmap img;
-        public Hero createHero(int startX , int startY , int w , int h)
+        public void Draw(Graphics g)
         {
-            Hero hero = new Hero();
-            hero.R.x = startX;
-            hero.R.y = startY;
-            hero.R.width = w;
-            hero.R.height = h;
-            hero.img = new bitmap("")
-            
+            g.DrawImage(anim.playFrame(), R.x, R.y, R.width, R.height);
+        }
+        public Hero(int startX , int startY , int w , int h)
+        {
+            R.x = startX;
+            R.y = startY;
+            R.width = w;
+            R.height = h;
 
-            return hero;
+            createAnim();
+            anim.changeAnimation("idle" , -1);
+        }
+
+        void createAnim()
+        {
+            string[] folders = {"attack", "critical_attack", "crouch", "death",
+                "idle", "jump", "ladder_climbing", "running", "shield_defence",
+                "sliding", "spell_cast", "taking_damage", "walking", "wall_sliding" };
+
+            int[] numFrames = { 8, 8, 3, 12, 6, 16, 10, 8, 3, 8, 8, 4, 10, 4 };
+            // C: \Users\User\source\repos\GameProject\General\bin\Debug\Characters\Hero\Blue\attack
+            for (int i = 0; i < 14; i++)
+            {
+                Animation anim = new Animation();
+                anim.name = folders[i];
+                if (folders[i] == "walking") anim.frameDelay = 0;
+                else if (folders[i] == "idle") anim.frameDelay = 2;
+                string path = "Characters/Hero/Blue/" + folders[i] + "/";
+                for(int j =1; j <= numFrames[i]; j++)
+                {
+                    Bitmap img = new Bitmap(path + j.ToString() + ".png");
+                    anim.frames.Add(img);
+                }
+                this.anim.addAnim(anim);
+            }
+
+        }
+        public void move()
+        {
+            float speedM = speed;
+            if (isRunning == true) speedM = speed * 2f;
+            if (moving == 'l') R.x -= speedM;
+            else if(moving == 'r') R.x += speedM;
+
+            if (moving == ' ')
+            {
+                anim.changeAnimation("idle", -1);
+            }
+            else
+            {
+                if (isRunning== true)
+                    anim.changeAnimation("running", -1);
+                else
+                    anim.changeAnimation("walking", -1);
+            }
+
         }
     }
 
@@ -146,20 +186,73 @@ namespace WindowsFormsApp2
         Bitmap off;
         Random RR = new Random();
 
+        Hero hero;
+        Timer timer = new Timer();
 
         public Form1()
         {
             this.Paint += Form1_Paint;
             this.WindowState = FormWindowState.Maximized;
             this.Load += Form1_Load;
+            this.KeyDown += Form1_KeyDown;
+            this.KeyUp += Form1_KeyUp;
+
+            timer.Interval = 16;
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        {
+            if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
+            {
+                hero.moving = ' ';
+
+            }
+            if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.moving == 'l')
+            {
+                hero.moving = ' ';
+
+            }
+            if (e.KeyCode == Keys.ShiftKey)
+            {
+                hero.isRunning = false;
+            }
 
         }
 
-      
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
+            {
+                hero.moving = 'r';
+            }
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
+            {
+                hero.moving = 'l';
+
+            }
+            if (e.KeyCode == Keys.ShiftKey)
+            {
+                hero.isRunning = true;
+            }
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            this.Text = hero.isRunning.ToString();
+            hero.move();
+            drawDubb(this.CreateGraphics());
+
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             off = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
 
+
+            hero = new Hero(30, this.ClientSize.Height - 150, 150, 150);
             drawDubb(this.CreateGraphics());
 
         }
@@ -181,6 +274,7 @@ namespace WindowsFormsApp2
         {
             g.Clear(this.BackColor);
 
+            hero.Draw(g);
         }
     }
 }
