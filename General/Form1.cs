@@ -22,6 +22,104 @@ namespace General
         }
 
     }
+
+    public class Health
+    {
+        public bool isHero = false;
+        public bool showHPText = false;
+        public int maxHP = 100;
+        public int HP = 100;
+        public RectangleF rect = new RectangleF();
+
+        private Bitmap sBorder = new Bitmap("ui/Health/bar.png");
+        private Bitmap sBackground = new Bitmap("ui/Health/bar_background.png");
+        private Bitmap sBar = new Bitmap("ui/Health/health_bar.png");
+        private Bitmap sHero;
+        private float padXRatio = 8f / 118f;
+        private float padYRatio = 2f / 13f;
+        private float innerWRatio = 102f / 13f * 13f / 118f;
+        private float innerHRatio = 10f / 13f;
+
+        public Health(float x, float y, float w, float h, int hp, int maxHp, bool isHero , bool showHPText)
+        {
+            if (isHero == true) sHero = new Bitmap("ui/hero_icon.png");
+            this.isHero = isHero;
+            this.HP = hp;
+            this.maxHP = maxHp;
+            rect.X = x;
+            rect.Y = y;
+            rect.Width = w;
+            rect.Height = h;
+            this.showHPText = showHPText;
+        }
+
+        public void positionAbove(RectangleF ownerR, float gap)
+        {
+            rect.X = ownerR.X + (ownerR.Width - rect.Width) / 2f;
+            rect.Y = ownerR.Y - rect.Height - gap;
+        }
+
+        public void draw(Graphics g)
+        {
+            float innerX = 0f;
+            float innerY = 0f;
+            float innerW = 0f;
+            float innerH = 0f;
+
+            if (isHero)
+            {
+                g.DrawImage(sHero, rect.X, rect.Y, rect.Height * 2, rect.Height * 2);
+
+                float X = rect.X + rect.Height + 25;
+                float Y = rect.Y + 15;
+
+                g.DrawImage(sBorder, X, Y, rect.Width, rect.Height);
+
+                innerX = X + rect.Width * padXRatio;
+                innerY = Y + rect.Height * padYRatio;
+                innerW = rect.Width * innerWRatio;
+                innerH = rect.Height * innerHRatio;
+            }
+            else
+            {
+                innerX = rect.X;
+                innerY = rect.Y;
+                innerW = rect.Width;
+                innerH = rect.Height;
+            }
+
+            g.DrawImage(sBackground, innerX, innerY, innerW, innerH);
+
+            int curHp = HP;
+            if (curHp < 0) curHp = 0;
+            if (curHp > maxHP) curHp = maxHP;
+
+            float ratio = 0f;
+            if (maxHP > 0) ratio = curHp * 1f / maxHP;
+
+            float widthHP = ratio * innerW;
+
+            if (widthHP > 0f)
+            {
+                g.DrawImage(sBar, innerX, innerY, widthHP, innerH);
+            }
+
+            if (showHPText == true)
+            {
+                string txt = curHp + " / " + maxHP;
+                float fontSize = innerH * 0.5f;
+                if (fontSize < 4f) fontSize = 4f;
+
+                Font f = new Font("Arial", fontSize, FontStyle.Bold);
+
+                float tx = innerX + (innerW/3) + innerW/14;
+                float ty = innerY + (innerH / 14);
+
+                SolidBrush fill = new SolidBrush(Color.White);
+                g.DrawString(txt, f, fill, tx, ty);
+            }
+        }
+    }
     public class AnimationController
     {
         public int currIdx =0;
@@ -97,19 +195,13 @@ namespace General
         }
     }
 
-    public class rect
-    {
-        public float x , y;
-        public float width, height;
-      
-    }
-
+ 
 
 
     public class Hero
     {
-        public rect R = new rect();
-        public rect drawR = new rect();
+        public RectangleF R = new Rectangle();
+        public RectangleF drawR = new Rectangle();
 
         public float speed = 6f;
 
@@ -131,30 +223,33 @@ namespace General
 
         public AnimationController anim = new AnimationController();
 
+        public Health HP = new Health(20, 20, 236, 26, 50, 100, true , false);
         public void Draw(Graphics g, bool showRanges)
         {
-            drawR.x = R.x + (R.width - drawR.width) / 2f;
-            drawR.y = R.y + (R.height - drawR.height);
+            drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+            drawR.Y = R.Y + (R.Height - drawR.Height);
 
-            g.DrawImage(anim.playFrame(), drawR.x, drawR.y, drawR.width, drawR.height);
+            g.DrawImage(anim.playFrame(), drawR.X, drawR.Y, drawR.Width, drawR.Height);
 
             if (showRanges)
             {
                 Pen p = new Pen(Color.Lime, 2);
-                g.DrawRectangle(p, R.x, R.y, R.width, R.height);
+                g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
             }
+
+            HP.draw(g);
         }
         public Hero(int startX, int startY, int w, int h)
         {
-            drawR.x = startX;
-            drawR.y = startY;
-            drawR.width = w;
-            drawR.height = h;
+            drawR.X = startX;
+            drawR.Y = startY;
+            drawR.Width = w;
+            drawR.Height = h;
 
-            R.width = w * 0.4f;
-            R.height = h * 0.65f;
-            R.x = startX + (w - R.width) / 2f;
-            R.y = startY + (h - R.height);
+            R.Width = w * 0.4f;
+            R.Height = h * 0.65f;
+            R.X = startX + (w - R.Width) / 2f;
+            R.Y = startY + (h - R.Height);
 
             createAnim();
             anim.changeAnimation("idle", -1);
@@ -198,7 +293,7 @@ namespace General
             if (moving == 'l') dx = -speedM;
             else if (moving == 'r') dx = speedM;
 
-            R.x += dx;
+            R.X += dx;
 
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -206,18 +301,18 @@ namespace General
                 if (t.interact == true && t.jumpThrough == false)
                 {
                     bool overlapping = false;
-                    if (R.x + R.width > t.R.x &&
-                        R.x < t.R.x + t.R.width &&
-                        R.y + R.height > t.R.y &&
-                        R.y < t.R.y + t.R.height)
+                    if (R.X + R.Width > t.R.X &&
+                        R.X < t.R.X + t.R.Width &&
+                        R.Y + R.Height > t.R.Y &&
+                        R.Y < t.R.Y + t.R.Height)
                     {
                         overlapping = true;
                     }
 
                     if (overlapping)
                     {
-                        if (dx > 0) R.x = t.R.x - R.width;
-                        else if (dx < 0) R.x = t.R.x + t.R.width;
+                        if (dx > 0) R.X = t.R.X - R.Width;
+                        else if (dx < 0) R.X = t.R.X + t.R.Width;
                     }
                 }
             }
@@ -230,12 +325,12 @@ namespace General
         public void applyPhysics(List<tile> tiles)
         {
             wasGrounded = isGrounded;
-            prevBottom = R.y + R.height;
+            prevBottom = R.Y + R.Height;
 
             velocityY += gravity;
             if (velocityY > max_speed) velocityY = max_speed;
 
-            R.y += velocityY;
+            R.Y += velocityY;
 
             isGrounded = false;
 
@@ -245,8 +340,8 @@ namespace General
                 if (t.interact == true)
                 {
                     bool overlappingX = false;
-                    if (R.x + R.width > t.R.x &&
-                        R.x < t.R.x + t.R.width)
+                    if (R.X + R.Width > t.R.X &&
+                        R.X < t.R.X + t.R.Width)
                     {
                         overlappingX = true;
                     }
@@ -256,10 +351,10 @@ namespace General
                         if (t.jumpThrough == true)
                         {
                             if (velocityY >= 0 &&
-                                prevBottom <= t.R.y &&
-                                R.y + R.height >= t.R.y)
+                                prevBottom <= t.R.Y &&
+                                R.Y + R.Height >= t.R.Y)
                             {
-                                R.y = t.R.y - R.height;
+                                R.Y = t.R.Y - R.Height;
                                 velocityY = 0;
                                 isGrounded = true;
                             }
@@ -267,8 +362,8 @@ namespace General
                         else
                         {
                             bool overlappingY = false;
-                            if (R.y + R.height > t.R.y &&
-                                R.y < t.R.y + t.R.height)
+                            if (R.Y + R.Height > t.R.Y &&
+                                R.Y < t.R.Y + t.R.Height)
                             {
                                 overlappingY = true;
                             }
@@ -277,13 +372,13 @@ namespace General
                             {
                                 if (velocityY > 0)
                                 {
-                                    R.y = t.R.y - R.height;
+                                    R.Y = t.R.Y - R.Height;
                                     velocityY = 0;
                                     isGrounded = true;
                                 }
                                 else if (velocityY < 0)
                                 {
-                                    R.y = t.R.y + t.R.height;
+                                    R.Y = t.R.Y + t.R.Height;
                                     velocityY = 0;
                                 }
                             }
@@ -346,7 +441,7 @@ namespace General
     }
     public class tile
     {
-        public rect R = new rect();
+        public Rectangle R = new Rectangle();
         public Color clr = Color.Black;
         public bool interact = false;
         public bool jumpThrough = true;
@@ -354,15 +449,15 @@ namespace General
         public void draw(Graphics g)
         {
             SolidBrush bsh = new SolidBrush(clr);
-            g.FillRectangle(bsh, R.x, R.y, R.width, R.height);
+            g.FillRectangle(bsh, R.X, R.Y, R.Width, R.Height);
         }
 
         public void init(int x , int y , int width , int height)
         {
-            R.x = x;
-            R.y = y;
-            R.height = height;
-            R.width = width;
+            R.X = x;
+            R.Y = y;
+            R.Height = height;
+            R.Width = width;
         }
     }
     public partial class Form1 : Form
