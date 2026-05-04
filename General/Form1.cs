@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 
 namespace General
@@ -460,8 +461,53 @@ namespace General
             R.Width = width;
         }
     }
+
+    public class Button
+    {
+        public Rectangle rect = new Rectangle();
+        string text;
+
+        public Button( int x , int y , int w , int h , string text)
+        {
+            this.text = text;
+            rect.X = x;
+            rect.Y = y;
+            rect.Width = w;
+            rect.Height = h;
+        }
+
+        public void draw(Bitmap button , Graphics g , Font f , SolidBrush bsh , bool isCurrent )
+        {
+
+            
+
+            g.DrawImage(button, rect.X, rect.Y, rect.Width, rect.Height);
+            
+
+            if (isCurrent == true) {
+                Pen pn = new Pen(Color.FromArgb(115, 85, 87), 5);
+                g.DrawRectangle(pn, rect.X + 3, rect.Y + 2 ,rect.Width - 10, rect.Height -10);
+            }
+
+            int startX = rect.X + rect.Width / 2 - 60;
+            g.DrawString(text, f, bsh, startX, rect.Y + rect.Height / 2 - 25);
+
+        }
+
+    }
     public partial class Form1 : Form
     {
+        bool hasStarted = false;
+
+
+
+        Bitmap button = new Bitmap("ui/menu/UI_TravelBook_Frame01a.png");
+        int currentButton = 0;
+
+        List<Bitmap> menuImgs = new List<Bitmap>();
+        List<Button> btns = new List<Button>();
+
+
         bool showRanges = false;
         Bitmap off;
         Random RR = new Random();
@@ -478,13 +524,104 @@ namespace General
             this.KeyDown += Form1_KeyDown;
             this.KeyUp += Form1_KeyUp;
 
+            this.BackColor = Color.FromArgb(115, 85, 87);
+            this.Text = "Arcane";
             timer.Interval = 6;
             timer.Tick += Timer_Tick;
+
+            this.MouseMove += Form1_MouseMove;
+            this.MouseDown += Form1_MouseDown;
+        }
+
+        private void Form1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (hasStarted == false)
+            {
+                Button btn = btns[btns.Count - 1];
+                if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                            && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                {
+                    startGame();
+                }
+            }
+        }
+
+        private void Form1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (hasStarted == false)
+            {
+                for (int i = 0; i < btns.Count; i++)
+                {
+                    Button btn = btns[i];
+                    if(e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                        && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                    {
+                        currentButton = i;
+                        drawDubb(this.CreateGraphics());
+                        break;
+                    }
+                }
+            }
+        }
+
+        void startGame()
+        {
+            hasStarted = true;
+            
+            while(btns.Count > 0)
+            {
+                btns.RemoveAt(0);
+            }
+
+            while(menuImgs.Count > 0)
+            {
+                menuImgs.RemoveAt(0);
+            }
             timer.Start();
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
+            if (hasStarted == false)
+            {
+                if(e.KeyCode == Keys.Down)
+                {
+                    if (currentButton < btns.Count - 2) currentButton++;
+                    else currentButton = 0;
+                    drawDubb(this.CreateGraphics());
+
+                }
+                if (e.KeyCode == Keys.Up)
+                {
+                    if (currentButton > 0) currentButton--;
+                    else currentButton = btns.Count - 2;
+                    drawDubb(this.CreateGraphics());
+                }
+
+                if(currentButton == 0 || currentButton == 1)
+                {
+                    if(e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
+                    {
+                        currentButton = btns.Count - 1;
+                        drawDubb(this.CreateGraphics());
+
+                    }
+                }
+                else if (currentButton == btns.Count - 1) {
+                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
+                    {
+                        currentButton = 0;
+                        drawDubb(this.CreateGraphics());
+
+                    }
+                }
+
+                if(currentButton == btns.Count - 1)
+                {
+                    if (e.KeyCode == Keys.Enter) startGame();
+                }
+            }
+
             if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
             {
                 hero.moving = ' ';
@@ -504,6 +641,7 @@ namespace General
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
+            if (hasStarted == false) return;
 
             if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
             {
@@ -533,7 +671,6 @@ namespace General
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            this.Text = hero.isRunning.ToString(); 
             hero.move(tiles);
 
             drawDubb(this.CreateGraphics());
@@ -546,8 +683,10 @@ namespace General
 
 
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
-            drawDubb(this.CreateGraphics());
             initTiles();
+            initButtons();
+            initMenu();
+            drawDubb(this.CreateGraphics());
 
         }
 
@@ -590,11 +729,135 @@ namespace General
         {
             g.Clear(this.BackColor);
 
-            hero.Draw(g , showRanges);
-            for(int i =0; i< tiles.Count; i++)
+            if (hasStarted == true)
             {
-                tiles[i].draw(g);
+                hero.Draw(g, showRanges);
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    tiles[i].draw(g);
+                }
+            }
+            else
+            {
+                displayMenu(g);
             }
         }
+
+        void initMenu()
+        {
+            Bitmap img = new Bitmap("ui/menu/UI_TravelBook_BookCover01a.png");
+            menuImgs.Add(img);
+            img= new Bitmap("ui/menu/UI_TravelBook_BookPageLeft01a.png");
+            menuImgs.Add(img);
+
+            img = new Bitmap("ui/menu/UI_TravelBook_BookPageRight01a.png");
+            
+            menuImgs.Add(img);
+            
+            img = new Bitmap("ui/menu/mainImage.png");
+            
+            menuImgs.Add(img);
+            img = new Bitmap("ui/border.png");
+            
+            menuImgs.Add(img);
+            img = new Bitmap("ui/hero_icon.png");
+            menuImgs.Add(img);
+
+
+        }
+        void initButtons()
+        {
+            int w = 300, h = 60;
+
+            int ButtonsY = 60 + 300;
+            int ButtonsX = (this.ClientSize.Width / 2) / 2 - w / 2;
+
+            Button btn = new Button(ButtonsX, ButtonsY, w, h, "New Game");
+            btns.Add(btn);
+
+            ButtonsY += (h + 20);
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Load Game");
+            btns.Add(btn);
+
+            ButtonsY += (h + 20);
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Options");
+            btns.Add(btn);
+
+            ButtonsY += (h + 20);
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Credits");
+            btns.Add(btn);
+
+
+            ButtonsX = (this.ClientSize.Width / 2) + (this.ClientSize.Width / 2) / 2 - w / 2;
+
+            int newGameY = 30 + this.ClientSize.Height - 160 - h;
+            btn = new Button(ButtonsX, newGameY, w, h, "Start");
+            btns.Add(btn);
+
+        }
+        void displayMenu(Graphics G)
+        {
+            G.DrawImage(menuImgs[0], 0, 0, this.ClientSize.Width , this.ClientSize.Height );
+            int spacing = 20;
+            G.DrawImage(menuImgs[1], spacing, spacing, this.ClientSize.Width/2 -spacing, this.ClientSize.Height -spacing * 2);
+            G.DrawImage(menuImgs[2], this.ClientSize.Width/2 , spacing, this.ClientSize.Width/2 - spacing, this.ClientSize.Height -spacing * 2);
+
+            int pad = 20;
+            int borderW = this.ClientSize.Width / 2 - pad * 2;
+            int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
+            G.DrawImage(menuImgs[4], pad + 5, spacing + pad/2, borderW, borderHeight);
+
+
+            G.DrawImage(menuImgs[3], spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400 );
+
+            //1/2   1/2
+            //|  |  |  |  |
+            int borderX = this.ClientSize.Width / 2 + pad;
+            int borderY = spacing + pad/2;
+            G.DrawImage(menuImgs[4], borderX, borderY, borderW, borderHeight);
+
+
+
+            int iconW = 100;
+            G.DrawImage(menuImgs[5], borderX + 60 , borderY + 60, iconW, iconW);
+
+
+            Font f = new Font("Comic Sans MS", 18, FontStyle.Bold);
+            SolidBrush bsh = new SolidBrush(Color.White);
+            for(int i =0; i< btns.Count; i++)
+            {
+                bool isIt = false;
+                if (i == currentButton) isIt = true;
+
+
+                Button btn = btns[i];
+                if(i < btns.Count - 1 || currentButton == 0 || currentButton == 1 || currentButton == btns.Count -1)
+                    btn.draw(button, G, f, bsh, isIt);
+            }
+
+
+            loadScreen(G , borderX + 60 + 100 + 20, borderY + 60, borderW - (60 + 100 + 20), borderHeight - 60);
+        }
+
+        void loadScreen(Graphics G, int x , int y , int width , int height)
+        {
+            if(currentButton == 0)
+            {
+               //show new game screen
+            }
+            if (currentButton ==1)
+            {
+                //show load
+            }
+            if (currentButton == 0)
+            {
+                //show options
+            }
+            if (currentButton == 0)
+            {
+                //show credits
+            }
+        }
+
     }
 }
