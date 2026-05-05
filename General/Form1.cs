@@ -26,32 +26,121 @@ namespace General
 
     public class Health
     {
-        public bool isHero = false;
-        public bool showHPText = false;
         public int maxHP = 100;
         public int HP = 100;
+
+        public Health(int hp, int maxHp)
+        {
+            HP = hp;
+            maxHP = maxHp;
+        }
+
+        public int getHP()
+        {
+            if (HP < 0) return 0;
+            if (HP > maxHP) return maxHP;
+            return HP;
+        }
+
+        public float getPercent()
+        {
+            if (maxHP <= 0) return 0f;
+
+            return getHP() *1f / maxHP;
+        }
+
+        public void damage(int amount)
+        {
+            HP -= amount;
+            if (HP < 0) HP = 0;
+        }
+
+        public void heal(int amount)
+        {
+            HP += amount;
+            if (HP > maxHP) HP = maxHP;
+        }
+    }
+
+    public class Mana
+    {
+        public int maxMana = 100;
+        public int mana = 100;
+
+        public Mana(int mana, int maxMana)
+        {
+            this.mana = mana;
+            this.maxMana = maxMana;
+        }
+
+        public int getMana()
+        {
+            if (mana < 0) return 0;
+            if (mana > maxMana) return maxMana;
+            return mana;
+        }
+
+        public float getPercent()
+        {
+            if (maxMana <= 0) return 0f;
+
+            return getMana() * 1f / maxMana;
+        }
+
+        public void use(int amount)
+        {
+            mana -= amount;
+            if (mana < 0) mana = 0;
+        }
+
+        public void restore(int amount)
+        {
+            mana += amount;
+            if (mana > maxMana) mana = maxMana;
+        }
+    }
+
+    public class UIEntity
+    {
+        public bool isHero = false;
+
+        public bool displayHPBar = true;
+        public bool displayHPText = true;
+
+        public bool displayManaBar = true;
+        public bool displayManaText = true;
+
+        public bool displayName = false;
+        public bool displayLevel = true;
+
         public RectangleF rect = new RectangleF();
 
-        private Bitmap sBorder = new Bitmap("ui/Health/bar.png");
-        private Bitmap sBackground = new Bitmap("ui/Health/bar_background.png");
-        private Bitmap sBar = new Bitmap("ui/Health/health_bar.png");
-        private Bitmap sHero;
-        private float padXRatio = 8f / 118f;
-        private float padYRatio = 2f / 13f;
-        private float innerWRatio = 102f / 13f * 13f / 118f;
-        private float innerHRatio = 10f / 13f;
+        Bitmap hpBorder = new Bitmap("ui/Health/bar.png");
+        Bitmap hpBackground = new Bitmap("ui/Health/bar_background.png");
+        Bitmap hpInner = new Bitmap("ui/Health/health_bar.png");
 
-        public Health(float x, float y, float w, float h, int hp, int maxHp, bool isHero , bool showHPText)
+        Bitmap manaBackground = new Bitmap("ui/Mana/mana_bg.png");
+        Bitmap manaInner = new Bitmap("ui/Mana/manaInner.png");
+
+        Bitmap heroIcon = new Bitmap("ui/hero_icon.png");
+        Bitmap heroBorder = new Bitmap("ui/border.png");
+
+        Font heroFont = new Font("Palatino Linotype", 9f, FontStyle.Bold);
+        Font manaFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
+        Font normalFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
+
+        SolidBrush textBrush = new SolidBrush(Color.White);
+        SolidBrush bigoutline = new SolidBrush(Color.Black);
+
+        public UIEntity(float x, float y, float w, float h, bool isHero, bool showHPText)
         {
-            if (isHero == true) sHero = new Bitmap("ui/hero_icon.png");
             this.isHero = isHero;
-            this.HP = hp;
-            this.maxHP = maxHp;
+            this.displayHPText = showHPText;
+
             rect.X = x;
             rect.Y = y;
             rect.Width = w;
             rect.Height = h;
-            this.showHPText = showHPText;
         }
 
         public void positionAbove(RectangleF ownerR, float gap)
@@ -60,65 +149,155 @@ namespace General
             rect.Y = ownerR.Y - rect.Height - gap;
         }
 
-        public void draw(Graphics g)
+        public void draw(Graphics g, Health hp, Mana mana ,int level)
         {
-            float innerX = 0f;
-            float innerY = 0f;
-            float innerW = 0f;
-            float innerH = 0f;
-
             if (isHero)
             {
-                g.DrawImage(sHero, rect.X, rect.Y, rect.Height * 2, rect.Height * 2);
-
-                float X = rect.X + rect.Height + 25;
-                float Y = rect.Y + 15;
-
-                g.DrawImage(sBorder, X, Y, rect.Width, rect.Height);
-
-                innerX = X + rect.Width * padXRatio;
-                innerY = Y + rect.Height * padYRatio;
-                innerW = rect.Width * innerWRatio;
-                innerH = rect.Height * innerHRatio;
+                drawHeroUI(g, hp, mana , level);
             }
             else
             {
-                innerX = rect.X;
-                innerY = rect.Y;
-                innerW = rect.Width;
-                innerH = rect.Height;
+                drawEntityUI(g, hp);
+            }
+        }
+
+        void drawHeroUI(Graphics g, Health hp, Mana mana , int level)
+        {
+            float iconBorderX = rect.X;
+            float iconBorderY = rect.Y;
+
+            float iconBorderW = 78f;
+            float iconBorderH = 120f;
+
+            float iconPad = 10f;
+
+            float iconX = iconBorderX + iconPad;
+            float iconY = iconBorderY + iconPad;
+            float iconW = iconBorderW - iconPad * 2f;
+            float iconH = iconBorderW - iconPad * 2f;
+
+
+
+            g.DrawImage(heroBorder, iconBorderX, iconBorderY, iconBorderW, iconBorderH);
+            g.DrawImage(heroIcon, iconX, iconY, iconW, iconH);
+
+            float levelY = iconBorderY + iconW + 15;
+            string levelText = "Level: " + level;
+
+            drawTextWithShadow(g, levelText, heroFont, iconX + 2, levelY);
+
+            float barX = iconBorderX + iconBorderW + 18f;
+
+            float hpBarY = rect.Y + 25f;
+            float manaBarY = hpBarY + rect.Height + 18f;
+
+            float barW = rect.Width;
+            float barH = rect.Height;
+
+            float manaBarW = barW;
+            float manaBarH = rect.Height / 2;
+
+            if (displayHPText)
+            {
+                string hpText = "HP: " + hp.getHP() + " / " + hp.maxHP;
+
+                float tx = barX + 10;
+                float ty = hpBarY - 20f;
+
+                drawTextWithShadow(g, hpText, heroFont, tx, ty);
             }
 
-            g.DrawImage(sBackground, innerX, innerY, innerW, innerH);
+            if (displayHPBar)
+            {
+                drawFramedHPBar(g, hp, barX, hpBarY, barW, barH);
+            }
 
-            int curHp = HP;
-            if (curHp < 0) curHp = 0;
-            if (curHp > maxHP) curHp = maxHP;
+            if (displayManaBar)
+            {
+                drawManaBar(g, mana, barX + 2, manaBarY, manaBarW, manaBarH);
+            }
 
-            float ratio = 0f;
-            if (maxHP > 0) ratio = curHp * 1f / maxHP;
+            if (displayManaText)
+            {
+                string manaText = "Mana: " + mana.getMana() + " / " + mana.maxMana;
 
-            float widthHP = ratio * innerW;
+                float tx = barX + 10;
+                float ty = manaBarY - 17 ;
+
+                drawTextWithShadow(g, manaText, manaFont, tx, ty);
+            }
+        }
+
+        void drawEntityUI(Graphics g, Health hp)
+        {
+            if (displayHPBar == false) return;
+
+            drawSimpleHPBar(g, hp, rect.X, rect.Y, rect.Width, rect.Height);
+
+            if (displayHPText)
+            {
+                string txt = hp.getHP() + " / " + hp.maxHP;
+
+                float tx = rect.X + rect.Width / 2f - txt.Length * 3.3f;
+                float ty = rect.Y + rect.Height / 2f - 6f;
+
+                drawTextWithShadow(g, txt, normalFont, tx, ty);
+            }
+        }
+
+        void drawFramedHPBar(Graphics g, Health hp, float x, float y, float w, float h)
+        {
+            float innerX = x + w * 8f / 118f;
+            float innerY = y + h * 2f / 13f;
+            float innerW = w * 102f / 118f;
+            float innerH = h * 10f / 13f;
+
+            g.DrawImage(hpBackground, innerX, innerY, innerW, innerH);
+
+            float widthHP = hp.getPercent() * innerW;
 
             if (widthHP > 0f)
             {
-                g.DrawImage(sBar, innerX, innerY, widthHP, innerH);
+                g.DrawImage(hpInner, innerX, innerY, widthHP, innerH);
             }
 
-            if (showHPText == true)
+            g.DrawImage(hpBorder, x, y, w, h);
+        }
+
+        void drawSimpleHPBar(Graphics g, Health hp, float x, float y, float w, float h)
+        {
+            g.DrawImage(hpBackground, x, y, w, h);
+
+            float widthHP = hp.getPercent() * w;
+
+            if (widthHP > 0f)
             {
-                string txt = curHp + " / " + maxHP;
-                float fontSize = innerH * 0.5f;
-                if (fontSize < 4f) fontSize = 4f;
-
-                Font f = new Font("Arial", fontSize, FontStyle.Bold);
-
-                float tx = innerX + (innerW/3) + innerW/14;
-                float ty = innerY + (innerH / 14);
-
-                SolidBrush fill = new SolidBrush(Color.White);
-                g.DrawString(txt, f, fill, tx, ty);
+                g.DrawImage(hpInner, x, y, widthHP, h);
             }
+        }
+
+        void drawManaBar(Graphics g, Mana mana, float x, float y, float w, float h)
+        {
+            g.FillRectangle(Brushes.White, x, y, w, h);
+            g.DrawImage(manaBackground, x, y, w, h);
+
+            float innerX = x + w * 8f / 118f - 2f;
+            float innerY = y + h * 2f / 13f;
+            float innerW = w * 102f / 118f;
+            float innerH = h * 10f / 13f;
+
+            float widthMana = mana.getPercent() * innerW;
+
+            if (widthMana > 0f)
+            {
+                g.DrawImage(manaInner, innerX, innerY, widthMana, innerH);
+            }
+        }
+
+        void drawTextWithShadow(Graphics g, string txt, Font f, float x, float y)
+        {
+            g.DrawString(txt, f, bigoutline, x + 2f, y + 2f);
+            g.DrawString(txt, f, textBrush, x, y);
         }
     }
     public class AnimationController
@@ -210,8 +389,19 @@ namespace General
         public bool isRunning = false;
 
         public float velocityY = 0f;
+
         public float gravity = 1.2f;
-        public float jumpForce = -18f;
+        public float jumpHoldGravity = 0.35f;
+        public float jumpReleaseGravity = 3.5f;
+
+        public bool jumpHeld = false;
+        public bool isJumping = false;
+
+        public float jumpStartY = 0f;
+        public float jumpMinY = 0f;
+
+        public float jumpStartPower = -16f;
+        public float maxJumpHeight = 120f;
 
         public bool isGrounded = false;
         bool wasGrounded = false;
@@ -219,12 +409,16 @@ namespace General
         public bool isLanding = false;
         int landingTimer = 0;
 
-        public float max_speed = 25f; 
+        public float max_speed = 30f; 
         float prevBottom = 0f;
+
+        public int level = 0;
 
         public AnimationController anim = new AnimationController();
 
-        public Health HP = new Health(20, 20, 236, 26, 50, 100, true , false);
+        public Health HP = new Health(50, 100);
+        public Mana mana = new Mana(75, 100);
+        public UIEntity UI = new UIEntity(20f, 20f, 236f, 26f, true, true);
         public void Draw(Graphics g, bool showRanges)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
@@ -238,7 +432,7 @@ namespace General
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
             }
 
-            HP.draw(g);
+            UI.draw(g, HP , mana , level);
         }
         public Hero(int startX, int startY, int w, int h)
         {
@@ -318,29 +512,59 @@ namespace General
                 }
             }
 
-            applyPhysics(tiles);
+            Movement(tiles);
 
             updateAnimation();
         }
 
-        public void applyPhysics(List<tile> tiles)
+        public void Movement(List<tile> tiles)
         {
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
 
-            velocityY += gravity;
+            float activeGravity = gravity;
+
+            if (velocityY < 0f)
+            {
+                if (jumpHeld == true && isJumping == true && R.Y > jumpMinY)
+                {
+                    activeGravity = jumpHoldGravity;
+                }
+                else
+                {
+                    activeGravity = jumpReleaseGravity;
+                    isJumping = false;
+                }
+            }
+            else
+            {
+                activeGravity = gravity;
+                isJumping = false;
+            }
+
+            velocityY += activeGravity;
+
             if (velocityY > max_speed) velocityY = max_speed;
 
             R.Y += velocityY;
+
+            if (R.Y <= jumpMinY && velocityY < 0f)
+            {
+                R.Y = jumpMinY;
+                velocityY = 0f;
+                isJumping = false;
+            }
 
             isGrounded = false;
 
             for (int i = 0; i < tiles.Count; i++)
             {
                 tile t = tiles[i];
+
                 if (t.interact == true)
                 {
                     bool overlappingX = false;
+
                     if (R.X + R.Width > t.R.X &&
                         R.X < t.R.X + t.R.Width)
                     {
@@ -351,18 +575,19 @@ namespace General
                     {
                         if (t.jumpThrough == true)
                         {
-                            if (velocityY >= 0 &&
+                            if (velocityY >= 0f &&
                                 prevBottom <= t.R.Y &&
                                 R.Y + R.Height >= t.R.Y)
                             {
                                 R.Y = t.R.Y - R.Height;
-                                velocityY = 0;
+                                velocityY = 0f;
                                 isGrounded = true;
                             }
                         }
                         else
                         {
                             bool overlappingY = false;
+
                             if (R.Y + R.Height > t.R.Y &&
                                 R.Y < t.R.Y + t.R.Height)
                             {
@@ -371,16 +596,18 @@ namespace General
 
                             if (overlappingY)
                             {
-                                if (velocityY > 0)
+                                if (velocityY > 0f)
                                 {
                                     R.Y = t.R.Y - R.Height;
-                                    velocityY = 0;
+                                    velocityY = 0f;
                                     isGrounded = true;
                                 }
-                                else if (velocityY < 0)
+                                else if (velocityY < 0f)
                                 {
                                     R.Y = t.R.Y + t.R.Height;
-                                    velocityY = 0;
+                                    velocityY = 0f;
+                                    isJumping = false;
+                                    jumpHeld = false;
                                 }
                             }
                         }
@@ -390,20 +617,51 @@ namespace General
 
             if (wasGrounded == false && isGrounded == true)
             {
+                isJumping = false;
+                jumpHeld = false;
+                velocityY = 0f;
+
                 isLanding = true;
                 landingTimer = 6;
                 anim.changeAnimation("landing", -1);
             }
         }
-
+        public void checkUnder(List<tile> tiles)
+        {
+            for(int i= 0; i< tiles.Count; i++)
+            {
+                tile trav = tiles[i];
+                if(trav.jumpThrough == true)
+                {
+                    if(R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
+                        R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
+                    {
+                        R.Y++;
+                    }
+                }
+            }
+        }
+        public void stopJump()
+        {
+            jumpHeld = false;
+            isJumping = false;
+        }
 
         public void jump()
         {
+            jumpHeld = true;
+
             if (isGrounded)
             {
-                velocityY = jumpForce;
+                jumpStartY = R.Y;
+                jumpMinY = jumpStartY - maxJumpHeight;
+
+                velocityY = jumpStartPower;
+
                 isGrounded = false;
+                isJumping = true;
                 isLanding = false;
+
                 anim.changeAnimation("jump_flying", -1);
             }
         }
@@ -445,7 +703,7 @@ namespace General
         public Rectangle R = new Rectangle();
         public Color clr = Color.Black;
         public bool interact = false;
-        public bool jumpThrough = true;
+        public bool jumpThrough = false;
 
         public void draw(Graphics g)
         {
@@ -467,7 +725,7 @@ namespace General
         public Rectangle rect = new Rectangle();
         string text;
 
-        public Button( int x , int y , int w , int h , string text)
+        public Button(int x, int y, int w, int h, string text)
         {
             this.text = text;
             rect.X = x;
@@ -476,24 +734,32 @@ namespace General
             rect.Height = h;
         }
 
-        public void draw(Bitmap button , Graphics g , Font f , SolidBrush bsh , bool isCurrent )
+        public void draw(Bitmap button, Graphics g, Font f, SolidBrush bsh, bool isCurrent)
         {
-
-            
-
             g.DrawImage(button, rect.X, rect.Y, rect.Width, rect.Height);
-            
 
-            if (isCurrent == true) {
-                Pen pn = new Pen(Color.FromArgb(115, 85, 87), 5);
-                g.DrawRectangle(pn, rect.X + 3, rect.Y + 2 ,rect.Width - 10, rect.Height -10);
+            if (isCurrent == true)
+            {
+                drawSelectionIcon(g);
             }
 
-            int startX = rect.X + rect.Width / 2 - 60;
-            g.DrawString(text, f, bsh, startX, rect.Y + rect.Height / 2 - 25);
-
+            int startX = rect.X + rect.Width / 2 - text.Length* 7;
+            g.DrawString(text, f, bsh, startX, rect.Y + rect.Height / 2 - 22);
         }
 
+        void drawSelectionIcon(Graphics g)
+        {
+            Pen p = new Pen(Color.FromArgb(90, 40, 35), 5);
+            g.DrawRectangle(p, rect.X + 3, rect.Y + 3, rect.Width - 8, rect.Height - 8);
+
+            p = new Pen(Color.FromArgb(230, 180, 90), 3);
+            g.DrawRectangle(p, rect.X + 8, rect.Y + 8, rect.Width - 18, rect.Height - 18);
+
+            p = new Pen(Color.FromArgb(255, 230, 150), 1);
+            g.DrawRectangle(p, rect.X + 12, rect.Y + 12, rect.Width - 26, rect.Height - 26);
+
+           
+        }
     }
     public partial class Form1 : Form
     {
@@ -582,9 +848,39 @@ namespace General
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
+            if (hasStarted == false) return;
+
+           
+            if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
+            {
+                hero.moving = ' ';
+
+            }
+            if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.moving == 'l')
+            {
+                hero.moving = ' ';
+
+            }
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
+            {
+                hero.stopJump();
+            }
+
+            if (e.KeyCode == Keys.ShiftKey)
+            {
+                hero.isRunning = false;
+            }
+
+            
+
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+
             if (hasStarted == false)
             {
-                if(e.KeyCode == Keys.Down)
+                if (e.KeyCode == Keys.Down)
                 {
                     if (currentButton < btns.Count - 2) currentButton++;
                     else currentButton = 0;
@@ -598,16 +894,17 @@ namespace General
                     drawDubb(this.CreateGraphics());
                 }
 
-                if(currentButton == 0 || currentButton == 1)
+                if (currentButton == 0 || currentButton == 1)
                 {
-                    if(e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
+                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
                     {
                         currentButton = btns.Count - 1;
                         drawDubb(this.CreateGraphics());
 
                     }
                 }
-                else if (currentButton == btns.Count - 1) {
+                else if (currentButton == btns.Count - 1)
+                {
                     if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
                     {
                         currentButton = 0;
@@ -616,56 +913,41 @@ namespace General
                     }
                 }
 
-                if(currentButton == btns.Count - 1)
+                if (currentButton == btns.Count - 1)
                 {
                     if (e.KeyCode == Keys.Enter) startGame();
                 }
             }
-
-            if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
+            else
             {
-                hero.moving = ' ';
+                if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
+                {
+                    hero.moving = 'r';
+                }
+                if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
+                {
+                    hero.moving = 'l';
 
-            }
-            if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.moving == 'l')
-            {
-                hero.moving = ' ';
+                }
+                if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
+                {
+                    hero.checkUnder(tiles);
+                }
+                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
+                {
+                    hero.jump();
+                }
 
-            }
-            if (e.KeyCode == Keys.ShiftKey)
-            {
-                hero.isRunning = false;
-            }
+                if (e.KeyCode == Keys.ShiftKey)
+                {
+                    hero.isRunning = true;
+                }
 
-        }
-
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (hasStarted == false) return;
-
-            if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
-            {
-                hero.moving = 'r';
-            }
-            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
-            {
-                hero.moving = 'l';
-
-            }
-            if (e.KeyCode == Keys.Space)
-            {
-                hero.jump();
-            }
-
-            if (e.KeyCode == Keys.ShiftKey)
-            {
-                hero.isRunning = true;
-            }
-
-            if (e.KeyCode == Keys.P)
-            {
-                if (showRanges == true) showRanges = false;
-                else showRanges = true;
+                if (e.KeyCode == Keys.P)
+                {
+                    if (showRanges == true) showRanges = false;
+                    else showRanges = true;
+                }
             }
         }
 
@@ -694,7 +976,6 @@ namespace General
         {
             tile pnn = new tile();
             pnn.interact = true;
-            pnn.jumpThrough = true;
             pnn.init(0, this.ClientSize.Height - 30, this.ClientSize.Width, 30);
             tiles.Add(pnn);
 
@@ -762,8 +1043,6 @@ namespace General
             menuImgs.Add(img);
             img = new Bitmap("ui/hero_icon.png");
             menuImgs.Add(img);
-
-
         }
         void initButtons()
         {
