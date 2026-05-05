@@ -12,7 +12,8 @@ using System.IO;
 
 namespace General
 {
-    public class Animation{
+    public class Animation
+    {
         public string name;
         public List<Bitmap> frames = new List<Bitmap>();
         public int frameDelay = 1;
@@ -46,7 +47,7 @@ namespace General
         {
             if (maxHP <= 0) return 0f;
 
-            return getHP() *1f / maxHP;
+            return getHP() * 1f / maxHP;
         }
 
         public void damage(int amount)
@@ -149,11 +150,11 @@ namespace General
             rect.Y = ownerR.Y - rect.Height - gap;
         }
 
-        public void draw(Graphics g, Health hp, Mana mana ,int level)
+        public void draw(Graphics g, Health hp, Mana mana, int level)
         {
             if (isHero)
             {
-                drawHeroUI(g, hp, mana , level);
+                drawHeroUI(g, hp, mana, level);
             }
             else
             {
@@ -161,7 +162,7 @@ namespace General
             }
         }
 
-        void drawHeroUI(Graphics g, Health hp, Mana mana , int level)
+        void drawHeroUI(Graphics g, Health hp, Mana mana, int level)
         {
             float iconBorderX = rect.X;
             float iconBorderY = rect.Y;
@@ -222,7 +223,7 @@ namespace General
                 string manaText = "Mana: " + mana.getMana() + " / " + mana.maxMana;
 
                 float tx = barX + 10;
-                float ty = manaBarY - 17 ;
+                float ty = manaBarY - 17;
 
                 drawTextWithShadow(g, manaText, manaFont, tx, ty);
             }
@@ -302,7 +303,7 @@ namespace General
     }
     public class AnimationController
     {
-        public int currIdx =0;
+        public int currIdx = 0;
         public int currAnim = 0;
 
         public int frameDelayCount = 0;
@@ -356,7 +357,7 @@ namespace General
             {
                 frame = animations[currAnim].frames[currIdx];
 
-                
+
             }
 
             frameDelayCount++;
@@ -374,9 +375,6 @@ namespace General
             return frame;
         }
     }
-
- 
-
 
     public class Hero
     {
@@ -409,7 +407,7 @@ namespace General
         public bool isLanding = false;
         int landingTimer = 0;
 
-        public float max_speed = 30f; 
+        public float max_speed = 30f;
         float prevBottom = 0f;
 
         public int level = 0;
@@ -432,7 +430,7 @@ namespace General
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
             }
 
-            UI.draw(g, HP , mana , level);
+            UI.draw(g, HP, mana, level);
         }
         public Hero(int startX, int startY, int w, int h)
         {
@@ -452,7 +450,6 @@ namespace General
             wasGrounded = true;
             isGrounded = true;
         }
-
         void createAnim()
         {
             string[] folders = {"attack", "critical_attack", "crouch", "death",
@@ -478,7 +475,6 @@ namespace General
                 this.anim.addAnim(a);
             }
         }
-
         public void move(List<tile> tiles)
         {
             float speedM = speed;
@@ -516,7 +512,6 @@ namespace General
 
             updateAnimation();
         }
-
         public void Movement(List<tile> tiles)
         {
             wasGrounded = isGrounded;
@@ -628,12 +623,12 @@ namespace General
         }
         public void checkUnder(List<tile> tiles)
         {
-            for(int i= 0; i< tiles.Count; i++)
+            for (int i = 0; i < tiles.Count; i++)
             {
                 tile trav = tiles[i];
-                if(trav.jumpThrough == true)
+                if (trav.jumpThrough == true)
                 {
-                    if(R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
+                    if (R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
                         R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
                     {
                         R.Y++;
@@ -646,7 +641,6 @@ namespace General
             jumpHeld = false;
             isJumping = false;
         }
-
         public void jump()
         {
             jumpHeld = true;
@@ -665,7 +659,6 @@ namespace General
                 anim.changeAnimation("jump_flying", -1);
             }
         }
-
         public void updateAnimation()
         {
             if (isLanding)
@@ -698,6 +691,345 @@ namespace General
                 anim.changeAnimation("walking", -1);
         }
     }
+
+    public class Enemy
+    {
+        public RectangleF R = new RectangleF();
+        public RectangleF drawR = new Rectangle();
+
+        public float speed = 4f;
+
+        public char moving = 'l';
+        public bool isRunning = false;
+
+        public float velocityY = 0f;
+        public float gravity = 1.2f;
+        public float max_speed = 25f;
+
+        public bool isGrounded = false;
+        public bool wasGrounded = false;
+        public float prevBottom = 0f;
+
+        public bool isDead = false;
+        public bool isTakingDamage = false;
+        public bool isAttacking = false;
+
+        public int damageTimer = 0;
+        public int attackTimer = 0;
+        public int deathTimer = 0;
+
+        public float startX = 0f;
+        public float patrolDistance = 200f;
+        public float leftLimit = 0f;
+        public float rightLimit = 0f;
+
+        public int spawnX = 0;
+        public int spawnY = 0;
+        public bool CanSpawn = false;
+
+        public Health HP;
+
+        public AnimationController anim = new AnimationController();
+        public Enemy(int startX, int startY, int w, int h)
+        {
+            spawnX = startX;
+            spawnY = startY;
+
+            drawR.X = startX;
+            drawR.Y = startY;
+            drawR.Width = w;
+            drawR.Height = h;
+
+            R.Width = w * 0.45f;
+            R.Height = h * 0.60f;
+            R.X = startX + (w - R.Width) / 2f;
+            R.Y = startY + (h - R.Height);
+
+            this.startX = R.X;
+
+            leftLimit = R.X - patrolDistance;
+            rightLimit = R.X + patrolDistance;
+
+            moving = 'l';
+
+            HP = new Health(0, 0, 45, 6, 100, 100, false, false);
+
+            createAnim();
+            anim.changeAnimation("idle", -1);
+
+            isGrounded = true;
+            wasGrounded = true;
+        }
+        public void draw(Graphics g, bool showRanges)
+        {
+            drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+            drawR.Y = R.Y + (R.Height - drawR.Height);
+
+            g.DrawImage(anim.playFrame(), drawR.X, drawR.Y, drawR.Width, drawR.Height);
+
+            if (showRanges)
+            {
+                Pen p = new Pen(Color.Red, 2);
+                g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
+            }
+
+            HP.positionAbove(R, 8);
+            HP.draw(g);
+        }
+        void createAnim()
+        {
+            string[] folders = { "attack", "die", "hit", "idle", "run", "stun-attack" };
+            int[] numFrames = { 10, 15, 5, 7, 8, 24 };
+
+            for (int i = 0; i < 6; i++)
+            {
+                Animation a = new Animation();
+
+                a.name = folders[i];
+                if (folders[i] == "idle")
+                {
+                    a.frameDelay = 2;
+                }
+                else if (folders[i] == "run")
+                {
+                    a.frameDelay = 2;
+                }
+                else if (folders[i] == "attack")
+                {
+                    a.frameDelay = 2;
+                }
+                else if (folders[i] == "hit")
+                {
+                    a.frameDelay = 3;
+                }
+                else if (folders[i] == "die")
+                {
+                    a.frameDelay = 3;
+                }
+                else if (folders[i] == "stun-attack")
+                {
+                    a.frameDelay = 3;
+                }
+
+                string path = "Characters/Enemies/Mushroom/" + folders[i] + "/";
+
+                for (int j = 1; j <= numFrames[i]; j++)
+                {
+                    Bitmap img = new Bitmap(path + j.ToString() + ".png");
+                    a.frames.Add(img);
+                }
+
+                this.anim.addAnim(a);
+            }
+        }
+        public void move(List<tile> tiles)
+        {
+            if (isDead)
+            {
+                updateAnimation();
+                return;
+            }
+
+            float dx = 0f;
+
+            if (moving == 'l')
+            {
+                dx = -speed;
+            }
+            else if (moving == 'r')
+            {
+                dx = speed;
+            }
+
+            R.X += dx;
+
+            if (R.X <= leftLimit)
+            {
+                R.X = leftLimit;
+                moving = 'r';
+            }
+            else if (R.X >= rightLimit)
+            {
+                R.X = rightLimit;
+                moving = 'l';
+            }
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+
+                if (t.interact == true && t.jumpThrough == false)
+                {
+                    bool overlapping = false;
+
+                    if (R.X + R.Width > t.R.X &&
+                        R.X < t.R.X + t.R.Width &&
+                        R.Y + R.Height > t.R.Y &&
+                        R.Y < t.R.Y + t.R.Height)
+                    {
+                        overlapping = true;
+                    }
+
+                    if (overlapping)
+                    {
+                        if (dx > 0)
+                        {
+                            R.X = t.R.X - R.Width;
+                            moving = 'l';
+                        }
+                        else if (dx < 0)
+                        {
+                            R.X = t.R.X + t.R.Width;
+                            moving = 'r';
+                        }
+                    }
+                }
+            }
+
+            applyPhysics(tiles);
+
+            updateAnimation();
+        }
+        public void applyPhysics(List<tile> tiles)
+        {
+            wasGrounded = isGrounded;
+            prevBottom = R.Y + R.Height;
+
+            velocityY += gravity;
+
+            if (velocityY > max_speed)
+                velocityY = max_speed;
+
+            R.Y += velocityY;
+
+            isGrounded = false;
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+
+                if (t.interact == true)
+                {
+                    bool overlappingX = false;
+
+                    if (R.X + R.Width > t.R.X &&
+                        R.X < t.R.X + t.R.Width)
+                    {
+                        overlappingX = true;
+                    }
+
+                    if (overlappingX)
+                    {
+                        if (t.jumpThrough == true)
+                        {
+                            if (velocityY >= 0 &&
+                                prevBottom <= t.R.Y &&
+                                R.Y + R.Height >= t.R.Y)
+                            {
+                                R.Y = t.R.Y - R.Height;
+                                velocityY = 0;
+                                isGrounded = true;
+                            }
+                        }
+                        else
+                        {
+                            bool overlappingY = false;
+
+                            if (R.Y + R.Height > t.R.Y &&
+                                R.Y < t.R.Y + t.R.Height)
+                            {
+                                overlappingY = true;
+                            }
+
+                            if (overlappingY)
+                            {
+                                if (velocityY > 0)
+                                {
+                                    R.Y = t.R.Y - R.Height;
+                                    velocityY = 0;
+                                    isGrounded = true;
+                                }
+                                else if (velocityY < 0)
+                                {
+                                    R.Y = t.R.Y + t.R.Height;
+                                    velocityY = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public void updateAnimation()
+        {
+            if (isDead)
+            {
+                anim.changeAnimation("die", -1);
+                return;
+            }
+            if (isTakingDamage)
+            {
+                anim.changeAnimation("hit", -1);
+                damageTimer--;
+
+                if (damageTimer <= 0)
+                {
+                    isTakingDamage = false;
+                }
+                return;
+            }
+
+            if (isAttacking)
+            {
+                anim.changeAnimation("attack", -1);
+                attackTimer--;
+
+                if (attackTimer <= 0)
+                {
+                    isAttacking = false;
+                }
+                return;
+            }
+
+            if (moving == ' ')
+            {
+                anim.changeAnimation("idle", -1);
+            }
+            else
+            {
+                anim.changeAnimation("run", -1);
+            }
+        }
+        public void respawn()
+        {
+            if (CanSpawn)
+            {
+                R.X = spawnX + (drawR.Width - R.Width) / 2f;
+                R.Y = spawnY + (drawR.Height - R.Height);
+
+                velocityY = 0f;
+
+                moving = 'l';
+
+                isDead = false;
+                isTakingDamage = false;
+                isAttacking = false;
+
+                damageTimer = 0;
+                attackTimer = 0;
+                deathTimer = 0;
+
+                isGrounded = true;
+                wasGrounded = true;
+
+                HP.HP = 50;
+                HP.maxHP = 50;
+
+                anim.changeAnimation("idle", -1);
+            }
+        }
+    }
+
     public class tile
     {
         public Rectangle R = new Rectangle();
@@ -711,7 +1043,7 @@ namespace General
             g.FillRectangle(bsh, R.X, R.Y, R.Width, R.Height);
         }
 
-        public void init(int x , int y , int width , int height)
+        public void init(int x, int y, int width, int height)
         {
             R.X = x;
             R.Y = y;
@@ -743,7 +1075,7 @@ namespace General
                 drawSelectionIcon(g);
             }
 
-            int startX = rect.X + rect.Width / 2 - text.Length* 7;
+            int startX = rect.X + rect.Width / 2 - text.Length * 7;
             g.DrawString(text, f, bsh, startX, rect.Y + rect.Height / 2 - 22);
         }
 
@@ -758,14 +1090,12 @@ namespace General
             p = new Pen(Color.FromArgb(255, 230, 150), 1);
             g.DrawRectangle(p, rect.X + 12, rect.Y + 12, rect.Width - 26, rect.Height - 26);
 
-           
+
         }
     }
     public partial class Form1 : Form
     {
         bool hasStarted = false;
-
-
 
         Bitmap button = new Bitmap("ui/menu/UI_TravelBook_Frame01a.png");
         int currentButton = 0;
@@ -779,6 +1109,7 @@ namespace General
         Random RR = new Random();
 
         Hero hero;
+        List<Enemy> enemies = new List<Enemy>();
         List<tile> tiles = new List<tile>();
         Timer timer = new Timer();
 
@@ -819,7 +1150,7 @@ namespace General
                 for (int i = 0; i < btns.Count; i++)
                 {
                     Button btn = btns[i];
-                    if(e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                    if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
                         && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
                     {
                         currentButton = i;
@@ -833,13 +1164,13 @@ namespace General
         void startGame()
         {
             hasStarted = true;
-            
-            while(btns.Count > 0)
+
+            while (btns.Count > 0)
             {
                 btns.RemoveAt(0);
             }
 
-            while(menuImgs.Count > 0)
+            while (menuImgs.Count > 0)
             {
                 menuImgs.RemoveAt(0);
             }
@@ -850,7 +1181,7 @@ namespace General
         {
             if (hasStarted == false) return;
 
-           
+
             if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
             {
                 hero.moving = ' ';
@@ -871,7 +1202,7 @@ namespace General
                 hero.isRunning = false;
             }
 
-            
+
 
         }
 
@@ -954,7 +1285,7 @@ namespace General
         private void Timer_Tick(object sender, EventArgs e)
         {
             hero.move(tiles);
-
+            handleEnemyMovement();
             drawDubb(this.CreateGraphics());
 
         }
@@ -965,6 +1296,7 @@ namespace General
 
 
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
+            Enemy en = new Enemy(800, 710, 120, 96);
             initTiles();
             initButtons();
             initMenu();
@@ -1013,6 +1345,10 @@ namespace General
             if (hasStarted == true)
             {
                 hero.Draw(g, showRanges);
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    enemies[i].draw(g, true);
+                }
                 for (int i = 0; i < tiles.Count; i++)
                 {
                     tiles[i].draw(g);
@@ -1028,18 +1364,18 @@ namespace General
         {
             Bitmap img = new Bitmap("ui/menu/UI_TravelBook_BookCover01a.png");
             menuImgs.Add(img);
-            img= new Bitmap("ui/menu/UI_TravelBook_BookPageLeft01a.png");
+            img = new Bitmap("ui/menu/UI_TravelBook_BookPageLeft01a.png");
             menuImgs.Add(img);
 
             img = new Bitmap("ui/menu/UI_TravelBook_BookPageRight01a.png");
-            
+
             menuImgs.Add(img);
-            
+
             img = new Bitmap("ui/menu/mainImage.png");
-            
+
             menuImgs.Add(img);
             img = new Bitmap("ui/border.png");
-            
+
             menuImgs.Add(img);
             img = new Bitmap("ui/hero_icon.png");
             menuImgs.Add(img);
@@ -1076,55 +1412,55 @@ namespace General
         }
         void displayMenu(Graphics G)
         {
-            G.DrawImage(menuImgs[0], 0, 0, this.ClientSize.Width , this.ClientSize.Height );
+            G.DrawImage(menuImgs[0], 0, 0, this.ClientSize.Width, this.ClientSize.Height);
             int spacing = 20;
-            G.DrawImage(menuImgs[1], spacing, spacing, this.ClientSize.Width/2 -spacing, this.ClientSize.Height -spacing * 2);
-            G.DrawImage(menuImgs[2], this.ClientSize.Width/2 , spacing, this.ClientSize.Width/2 - spacing, this.ClientSize.Height -spacing * 2);
+            G.DrawImage(menuImgs[1], spacing, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2);
+            G.DrawImage(menuImgs[2], this.ClientSize.Width / 2, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2);
 
             int pad = 20;
             int borderW = this.ClientSize.Width / 2 - pad * 2;
             int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
-            G.DrawImage(menuImgs[4], pad + 5, spacing + pad/2, borderW, borderHeight);
+            G.DrawImage(menuImgs[4], pad + 5, spacing + pad / 2, borderW, borderHeight);
 
 
-            G.DrawImage(menuImgs[3], spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400 );
+            G.DrawImage(menuImgs[3], spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400);
 
             //1/2   1/2
             //|  |  |  |  |
             int borderX = this.ClientSize.Width / 2 + pad;
-            int borderY = spacing + pad/2;
+            int borderY = spacing + pad / 2;
             G.DrawImage(menuImgs[4], borderX, borderY, borderW, borderHeight);
 
 
 
             int iconW = 100;
-            G.DrawImage(menuImgs[5], borderX + 60 , borderY + 60, iconW, iconW);
+            G.DrawImage(menuImgs[5], borderX + 60, borderY + 60, iconW, iconW);
 
 
             Font f = new Font("Comic Sans MS", 18, FontStyle.Bold);
             SolidBrush bsh = new SolidBrush(Color.White);
-            for(int i =0; i< btns.Count; i++)
+            for (int i = 0; i < btns.Count; i++)
             {
                 bool isIt = false;
                 if (i == currentButton) isIt = true;
 
 
                 Button btn = btns[i];
-                if(i < btns.Count - 1 || currentButton == 0 || currentButton == 1 || currentButton == btns.Count -1)
+                if (i < btns.Count - 1 || currentButton == 0 || currentButton == 1 || currentButton == btns.Count - 1)
                     btn.draw(button, G, f, bsh, isIt);
             }
 
 
-            loadScreen(G , borderX + 60 + 100 + 20, borderY + 60, borderW - (60 + 100 + 20), borderHeight - 60);
+            loadScreen(G, borderX + 60 + 100 + 20, borderY + 60, borderW - (60 + 100 + 20), borderHeight - 60);
         }
 
-        void loadScreen(Graphics G, int x , int y , int width , int height)
+        void loadScreen(Graphics G, int x, int y, int width, int height)
         {
-            if(currentButton == 0)
+            if (currentButton == 0)
             {
-               //show new game screen
+                //show new game screen
             }
-            if (currentButton ==1)
+            if (currentButton == 1)
             {
                 //show load
             }
@@ -1138,5 +1474,23 @@ namespace General
             }
         }
 
+
+        void handleEnemyMovement()
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                if (enemies[i].isDead)
+                {
+                    enemies[i].deathTimer++;
+
+                    if (enemies[i].deathTimer >= 100)
+                    {
+                        enemies[i].respawn();
+                    }
+                }
+
+                enemies[i].move(tiles);
+            }
+        }
     }
 }
