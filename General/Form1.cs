@@ -375,7 +375,6 @@ namespace General
             return frame;
         }
     }
-
     public class Hero
     {
         public RectangleF R = new Rectangle();
@@ -728,6 +727,7 @@ namespace General
         public bool CanSpawn = false;
 
         public Health HP;
+        public UIEntity UI;
 
         public AnimationController anim = new AnimationController();
         public Enemy(int startX, int startY, int w, int h)
@@ -752,7 +752,8 @@ namespace General
 
             moving = 'l';
 
-            HP = new Health(0, 0, 45, 6, 100, 100, false, false);
+            HP = new Health(50, 50);
+            UI = new UIEntity(0, 0, 70, 15, false, true);
 
             createAnim();
             anim.changeAnimation("idle", -1);
@@ -773,8 +774,8 @@ namespace General
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
             }
 
-            HP.positionAbove(R, 8);
-            HP.draw(g);
+            UI.positionAbove(R, 8);
+            UI.draw(g, HP, null, 0);
         }
         void createAnim()
         {
@@ -860,27 +861,33 @@ namespace General
 
                 if (t.interact == true && t.jumpThrough == false)
                 {
-                    bool overlapping = false;
-
+                    bool overlappingX = false;
                     if (R.X + R.Width > t.R.X &&
-                        R.X < t.R.X + t.R.Width &&
-                        R.Y + R.Height > t.R.Y &&
-                        R.Y < t.R.Y + t.R.Height)
-                    {
-                        overlapping = true;
-                    }
+                        R.X < t.R.X + t.R.Width) overlappingX = true;
 
-                    if (overlapping)
+                    bool overlappingY = false;
+                    if (R.Y + R.Height > t.R.Y &&
+                        R.Y < t.R.Y + t.R.Height) overlappingY = true;
+
+                    if (overlappingX && overlappingY)
                     {
-                        if (dx > 0)
+                        float overlapTop = Math.Max(R.Y, t.R.Y);
+                        float overlapBottom = Math.Min(R.Y + R.Height, t.R.Y + t.R.Height);
+                        float overlapY = overlapBottom - overlapTop;
+
+                        
+                        if (overlapY > 3f)
                         {
-                            R.X = t.R.X - R.Width;
-                            moving = 'l';
-                        }
-                        else if (dx < 0)
-                        {
-                            R.X = t.R.X + t.R.Width;
-                            moving = 'r';
+                            if (dx > 0)
+                            {
+                                R.X = t.R.X - R.Width;
+                                moving = 'l';
+                            }
+                            else if (dx < 0)
+                            {
+                                R.X = t.R.X + t.R.Width;
+                                moving = 'r';
+                            }
                         }
                     }
                 }
@@ -1022,8 +1029,8 @@ namespace General
                 isGrounded = true;
                 wasGrounded = true;
 
-                HP.HP = 50;
                 HP.maxHP = 50;
+                HP.HP = HP.maxHP;
 
                 anim.changeAnimation("idle", -1);
             }
@@ -1124,6 +1131,7 @@ namespace General
             this.BackColor = Color.FromArgb(115, 85, 87);
             this.Text = "Arcane";
             timer.Interval = 6;
+            timer.Stop();
             timer.Tick += Timer_Tick;
 
             this.MouseMove += Form1_MouseMove;
@@ -1296,12 +1304,38 @@ namespace General
 
 
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
-            Enemy en = new Enemy(800, 710, 120, 96);
             initTiles();
+            initEnemies();
             initButtons();
             initMenu();
             drawDubb(this.CreateGraphics());
 
+        }
+
+        int getAboveGroundLoc(int idx)
+        {
+            return this.ClientSize.Height - 30 - enemyH[idx];
+        }
+
+        int[] enemyW = { 120 };
+        int[] enemyH = { 96 };
+        string[] enemyType = { "Mushroom" };
+
+        
+        
+        void initEnemies()
+        {
+            for(int i =0; i< enemyType.Length; i++)
+            {
+                if (enemyType[i] == "Mushroom")
+                {
+                    //call initMushroomEnemy later if its alot or just put all mushrooms here
+
+                    Enemy en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    enemies.Add(en);
+                }
+
+            }
         }
 
         void initTiles()
@@ -1344,15 +1378,16 @@ namespace General
 
             if (hasStarted == true)
             {
-                hero.Draw(g, showRanges);
-                for (int i = 0; i < enemies.Count; i++)
-                {
-                    enemies[i].draw(g, true);
-                }
                 for (int i = 0; i < tiles.Count; i++)
                 {
                     tiles[i].draw(g);
                 }
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    enemies[i].draw(g, showRanges);
+                }
+
+                hero.Draw(g, showRanges);
             }
             else
             {
