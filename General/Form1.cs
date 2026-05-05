@@ -375,6 +375,47 @@ namespace General
             return frame;
         }
     }
+
+    public class vfx
+    {
+        public AnimationController anim = new AnimationController();
+
+        public string name;
+        public RectangleF rect = new RectangleF();
+
+        public bool finished = false;
+        public bool followPlayer = false;
+
+        public int offsetX;
+        public int offsetY;
+
+        public int timer = 0;
+        public int maxTimer = 20;
+
+        public void draw(Graphics g, RectangleF ownerR)
+        {
+            if (followPlayer)
+            {
+                rect.X = ownerR.X + ownerR.Width / 2f - rect.Width / 2f + offsetX;
+                rect.Y = ownerR.Y + ownerR.Height - rect.Height + offsetY;
+            }
+
+            Bitmap frame = anim.playFrame();
+
+            if (frame != null)
+            {
+                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
+            }
+
+            timer++;
+
+            if (timer >= maxTimer)
+            {
+                finished = true;
+            }
+        }
+    }
+
     public class Hero
     {
         public RectangleF R = new Rectangle();
@@ -385,20 +426,21 @@ namespace General
         public char moving = ' ';
         public bool isRunning = false;
 
-        public float velocityY = 0f;
+        public float ySpeed = 0f;
 
-        public float gravity = 1.2f;
-        public float jumpHoldGravity = 0.35f;
-        public float jumpReleaseGravity = 3.5f;
+        public float jumpPower = -17f;
+        public float doubleJumpPower = -15f;
+
+        public float gravity = 1f;
+        public float fallGravity = 2f;
+
+        public float maxFallSpeed = 30f;
+        public float jumpCutSpeed = -2f;
 
         public bool jumpHeld = false;
-        public bool isJumping = false;
 
-        public float jumpStartY = 0f;
-        public float jumpMinY = 0f;
-
-        public float jumpStartPower = -16f;
-        public float maxJumpHeight = 120f;
+        public int jumpsUsed = 0;
+        public int maxJumps = 2;
 
         public bool isGrounded = false;
         bool wasGrounded = false;
@@ -406,9 +448,9 @@ namespace General
         public bool isLanding = false;
         int landingTimer = 0;
 
-        public float max_speed = 30f;
         float prevBottom = 0f;
 
+        Animation doubleJumpAnimation;
         public int level = 0;
 
         public AnimationController anim = new AnimationController();
@@ -416,12 +458,67 @@ namespace General
         public Health HP = new Health(50, 100);
         public Mana mana = new Mana(75, 100);
         public UIEntity UI = new UIEntity(20f, 20f, 236f, 26f, true, true);
+
+
+        public List<vfx> vfxes = new List<vfx>();
+
+        public void initVFX()
+        {
+            doubleJumpAnimation = new Animation();
+            doubleJumpAnimation.name = "doubleJump";
+            doubleJumpAnimation.frameDelay = 2;
+
+            for (int i = 1; i <= 5; i++)
+            {
+                Bitmap frame = new Bitmap("vfx/doubleJump/" + i + ".png");
+                doubleJumpAnimation.addFrame(frame);
+            }
+        }
+        void createDoubleJumpVFX()
+        {
+            vfx fx = new vfx();
+
+            fx.name = "doubleJump";
+            fx.maxTimer = 5;
+            fx.anim.addAnim(doubleJumpAnimation);
+            fx.anim.changeAnimation("doubleJump", -1);
+         
+
+            fx.rect.Width = 90;
+            fx.rect.Height = 45;
+
+            fx.rect.X = R.X + R.Width / 2f - fx.rect.Width / 2f;
+            fx.rect.Y = R.Y + R.Height - fx.rect.Height / 2f - 20;
+
+            fx.followPlayer = false;
+
+
+            fx.maxTimer = doubleJumpAnimation.frames.Count * doubleJumpAnimation.frameDelay;
+
+            vfxes.Add(fx);
+        }
+
         public void Draw(Graphics g, bool showRanges)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
 
-            g.DrawImage(anim.playFrame(), drawR.X, drawR.Y, drawR.Width, drawR.Height);
+            for (int i = vfxes.Count - 1; i >= 0; i--)
+            {
+                vfxes[i].draw(g, R);
+
+                if (vfxes[i].finished)
+                {
+                    vfxes.RemoveAt(i);
+                }
+            }
+
+            Bitmap frame = anim.playFrame();
+
+            if (frame != null)
+            {
+                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+            }
 
             if (showRanges)
             {
@@ -444,6 +541,8 @@ namespace General
             R.Y = startY + (h - R.Height);
 
             createAnim();
+            initVFX();
+
             anim.changeAnimation("idle", -1);
 
             wasGrounded = true;
@@ -476,33 +575,55 @@ namespace General
         }
         public void move(List<tile> tiles)
         {
-            float speedM = speed;
-            if (isRunning) speedM = speed * 2f;
+            float moveSpeed = speed;
 
-            float dx = 0f;
-            if (moving == 'l') dx = -speedM;
-            else if (moving == 'r') dx = speedM;
+            if (isRunning == true)
+            {
+                moveSpeed = speed * 2f;
+            }
 
-            R.X += dx;
+            float xMove = 0f;
+
+            if (moving == 'l')
+            {
+                xMove = -moveSpeed;
+            }
+            else if (moving == 'r')
+            {
+                xMove = moveSpeed;
+            }
+
+            R.X += xMove;
 
             for (int i = 0; i < tiles.Count; i++)
             {
                 tile t = tiles[i];
-                if (t.interact == true && t.jumpThrough == false)
-                {
-                    bool overlapping = false;
-                    if (R.X + R.Width > t.R.X &&
-                        R.X < t.R.X + t.R.Width &&
-                        R.Y + R.Height > t.R.Y &&
-                        R.Y < t.R.Y + t.R.Height)
-                    {
-                        overlapping = true;
-                    }
 
-                    if (overlapping)
+                if (t.interact == true)
+                {
+                    if (t.jumpThrough == false)
                     {
-                        if (dx > 0) R.X = t.R.X - R.Width;
-                        else if (dx < 0) R.X = t.R.X + t.R.Width;
+                        bool hitTile = false;
+
+                        if (R.X + R.Width > t.R.X &&
+                            R.X < t.R.X + t.R.Width &&
+                            R.Y + R.Height > t.R.Y &&
+                            R.Y < t.R.Y + t.R.Height)
+                        {
+                            hitTile = true;
+                        }
+
+                        if (hitTile == true)
+                        {
+                            if (xMove > 0)
+                            {
+                                R.X = t.R.X - R.Width;
+                            }
+                            else if (xMove < 0)
+                            {
+                                R.X = t.R.X + t.R.Width;
+                            }
+                        }
                     }
                 }
             }
@@ -516,38 +637,21 @@ namespace General
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
 
-            float activeGravity = gravity;
-
-            if (velocityY < 0f)
+            if (ySpeed < 0)
             {
-                if (jumpHeld == true && isJumping == true && R.Y > jumpMinY)
-                {
-                    activeGravity = jumpHoldGravity;
-                }
-                else
-                {
-                    activeGravity = jumpReleaseGravity;
-                    isJumping = false;
-                }
+                ySpeed += gravity;
             }
             else
             {
-                activeGravity = gravity;
-                isJumping = false;
+                ySpeed += fallGravity;
             }
 
-            velocityY += activeGravity;
-
-            if (velocityY > max_speed) velocityY = max_speed;
-
-            R.Y += velocityY;
-
-            if (R.Y <= jumpMinY && velocityY < 0f)
+            if (ySpeed > maxFallSpeed)
             {
-                R.Y = jumpMinY;
-                velocityY = 0f;
-                isJumping = false;
+                ySpeed = maxFallSpeed;
             }
+
+            R.Y += ySpeed;
 
             isGrounded = false;
 
@@ -557,51 +661,53 @@ namespace General
 
                 if (t.interact == true)
                 {
-                    bool overlappingX = false;
+                    bool touchingX = false;
 
                     if (R.X + R.Width > t.R.X &&
                         R.X < t.R.X + t.R.Width)
                     {
-                        overlappingX = true;
+                        touchingX = true;
                     }
 
-                    if (overlappingX)
+                    if (touchingX == true)
                     {
                         if (t.jumpThrough == true)
                         {
-                            if (velocityY >= 0f &&
-                                prevBottom <= t.R.Y &&
-                                R.Y + R.Height >= t.R.Y)
+                            if (ySpeed >= 0)
                             {
-                                R.Y = t.R.Y - R.Height;
-                                velocityY = 0f;
-                                isGrounded = true;
+                                if (prevBottom <= t.R.Y)
+                                {
+                                    if (R.Y + R.Height >= t.R.Y)
+                                    {
+                                        R.Y = t.R.Y - R.Height;
+                                        ySpeed = 0;
+                                        isGrounded = true;
+                                    }
+                                }
                             }
                         }
                         else
                         {
-                            bool overlappingY = false;
+                            bool touchingY = false;
 
                             if (R.Y + R.Height > t.R.Y &&
                                 R.Y < t.R.Y + t.R.Height)
                             {
-                                overlappingY = true;
+                                touchingY = true;
                             }
 
-                            if (overlappingY)
+                            if (touchingY == true)
                             {
-                                if (velocityY > 0f)
+                                if (ySpeed > 0)
                                 {
                                     R.Y = t.R.Y - R.Height;
-                                    velocityY = 0f;
+                                    ySpeed = 0;
                                     isGrounded = true;
                                 }
-                                else if (velocityY < 0f)
+                                else if (ySpeed < 0)
                                 {
                                     R.Y = t.R.Y + t.R.Height;
-                                    velocityY = 0f;
-                                    isJumping = false;
-                                    jumpHeld = false;
+                                    ySpeed = 0;
                                 }
                             }
                         }
@@ -609,28 +715,42 @@ namespace General
                 }
             }
 
-            if (wasGrounded == false && isGrounded == true)
+            if (isGrounded == true)
             {
-                isJumping = false;
+                jumpsUsed = 0;
                 jumpHeld = false;
-                velocityY = 0f;
 
-                isLanding = true;
-                landingTimer = 6;
-                anim.changeAnimation("landing", -1);
+                if (wasGrounded == false)
+                {
+                    isLanding = true;
+                    landingTimer = 6;
+                    anim.changeAnimation("landing", -1);
+                }
+            }
+
+            if (wasGrounded == true)
+            {
+                if (isGrounded == false)
+                {
+                    if (jumpsUsed == 0)
+                    {
+                        jumpsUsed = 1;
+                    }
+                }
             }
         }
+
         public void checkUnder(List<tile> tiles)
         {
             for (int i = 0; i < tiles.Count; i++)
             {
                 tile trav = tiles[i];
-                if (trav.jumpThrough == true)
+                if (trav.jumpThrough == true && trav.interact == true)
                 {
                     if (R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
                         R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
                     {
-                        R.Y++;
+                        R.Y+=2;
                     }
                 }
             }
@@ -638,24 +758,40 @@ namespace General
         public void stopJump()
         {
             jumpHeld = false;
-            isJumping = false;
+
+            if (isGrounded == false)
+            {
+                if (ySpeed < jumpCutSpeed)
+                {
+                    ySpeed = jumpCutSpeed;
+                }
+            }
         }
         public void jump()
         {
             jumpHeld = true;
 
-            if (isGrounded)
+            if (isGrounded == true)
             {
-                jumpStartY = R.Y;
-                jumpMinY = jumpStartY - maxJumpHeight;
-
-                velocityY = jumpStartPower;
-
+                ySpeed = jumpPower;
+                jumpsUsed = 1;
                 isGrounded = false;
-                isJumping = true;
                 isLanding = false;
 
                 anim.changeAnimation("jump_flying", -1);
+            }
+            else
+            {
+                if (jumpsUsed < maxJumps)
+                {
+                    ySpeed = doubleJumpPower;
+                    jumpsUsed++;
+
+                    isLanding = false;
+                    createDoubleJumpVFX();
+
+                    anim.changeAnimation("jump_flying", -1);
+                }
             }
         }
         public void updateAnimation()
@@ -675,10 +811,11 @@ namespace General
 
             if (!isGrounded)
             {
-                if (velocityY < 0)
+                if (ySpeed < 0)
                     anim.changeAnimation("jump_flying", -1);
                 else
                     anim.changeAnimation("falling", -1);
+
                 return;
             }
 
@@ -1130,7 +1267,7 @@ namespace General
 
             this.BackColor = Color.FromArgb(115, 85, 87);
             this.Text = "Arcane";
-            timer.Interval = 6;
+            timer.Interval = 15;
             timer.Stop();
             timer.Tick += Timer_Tick;
 
@@ -1274,7 +1411,10 @@ namespace General
                 }
                 if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                 {
-                    hero.jump();
+                    if (hero.jumpHeld == false)
+                    {
+                        hero.jump();
+                    }
                 }
 
                 if (e.KeyCode == Keys.ShiftKey)
