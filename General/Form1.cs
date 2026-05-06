@@ -353,6 +353,7 @@ namespace General
             Bitmap frame = null;
 
             if (currIdx >= animations[currAnim].frames.Count) currIdx = 0;
+
             if (animations[currAnim].frames.Count > 0)
             {
                 frame = animations[currAnim].frames[currIdx];
@@ -374,6 +375,58 @@ namespace General
 
             return frame;
         }
+
+        public Bitmap playFrameOnce()
+        {
+            Bitmap frame = null;
+
+            if (currIdx >= animations[currAnim].frames.Count) currIdx = animations[currAnim].frames.Count - 1;
+
+            if (animations[currAnim].frames.Count > 0)
+            {
+                frame = animations[currAnim].frames[currIdx];
+            }
+
+            frameDelayCount++;
+
+            if (currIdx < animations[currAnim].frames.Count - 1)
+            {
+                if (frameDelayCount >= animations[currAnim].frameDelay)
+                {
+                    frameDelayCount = 0;
+
+                    if (currIdx < animations[currAnim].frames.Count - 1)
+                        currIdx++;
+                    else
+                        currIdx = 0;
+                }
+            }
+
+            return frame;
+        }
+
+        public Animation getCurrentAnimation()
+        {
+            if (animations.Count == 0) return null;
+            if (currAnim < 0 || currAnim >= animations.Count) return null;
+
+            return animations[currAnim];
+        }
+
+        public bool isCurrentAnimation(string name)
+        {
+            Animation a = getCurrentAnimation();
+            if (a == null) return false;
+
+            return a.name == name;
+        }
+
+        public void restart()
+        {
+            currIdx = 0;
+            frameDelayCount = 0;
+        }
+
     }
 
     public class vfx
@@ -428,14 +481,14 @@ namespace General
 
         public float ySpeed = 0f;
 
-        public float jumpPower = -17f;
-        public float doubleJumpPower = -15f;
+        public float jumpPower = -22f;
+        public float doubleJumpPower = -19f;
 
-        public float gravity = 1f;
-        public float fallGravity = 2f;
+        public float gravity = 1.8f;
+        public float fallGravity = 3.5f;
 
-        public float maxFallSpeed = 30f;
-        public float jumpCutSpeed = -2f;
+        public float maxFallSpeed = 28f;
+        public float jumpCutSpeed = -4f;
 
         public bool jumpHeld = false;
 
@@ -462,6 +515,19 @@ namespace General
 
         public List<vfx> vfxes = new List<vfx>();
 
+        public int damage = 10;
+
+        public bool isAttacking = false;
+        public bool attackHasHit = false;
+
+        public int attackHitFrame = 4; //first 4 frames in teh attack animation are normal
+        public int attackComboExtraFrames = 2; // last 2 frames are extra whgen there is a combo
+        public float attackMoveMultiplier = 0.55f;
+
+        public char facing = 'r';
+
+        public float attackRange = 80f;
+        public float attackHeightScale = 1.2f;
         public void initVFX()
         {
             doubleJumpAnimation = new Animation();
@@ -482,7 +548,7 @@ namespace General
             fx.maxTimer = 5;
             fx.anim.addAnim(doubleJumpAnimation);
             fx.anim.changeAnimation("doubleJump", -1);
-         
+
 
             fx.rect.Width = 90;
             fx.rect.Height = 45;
@@ -524,6 +590,13 @@ namespace General
             {
                 Pen p = new Pen(Color.Lime, 2);
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
+
+                if (isAttacking == true)
+                {
+                    RectangleF atk = getAttackHitBox();
+                    Pen atkPen = new Pen(Color.Orange, 2);
+                    g.DrawRectangle(atkPen, atk.X, atk.Y, atk.Width, atk.Height);
+                }
             }
 
             UI.draw(g, HP, mana, level);
@@ -573,6 +646,105 @@ namespace General
                 this.anim.addAnim(a);
             }
         }
+
+        public bool isDoingCombo = false;
+        public void startAttack()
+        {
+            if (isAttacking == true)
+            {
+                Animation attackAnim = anim.getCurrentAnimation();
+                if (attackAnim != null)
+                {
+                    int usableFrames = attackAnim.frames.Count - attackComboExtraFrames;
+                    if (anim.currIdx >= usableFrames)
+                        isDoingCombo = true;
+                }
+                return;
+            }
+
+            isAttacking = true;
+            attackHasHit = false;
+            isDoingCombo = false;
+            isRunning = false;
+
+            anim.changeAnimation("attack", -1);
+            anim.restart();
+        }
+
+        public RectangleF getAttackHitBox()
+        {
+            float h = R.Height * attackHeightScale;
+            float y = R.Y + (R.Height - h) / 2f;
+
+            if (facing == 'r')
+            {
+                return new RectangleF(R.X, y, R.Width + attackRange, h );
+            }
+            else
+            {
+                return new RectangleF( R.X - attackRange + 5, y, R.Width + attackRange, h);
+            }
+        }
+
+        public void updateAttack(List<Enemy> enemies)
+        {
+            if (isAttacking == false) return;
+
+            anim.changeAnimation("attack", -1);
+
+            Animation attackAnim = anim.getCurrentAnimation();
+            if (attackAnim == null) return;
+
+            int usableFrames = attackAnim.frames.Count - attackComboExtraFrames;
+
+            if (usableFrames <= 0)
+            {
+                usableFrames = attackAnim.frames.Count;
+            }
+
+            if (anim.currIdx >= usableFrames)
+            {
+                isAttacking = false;
+                attackHasHit = false;
+
+                if (isDoingCombo)
+                {
+                    isDoingCombo = false;
+                    isAttacking = true;
+                    anim.changeAnimation("attack", -1);
+                    anim.restart();
+                    attackHasHit = false;
+                    return;
+                }
+
+                updateAnimation();
+                return;
+            }
+
+            if (attackHasHit == false && anim.currIdx >= attackHitFrame - 1)
+            {
+                RectangleF hitBox = getAttackHitBox();
+
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    Enemy en = enemies[i];
+
+                    if (en.isDead == false)
+                    {
+                        if (hitBox.X <= en.R.X + en.R.Width && hitBox.X + hitBox.Width >= en.R.X &&
+                            hitBox.Y <= en.R.Y + en.R.Height && hitBox.Y + hitBox.Height >= en.R.Y)
+                        {
+                            en.takeHit(damage);
+                            // break;
+                        }
+
+                    }
+                }
+
+                attackHasHit = true;
+            }
+        }
+
         public void move(List<tile> tiles)
         {
             float moveSpeed = speed;
@@ -581,6 +753,7 @@ namespace General
             {
                 moveSpeed = speed * 2f;
             }
+            if (isAttacking == true && isGrounded == true) moveSpeed *= attackMoveMultiplier;
 
             float xMove = 0f;
 
@@ -630,7 +803,8 @@ namespace General
 
             Movement(tiles);
 
-            updateAnimation();
+            if (!isAttacking)
+                updateAnimation();
         }
         public void Movement(List<tile> tiles)
         {
@@ -750,7 +924,7 @@ namespace General
                     if (R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
                         R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
                     {
-                        R.Y+=2;
+                        R.Y += 2;
                     }
                 }
             }
@@ -759,17 +933,15 @@ namespace General
         {
             jumpHeld = false;
 
-            if (isGrounded == false)
+            if (isGrounded == false && ySpeed < 0)
             {
-                if (ySpeed < jumpCutSpeed)
-                {
-                    ySpeed = jumpCutSpeed;
-                }
+                if (ySpeed * 0.35 > jumpCutSpeed) ySpeed = ySpeed * 0.35f;
+                else ySpeed = jumpCutSpeed;
             }
         }
         public void jump()
         {
-            jumpHeld = true;
+            jumpHeld = true; 
 
             if (isGrounded == true)
             {
@@ -796,6 +968,12 @@ namespace General
         }
         public void updateAnimation()
         {
+            if (isAttacking == true)
+            {
+                anim.changeAnimation("attack", -1);
+                return;
+            }
+
             if (isLanding)
             {
                 landingTimer--;
@@ -862,6 +1040,7 @@ namespace General
         public int spawnX = 0;
         public int spawnY = 0;
         public bool CanSpawn = false;
+        public int spawnTime = 600;
 
         public Health HP;
         public UIEntity UI;
@@ -903,7 +1082,21 @@ namespace General
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
 
-            g.DrawImage(anim.playFrame(), drawR.X, drawR.Y, drawR.Width, drawR.Height);
+            Bitmap frame;
+
+            if (isDead)
+            {
+                frame = anim.playFrameOnce();
+            }
+            else
+            {
+                frame = anim.playFrame();
+            }
+
+            if (frame != null)
+            {
+                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+            }
 
             if (showRanges)
             {
@@ -911,8 +1104,11 @@ namespace General
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
             }
 
-            UI.positionAbove(R, 8);
-            UI.draw(g, HP, null, 0);
+            if (isDead == false)
+            {
+                UI.positionAbove(R, 8);
+                UI.draw(g, HP, null, 0);
+            }
         }
         void createAnim()
         {
@@ -960,10 +1156,43 @@ namespace General
                 this.anim.addAnim(a);
             }
         }
+
+        public void takeHit(int amount)
+        {
+            if (isDead == true)
+            {
+                return;
+            }
+            HP.damage(amount);
+
+            if (HP.getHP() <= 0)
+            {
+                isDead = true;
+                isTakingDamage = false;
+                isAttacking = false;
+
+                deathTimer = 0;
+
+                anim.changeAnimation("die", -1);
+                anim.restart();
+            }
+            else
+            {
+                isTakingDamage = true;
+                isAttacking = false;
+
+                damageTimer = 15;
+
+                anim.changeAnimation("hit", -1);
+                anim.restart();
+            }
+        }
+        
         public void move(List<tile> tiles)
         {
-            if (isDead)
+            if (isDead || isTakingDamage || isAttacking)
             {
+                applyPhysics(tiles);
                 updateAnimation();
                 return;
             }
@@ -1008,11 +1237,15 @@ namespace General
 
                     if (overlappingX && overlappingY)
                     {
-                        float overlapTop = Math.Max(R.Y, t.R.Y);
-                        float overlapBottom = Math.Min(R.Y + R.Height, t.R.Y + t.R.Height);
+                        float overlapTop = R.Y;
+                        if (t.R.Y > overlapTop) overlapTop = t.R.Y;
+
+                        float overlapBottom =R.Y + R.Height;
+                        if(t.R.Y + t.R.Height < R.Y + R.Height ) overlapBottom = t.R.Y + t.R.Height;
+
                         float overlapY = overlapBottom - overlapTop;
 
-                        
+
                         if (overlapY > 3f)
                         {
                             if (dx > 0)
@@ -1108,9 +1341,15 @@ namespace General
         {
             if (isDead)
             {
-                anim.changeAnimation("die", -1);
+                if (anim.isCurrentAnimation("die") == false)
+                {
+                    anim.changeAnimation("die", -1);
+                    anim.restart();
+                }
+
                 return;
             }
+
             if (isTakingDamage)
             {
                 anim.changeAnimation("hit", -1);
@@ -1149,7 +1388,9 @@ namespace General
             if (CanSpawn)
             {
                 R.X = spawnX + (drawR.Width - R.Width) / 2f;
-                R.Y = spawnY + (drawR.Height - R.Height);
+                R.Y = spawnY;
+                drawR.X = spawnX;
+                drawR.Y = spawnY - (drawR.Height - R.Height);
 
                 velocityY = 0f;
 
@@ -1267,7 +1508,7 @@ namespace General
 
             this.BackColor = Color.FromArgb(115, 85, 87);
             this.Text = "Arcane";
-            timer.Interval = 15;
+            timer.Interval = 1;
             timer.Stop();
             timer.Tick += Timer_Tick;
 
@@ -1284,6 +1525,13 @@ namespace General
                             && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
                 {
                     startGame();
+                }
+            }
+            else
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    hero.startAttack();
                 }
             }
         }
@@ -1399,11 +1647,12 @@ namespace General
                 if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
                 {
                     hero.moving = 'r';
+                    hero.facing = 'r';
                 }
                 if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
                 {
                     hero.moving = 'l';
-
+                    hero.facing = 'l';
                 }
                 if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
                 {
@@ -1417,10 +1666,11 @@ namespace General
                     }
                 }
 
-                if (e.KeyCode == Keys.ShiftKey)
+                if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false)
                 {
                     hero.isRunning = true;
                 }
+
 
                 if (e.KeyCode == Keys.P)
                 {
@@ -1433,6 +1683,7 @@ namespace General
         private void Timer_Tick(object sender, EventArgs e)
         {
             hero.move(tiles);
+            hero.updateAttack(enemies);
             handleEnemyMovement();
             drawDubb(this.CreateGraphics());
 
@@ -1461,17 +1712,28 @@ namespace General
         int[] enemyH = { 96 };
         string[] enemyType = { "Mushroom" };
 
-        
-        
+
+
         void initEnemies()
         {
-            for(int i =0; i< enemyType.Length; i++)
+            for (int i = 0; i < enemyType.Length; i++)
             {
                 if (enemyType[i] == "Mushroom")
                 {
                     //call initMushroomEnemy later if its alot or just put all mushrooms here
 
                     Enemy en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en.CanSpawn = true;
+                    enemies.Add(en);
+
+                    en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    enemies.Add(en);
+
+                     en = new Enemy(700, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    enemies.Add(en);
+                     en = new Enemy(800, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    enemies.Add(en);
+                     en = new Enemy(900, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     enemies.Add(en);
                 }
 
@@ -1656,9 +1918,19 @@ namespace General
             {
                 if (enemies[i].isDead)
                 {
+                    if (enemies[i].anim.currIdx == enemies[i].anim.animations[enemies[i].anim.currAnim].frames.Count - 1)
+                    {
+                        if (enemies[i].CanSpawn == false)
+                        {
+                            enemies.RemoveAt(i);
+                            i--;
+                            break;
+                        }
+                    }
+
                     enemies[i].deathTimer++;
 
-                    if (enemies[i].deathTimer >= 100)
+                    if (enemies[i].deathTimer >= enemies[i].spawnTime)
                     {
                         enemies[i].respawn();
                     }
@@ -1667,5 +1939,7 @@ namespace General
                 enemies[i].move(tiles);
             }
         }
+
+        
     }
 }
