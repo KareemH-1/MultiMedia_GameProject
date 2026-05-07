@@ -127,7 +127,6 @@ namespace General
         public bool displayManaText = true;
 
         public bool displayName = false;
-        public bool displayLevel = true;
 
         public RectangleF rect = new RectangleF();
 
@@ -152,6 +151,10 @@ namespace General
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
 
+        Bitmap goldCoinIcon;
+        Bitmap silverCoinIcon;
+        Bitmap bronzeCoinIcon;
+
 
         public UIEntity(float x, float y, float w, float h, bool isHero, bool showHPText)
         {
@@ -162,6 +165,14 @@ namespace General
             rect.Y = y;
             rect.Width = w;
             rect.Height = h;
+
+            if(isHero == true)
+            {
+                goldCoinIcon = new Bitmap("ui/Coins/Gold/1.png");
+                silverCoinIcon = new Bitmap("ui/Coins/Silver/1.png");
+                bronzeCoinIcon = new Bitmap("ui/Coins/Bronze/1.png");
+
+            }
         }
 
         public void positionAbove(RectangleF ownerR, float gap)
@@ -170,11 +181,11 @@ namespace General
             rect.Y = ownerR.Y - rect.Height - gap;
         }
 
-        public void draw(Graphics g, Health hp, Mana mana, int level)
+        public void draw(Graphics g, Health hp, Mana mana, int coins)
         {
             if (isHero)
             {
-                drawHeroUI(g, hp, mana, level);
+                drawHeroUI(g, hp, mana, coins);
             }
             else
             {
@@ -182,13 +193,13 @@ namespace General
             }
         }
 
-        void drawHeroUI(Graphics g, Health hp, Mana mana, int level)
+        void drawHeroUI(Graphics g, Health hp, Mana mana, int coins)
         {
-            float iconBorderX = rect.X;
-            float iconBorderY = rect.Y;
+            float iconBorderX = rect.X ;
+            float iconBorderY = rect.Y + 15f;
 
             float iconBorderW = 78f;
-            float iconBorderH = 120f;
+            float iconBorderH = 120f - 40f;
 
             float iconPad = 10f;
             float iconX = iconBorderX + iconPad;
@@ -201,10 +212,7 @@ namespace General
             g.DrawImage(heroBorder, iconBorderX, iconBorderY, iconBorderW, iconBorderH);
             g.DrawImage(heroIcon, iconX, iconY, iconW, iconH);
 
-            float levelY = iconBorderY + iconW + 15;
-            string levelText = "Level: " + level;
 
-            drawTextWithShadow(g, levelText, heroFont, iconX + 2, levelY);
 
             float barX = iconBorderX + iconBorderW + 18f;
 
@@ -216,6 +224,10 @@ namespace General
 
             float manaBarW = barW;
             float manaBarH = rect.Height / 2;
+
+            float coinX = barX + 4;
+            float coinY = manaBarY + manaBarH + 10;
+            drawCoins(g , coins , coinX , coinY);
 
             if (displayHPText)
             {
@@ -248,6 +260,41 @@ namespace General
             }
         }
 
+        public void drawCoins(Graphics g, int coins , float x , float y)
+        {
+            int remaining = coins;
+
+            int NGold = remaining / 1000;
+            remaining = remaining - NGold * 1000;
+
+            int NSilver = remaining/100;
+            remaining = remaining - NSilver * 100;
+
+            int NBronze = remaining;
+
+     
+            int wh = 15;
+            int spacing = 25;
+
+            g.DrawImage(goldCoinIcon, x, y, wh, wh);
+            x += wh + 5;
+            drawTextWithShadow(g, NGold.ToString(), normalFont, x, y);
+
+
+            x += spacing;
+            g.DrawImage(silverCoinIcon, x, y, wh, wh);
+            x += wh + 5;
+            drawTextWithShadow(g, NSilver.ToString(), normalFont, x, y);
+
+            x += spacing;
+            g.DrawImage(bronzeCoinIcon, x, y, wh, wh);
+            x += wh + 5;
+            drawTextWithShadow(g, NBronze.ToString(), normalFont, x, y);
+
+
+
+
+        }
         public void drawWeaponsUI(Graphics g , List<Weapon> weapons , int currentWeapon)
         {
             float spacing = 20f;
@@ -794,7 +841,7 @@ namespace General
 
         Animation doubleJumpAnimation;
         Animation fireballAnimation;
-        public int level = 0;
+        public int coins = 0;
 
         public AnimationController anim = new AnimationController();
 
@@ -1021,7 +1068,7 @@ namespace General
             }
 
 
-            UI.draw(g, HP, mana, level);
+            UI.draw(g, HP, mana, coins);
             UI.drawWeaponsUI(g, Weapons, currentWeapon);
         }
         public Hero(int startX, int startY, int w, int h)
@@ -2083,7 +2130,7 @@ namespace General
             }
         }
 
-        void CheckIfWeaponUIClicked(int eX , int eY)
+        bool CheckIfWeaponUIClicked(int eX , int eY)
         {
             float spacing = 20f;
             float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
@@ -2100,9 +2147,12 @@ namespace General
                 {
                     hero.currentWeapon = i;
                     hero.ManageWeapon();
+                    return true;
+  
                 }
                 x += wh + spacing;
             }
+            return false;
         }
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -2119,11 +2169,14 @@ namespace General
             {
                 if (e.Button == MouseButtons.Left)
                 {
-                    CheckIfWeaponUIClicked(e.X, e.Y);
+                    bool isClicked = CheckIfWeaponUIClicked(e.X, e.Y);
 
-                    hero.mouseX = e.X;
-                    hero.mouseY = e.Y;
-                    hero.startAttack();
+                    if (isClicked == false)
+                    {
+                        hero.mouseX = e.X;
+                        hero.mouseY = e.Y;
+                        hero.startAttack();
+                    }
                 }
             }
         }
