@@ -985,7 +985,6 @@ namespace General
 
         public void updateFireballCast(List<Enemy> enemies, List<tile> tiles)
         {
-            if (currentWeapon != 1) return;
 
             if (isShooting && mana.mana >= fireballManaCost)
             {
@@ -1908,6 +1907,27 @@ namespace General
             }
         }
 
+        void CheckIfWeaponUIClicked(int eX , int eY)
+        {
+            float spacing = 20f;
+            float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
+            float y = hero.UI.rect.Y + 10;
+
+            float wh = 70f;
+ 
+             
+            for (int i =0; i < hero.Weapons.Count; i++)
+            {
+                
+                if(eX > x && eX < x + wh &&
+                    eY > y && eY < y + wh)
+                {
+                    hero.currentWeapon = i;
+                    hero.ManageWeapon();
+                }
+                x += wh + spacing;
+            }
+        }
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
             if (hasStarted == false)
@@ -1923,6 +1943,8 @@ namespace General
             {
                 if (e.Button == MouseButtons.Left)
                 {
+                    CheckIfWeaponUIClicked(e.X, e.Y);
+
                     hero.mouseX = e.X;
                     hero.mouseY = e.Y;
                     hero.startAttack();
@@ -2108,8 +2130,7 @@ namespace General
             {
                 hero.updateAttack(enemies);
             }
-            else if (hero.currentWeapon == 1)
-                hero.updateFireballCast(enemies, tiles);
+            hero.updateFireballCast(enemies, tiles);
 
             hero.mana.tick();
             handleEnemyMovement();
