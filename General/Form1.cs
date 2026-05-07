@@ -584,7 +584,7 @@ namespace General
                     strong = true;
                     maxDist = maxDist * 1.5f;
 
-                    rect = new RectangleF(startX, startY, 60, 60);
+                    rect = new RectangleF(startX, startY, 40, 40);
                     currentSpeed = strongSpeed;
                     damage = 50;
                 }
@@ -798,8 +798,8 @@ namespace General
 
         public AnimationController anim = new AnimationController();
 
-        public Health HP = new Health(50, 100);
-        public Mana mana = new Mana(75, 100);
+        public Health HP = new Health(100, 100);
+        public Mana mana = new Mana(100, 100);
         public UIEntity UI = new UIEntity(20f, 20f, 236f, 26f, true, true);
 
 
@@ -842,6 +842,8 @@ namespace General
         public bool isCastingAbility = false;
         private bool abilityFireballSpawned = false;
         public float abilityManaCost = 50f;
+        public bool abilityKeyDown = false;
+
 
         public void startAbilityCast()
         {
@@ -890,6 +892,8 @@ namespace General
                 abilityFireballSpawned = false;
                 isLanding = false;
                 wasGrounded = isGrounded;
+                ySpeed = 0;
+                isGrounded = true;
                 updateAnimation();
             }
         }
@@ -1416,7 +1420,7 @@ namespace General
 
                             if (touchingY == true)
                             {
-                                if (ySpeed > 0)
+                                if (ySpeed >= 0)
                                 {
                                     R.Y = t.R.Y - R.Height;
                                     ySpeed = 0;
@@ -2188,6 +2192,11 @@ namespace General
                 hero.isRunning = false;
             }
 
+            if (e.KeyCode == Keys.E)
+            {
+                hero.abilityKeyDown = false;
+            }
+
 
 
         }
@@ -2271,8 +2280,9 @@ namespace General
                     else showRanges = true;
                 }
 
-                if (e.KeyCode == Keys.E)
+                if (e.KeyCode == Keys.E && hero.abilityKeyDown == false)
                 {
+                    hero.abilityKeyDown = true;
                     hero.startAbilityCast();
                 }
 
@@ -2312,6 +2322,8 @@ namespace General
 
             hero.mana.tick();
             handleEnemyMovement();
+
+            
             drawDubb(this.CreateGraphics());
 
         }
