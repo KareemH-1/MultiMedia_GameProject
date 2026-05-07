@@ -107,7 +107,8 @@ namespace General
         }
     }
 
-    public class Weapon{
+    public class Weapon
+    {
         public Bitmap UIImage;
         public int damage;
         public int rangeW;
@@ -248,20 +249,20 @@ namespace General
             }
         }
 
-        public void drawWeaponsUI(Graphics g , List<Weapon> weapons , int currentWeapon)
+        public void drawWeaponsUI(Graphics g, List<Weapon> weapons, int currentWeapon)
         {
             float spacing = 20f;
-            float x = rect.X  + rect.Width + 120;
+            float x = rect.X + rect.Width + 120;
             float y = rect.Y + 10;
- 
+
             float wh = 70f;
 
 
-            for (int i =0; i< weapons.Count; i++)
+            for (int i = 0; i < weapons.Count; i++)
             {
                 Weapon wpn = weapons[i];
                 int number = i + 1;
-                if(currentWeapon != i)
+                if (currentWeapon != i)
                 {
                     g.DrawImage(heroSelectedSlot, x, y, wh, wh);
                 }
@@ -276,7 +277,7 @@ namespace General
                 float wY = y + wh / 2 - weaponImgWh / 2;
                 g.DrawImage(wpn.UIImage, wX, wY, weaponImgWh, weaponImgWh);
 
-                drawTextWithShadow(g, number.ToString() , normalFont, x + 5, y + 5);
+                drawTextWithShadow(g, number.ToString(), normalFont, x + 5, y + 5);
 
                 x += (wh + spacing);
             }
@@ -550,7 +551,7 @@ namespace General
 
         public Fireball(Random rr, float startX, float startY, float targetX, float targetY, bool isItSingle)
         {
-           
+
 
             if (isItSingle == false)
             {
@@ -595,7 +596,7 @@ namespace General
             else
             {
                 dirX = 1f;
-                if(targetX < startX) dirX = -1f;
+                if (targetX < startX) dirX = -1f;
 
                 dirY = 0f;
 
@@ -618,7 +619,7 @@ namespace General
                 anim.currAnim = 0;
             }
         }
-        
+
 
         public void moveFireball(List<tile> tiles, List<Enemy> enemies)
         {
@@ -636,7 +637,7 @@ namespace General
                 traveledDist += step;
                 remainingDist -= step;
 
-                
+
 
                 if (traveledDist >= maxDist)
                 {
@@ -649,7 +650,7 @@ namespace General
                     tile tl = tiles[t];
                     if (tl.interact == true && tl.jumpThrough == false)
                     {
-                        
+
                         if (rect.X < tl.R.X + tl.R.Width &&
                             rect.X + rect.Width > tl.R.X &&
                             rect.Y < tl.R.Y + tl.R.Height &&
@@ -748,7 +749,7 @@ namespace General
         public void draw(Graphics g)
         {
             Bitmap frame = anim.playFrame();
-            if ( isItSingle == false)
+            if (isItSingle == false)
                 g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
             else
             {
@@ -819,7 +820,7 @@ namespace General
         public float attackHeightScale = 1.2f;
 
         public List<Weapon> Weapons = new List<Weapon>();
-   
+
         public int currentWeapon = 0;
 
 
@@ -918,7 +919,7 @@ namespace General
             {
 
                 Bitmap frame;
-                if(i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
+                if (i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
                 else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
 
                 fireballAnimation.addFrame(frame);
@@ -984,21 +985,21 @@ namespace General
                 if (showRanges)
                 {
                     Pen fbPen = new Pen(Color.Red, 1);
-                    g.DrawRectangle(fbPen,fireballs[i].rect.X, fireballs[i].rect.Y, fireballs[i].rect.Width, fireballs[i].rect.Height);
+                    g.DrawRectangle(fbPen, fireballs[i].rect.X, fireballs[i].rect.Y, fireballs[i].rect.Width, fireballs[i].rect.Height);
                 }
             }
 
             Bitmap frame = anim.playFrame();
             if (frame != null)
-            { 
+            {
                 g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
 
-                
+
             }
 
             if (showRanges)
             {
-                
+
                 Pen p = new Pen(Color.Lime, 2);
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
 
@@ -1111,9 +1112,9 @@ namespace General
         }
         void removeOtherWeaponVFX()
         {
-            for(int i = 0; i< vfxes.Count; i++)
+            for (int i = 0; i < vfxes.Count; i++)
             {
-                if(vfxes[i].name == "fireball")
+                if (vfxes[i].name == "fireball")
                 {
                     vfxes.RemoveAt(i);
                     i--;
@@ -1127,11 +1128,11 @@ namespace General
             {
                 swordLogic();
             }
-            else if(currentWeapon == 1)
+            else if (currentWeapon == 1)
             {
                 fireballLogic();
             }
-          
+
         }
 
         void fireballLogic()
@@ -1182,7 +1183,7 @@ namespace General
             float spawnX = R.X + R.Width / 2f;
             float spawnY = R.Y;
 
-            Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY , false);
+            Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY, false);
             fireballs.Add(fb);
 
             mana.mana -= fireballManaCost;
@@ -1217,11 +1218,11 @@ namespace General
 
             if (facing == 'r')
             {
-                return new RectangleF(R.X, y, R.Width + attackRange, h );
+                return new RectangleF(R.X, y, R.Width + attackRange, h);
             }
             else
             {
-                return new RectangleF( R.X - attackRange + 5, y, R.Width + attackRange, h);
+                return new RectangleF(R.X - attackRange + 5, y, R.Width + attackRange, h);
             }
         }
 
@@ -1293,7 +1294,7 @@ namespace General
                 moveSpeed = speed * 2f;
             }
 
-            
+
             if (isAttacking == true && isGrounded == true) moveSpeed *= attackMoveMultiplier;
 
             if (isShooting && currentWeapon == 1) moveSpeed *= 0.75f;
@@ -1489,7 +1490,7 @@ namespace General
         }
         public void jump()
         {
-            jumpHeld = true; 
+            jumpHeld = true;
 
             if (isGrounded == true)
             {
@@ -1596,6 +1597,16 @@ namespace General
         public bool CanSpawn = false;
         public int spawnTime = 600;
 
+        public bool isWaiting = true;
+        public int waitTime = 0;
+        public int waitingTimer = 60;
+
+        public int spawnrange = 600;
+        public bool spawn = false;
+        public float attackrange = 65;
+        public float attackdis = 200;
+        public bool attackmode = false;
+
         public Health HP;
         public UIEntity UI;
 
@@ -1633,35 +1644,38 @@ namespace General
         }
         public void draw(Graphics g, bool showRanges)
         {
-            drawR.X = R.X + (R.Width - drawR.Width) / 2f;
-            drawR.Y = R.Y + (R.Height - drawR.Height);
-
-            Bitmap frame;
-
-            if (isDead)
+            if (spawn)
             {
-                frame = anim.playFrameOnce();
-            }
-            else
-            {
-                frame = anim.playFrame();
-            }
+                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+                drawR.Y = R.Y + (R.Height - drawR.Height);
 
-            if (frame != null)
-            {
-                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
-            }
+                Bitmap frame;
 
-            if (showRanges)
-            {
-                Pen p = new Pen(Color.Red, 2);
-                g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
-            }
+                if (isDead)
+                {
+                    frame = anim.playFrameOnce();
+                }
+                else
+                {
+                    frame = anim.playFrame();
+                }
 
-            if (isDead == false)
-            {
-                UI.positionAbove(R, 8);
-                UI.draw(g, HP, null, 0);
+                if (frame != null)
+                {
+                    g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                }
+
+                if (showRanges)
+                {
+                    Pen p = new Pen(Color.Red, 2);
+                    g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
+                }
+
+                if (isDead == false)
+                {
+                    UI.positionAbove(R, 8);
+                    UI.draw(g, HP, null, 0);
+                }
             }
         }
         void createAnim()
@@ -1741,39 +1755,107 @@ namespace General
                 anim.restart();
             }
         }
-        
-        public void move(List<tile> tiles)
+
+        public void move(List<tile> tiles, Hero hero)
         {
+            if (!spawn)
+            {
+                return;
+            }
             if (isDead || isTakingDamage || isAttacking)
             {
                 applyPhysics(tiles);
                 updateAnimation();
                 return;
             }
+            if (isWaiting)
+            {
+                updateAnimation();
+                return;
+            }
 
             float dx = 0f;
 
-            if (moving == 'l')
+            if (isRunning && !attackmode)
             {
-                dx = -speed;
+                if (moving == 'l')
+                {
+                    dx = -speed;
+                }
+                else if (moving == 'r')
+                {
+                    dx = speed;
+                }
+
+                R.X += dx;
+
+                if (R.X <= leftLimit)
+                {
+                    R.X = leftLimit;
+                    moving = 'l';
+                    isRunning = false;
+                    isWaiting = true;
+                }
+                else if (R.X >= rightLimit)
+                {
+                    R.X = rightLimit;
+                    moving = 'r';
+                    isRunning = false;
+                    isWaiting = true;
+                }
+
             }
-            else if (moving == 'r')
+            float distance = 0;
+            char dir = ' ';
+            if (R.X > hero.R.X)
             {
-                dx = speed;
+                distance = R.X - hero.R.X;
+                dir = 'l';
+            }
+            else if (R.X < hero.R.X)
+            {
+                distance = hero.R.X - R.X;
+                dir = 'r';
             }
 
-            R.X += dx;
+            if (distance <= attackdis)
+            {
+                attackmode = true;
+            }
 
-            if (R.X <= leftLimit)
+            if (attackmode)
             {
-                R.X = leftLimit;
-                moving = 'r';
+                moving = dir;
+                if (R.X > hero.R.X)
+                {
+                    distance = R.X - hero.R.X;
+                    R.X -= 5;
+                }
+                else if (R.X < hero.R.X)
+                {
+                    distance = hero.R.X - R.X;
+                    R.X += 5;
+                }
+
+                if (distance <= attackrange)
+                {
+                    isAttacking = true;
+                }
+
             }
-            else if (R.X >= rightLimit)
+            if (isAttacking)
             {
-                R.X = rightLimit;
-                moving = 'l';
+                if (attackTimer < 0)
+                {
+                    hero.HP.damage(10);
+                    attackTimer = 100;
+                }
+                else
+                {
+                    attackTimer--;
+                }
             }
+
 
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -1794,8 +1876,8 @@ namespace General
                         float overlapTop = R.Y;
                         if (t.R.Y > overlapTop) overlapTop = t.R.Y;
 
-                        float overlapBottom =R.Y + R.Height;
-                        if(t.R.Y + t.R.Height < R.Y + R.Height ) overlapBottom = t.R.Y + t.R.Height;
+                        float overlapBottom = R.Y + R.Height;
+                        if (t.R.Y + t.R.Height < R.Y + R.Height) overlapBottom = t.R.Y + t.R.Height;
 
                         float overlapY = overlapBottom - overlapTop;
 
@@ -1928,14 +2010,46 @@ namespace General
                 return;
             }
 
-            if (moving == ' ')
+            if (isWaiting)
             {
-                anim.changeAnimation("idle", -1);
+                if (waitTime >= waitingTimer)
+                {
+                    waitTime = 0;
+                    anim.changeAnimation("run", -1);
+                    isWaiting = false;
+                    isRunning = true;
+                    if (moving == 'r')
+                    {
+                        moving = 'l';
+                    }
+                    else if (moving == 'l')
+                    {
+                        moving = 'r';
+                    }
+                }
+                else
+                {
+                    waitTime++;
+                    anim.changeAnimation("idle", -1);
+                    return;
+                }
+
             }
-            else
+
+            if (isRunning)
             {
                 anim.changeAnimation("run", -1);
+                return;
+
             }
+
+            if (isAttacking)
+            {
+                anim.changeAnimation("attack", -1);
+                return;
+            }
+
+
         }
         public void respawn()
         {
@@ -1968,7 +2082,6 @@ namespace General
             }
         }
     }
-
     public class tile
     {
         public Rectangle R = new Rectangle();
@@ -2083,19 +2196,19 @@ namespace General
             }
         }
 
-        void CheckIfWeaponUIClicked(int eX , int eY)
+        void CheckIfWeaponUIClicked(int eX, int eY)
         {
             float spacing = 20f;
             float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
             float y = hero.UI.rect.Y + 10;
 
             float wh = 70f;
- 
-             
-            for (int i =0; i < hero.Weapons.Count; i++)
+
+
+            for (int i = 0; i < hero.Weapons.Count; i++)
             {
-                
-                if(eX > x && eX < x + wh &&
+
+                if (eX > x && eX < x + wh &&
                     eY > y && eY < y + wh)
                 {
                     hero.currentWeapon = i;
@@ -2288,18 +2401,18 @@ namespace General
 
                 if (hero.Weapons.Count > 1)
                 {
-                    if(e.KeyCode == Keys.D1)
+                    if (e.KeyCode == Keys.D1)
                     {
                         hero.currentWeapon = 0;
                         hero.ManageWeapon();
                     }
-                    else if(e.KeyCode == Keys.D2)
+                    else if (e.KeyCode == Keys.D2)
                     {
                         hero.currentWeapon = 1;
                         hero.ManageWeapon();
 
                     }
-                    else if(hero.Weapons.Count >2 && e.KeyCode == Keys.D3)
+                    else if (hero.Weapons.Count > 2 && e.KeyCode == Keys.D3)
                     {
                         hero.currentWeapon = 2;
                         hero.ManageWeapon();
@@ -2323,7 +2436,7 @@ namespace General
             hero.mana.tick();
             handleEnemyMovement();
 
-            
+
             drawDubb(this.CreateGraphics());
 
         }
@@ -2368,11 +2481,11 @@ namespace General
                     en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     enemies.Add(en);
 
-                     en = new Enemy(700, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en = new Enemy(700, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     enemies.Add(en);
-                     en = new Enemy(800, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en = new Enemy(800, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     enemies.Add(en);
-                     en = new Enemy(900, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en = new Enemy(900, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     enemies.Add(en);
                 }
 
@@ -2555,6 +2668,19 @@ namespace General
         {
             for (int i = 0; i < enemies.Count; i++)
             {
+                float distance;
+                if (hero.R.X > enemies[i].R.X)
+                {
+                    distance = hero.R.X - enemies[i].R.X;
+                }
+                else
+                {
+                    distance = enemies[i].R.X - hero.R.X;
+                }
+                if (enemies[i].spawnrange >= distance)
+                {
+                    enemies[i].spawn = true;
+                }
                 if (enemies[i].isDead)
                 {
                     if (enemies[i].anim.currIdx == enemies[i].anim.animations[enemies[i].anim.currAnim].frames.Count - 1)
@@ -2575,10 +2701,9 @@ namespace General
                     }
                 }
 
-                enemies[i].move(tiles);
+                enemies[i].move(tiles, hero);
             }
         }
 
-        
     }
 }
