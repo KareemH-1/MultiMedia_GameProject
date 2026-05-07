@@ -65,16 +65,22 @@ namespace General
 
     public class Mana
     {
-        public int maxMana = 100;
-        public int mana = 100;
+        public float maxMana = 100;
+        public float mana = 100;
+        public float regenRate = 0.5f;
 
-        public Mana(int mana, int maxMana)
+        public Mana(float mana, float maxMana)
         {
             this.mana = mana;
             this.maxMana = maxMana;
         }
+        public void tick()
+        {
+            mana += regenRate;
+            if (mana > maxMana) mana = maxMana;
+        }
 
-        public int getMana()
+        public float getMana()
         {
             if (mana < 0) return 0;
             if (mana > maxMana) return maxMana;
@@ -101,6 +107,15 @@ namespace General
         }
     }
 
+    public class Weapon{
+        public Bitmap UIImage;
+        public int damage;
+        public int rangeW;
+        public int rangeH;
+
+        public int order; //key number
+
+    }
     public class UIEntity
     {
         public bool isHero = false;
@@ -126,12 +141,17 @@ namespace General
         Bitmap heroIcon = new Bitmap("ui/hero_icon.png");
         Bitmap heroBorder = new Bitmap("ui/border.png");
 
+        Bitmap heroWeaponSlot = new Bitmap("ui/menu/slotSelected.png");
+        Bitmap heroSelectedSlot = new Bitmap("ui/menu/slot.png");
+
+
         Font heroFont = new Font("Palatino Linotype", 9f, FontStyle.Bold);
         Font manaFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
         Font normalFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
 
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
+
 
         public UIEntity(float x, float y, float w, float h, bool isHero, bool showHPText)
         {
@@ -171,7 +191,6 @@ namespace General
             float iconBorderH = 120f;
 
             float iconPad = 10f;
-
             float iconX = iconBorderX + iconPad;
             float iconY = iconBorderY + iconPad;
             float iconW = iconBorderW - iconPad * 2f;
@@ -229,6 +248,39 @@ namespace General
             }
         }
 
+        public void drawWeaponsUI(Graphics g , List<Weapon> weapons , int currentWeapon)
+        {
+            float spacing = 20f;
+            float x = rect.X  + rect.Width + 120;
+            float y = rect.Y + 10;
+ 
+            float wh = 70f;
+
+
+            for (int i =0; i< weapons.Count; i++)
+            {
+                Weapon wpn = weapons[i];
+                int number = i + 1;
+                if(currentWeapon != i)
+                {
+                    g.DrawImage(heroSelectedSlot, x, y, wh, wh);
+                }
+                else
+                {
+                    g.DrawImage(heroWeaponSlot, x, y, wh, wh);
+
+                }
+
+                float weaponImgWh = wh - 10;
+                float wX = x + wh / 2 - weaponImgWh / 2;
+                float wY = y + wh / 2 - weaponImgWh / 2;
+                g.DrawImage(wpn.UIImage, wX, wY, weaponImgWh, weaponImgWh);
+
+                drawTextWithShadow(g, number.ToString() , normalFont, x + 5, y + 5);
+
+                x += (wh + spacing);
+            }
+        }
         void drawEntityUI(Graphics g, Health hp)
         {
             if (displayHPBar == false) return;
@@ -445,6 +497,7 @@ namespace General
         public int timer = 0;
         public int maxTimer = 20;
 
+        public bool repeat = false;
         public void draw(Graphics g, RectangleF ownerR)
         {
             if (followPlayer)
@@ -459,13 +512,147 @@ namespace General
             {
                 g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
             }
-
-            timer++;
-
-            if (timer >= maxTimer)
+            if (repeat == false)
             {
-                finished = true;
+                timer++;
+
+                if (timer >= maxTimer)
+                {
+                    finished = true;
+                }
             }
+        }
+    }
+
+    public class Fireball
+    {
+        public RectangleF rect;
+        public float traveledDist = 0f;
+        public float maxDist = 1000;
+        public Animation animation = new Animation();
+        public AnimationController anim = new AnimationController();
+        public bool strong = false;
+
+        public float speed = 52f;
+        public float strongSpeed = 64f;
+        public float currentSpeed;
+
+        public float dirX = 1f;
+        public float dirY = 0f;
+
+        public float stepSize = 8f;
+
+        public int damage = 15;
+        public int strongDamage = 30;
+        public bool finished = false;
+
+        public Fireball(Random rr, float startX, float startY, float targetX, float targetY)
+        {
+            float dx = targetX - startX;
+            float dy = targetY - startY;
+
+            float biggest = dx;
+            if (biggest < 0) biggest = -biggest;
+            if (dy < 0 && -dy > biggest) biggest = -dy;
+            else if (dy > biggest) biggest = dy;
+
+            if (biggest == 0) biggest = 1;
+
+            dirX = dx / biggest;
+            dirY = dy / biggest;
+
+            int normOrStrong = rr.Next(0, 15);
+            if (normOrStrong != 0)
+            {
+                Bitmap img;
+                for (int i = 1; i <= 5; i++)
+                {
+                    img = new Bitmap("Abilities/fireball/normal/FB500-" + i.ToString() + ".png");
+                    animation.addFrame(img);
+                }
+                rect = new RectangleF(startX, startY, 30, 30);
+                currentSpeed = speed;
+            }
+            else
+            {
+                strong = true;
+                maxDist = maxDist * 1.5f;
+                Bitmap img;
+                for (int i = 1; i <= 6; i++)
+                {
+                    img = new Bitmap("Abilities/fireball/strong/" + i.ToString() + ".png");
+                    animation.addFrame(img);
+                }
+                rect = new RectangleF(startX, startY, 74, 52);
+                currentSpeed = strongSpeed;
+                damage = strongDamage;
+            }
+
+            anim.addAnim(animation);
+            anim.currAnim = 0;
+        }
+
+        public void moveFireball(List<tile> tiles, List<Enemy> enemies)
+        {
+            float speed = currentSpeed;
+            float remainingDist = speed;
+
+            while (remainingDist > 0f)
+            {
+                float step = remainingDist;
+                if (step > stepSize) step = stepSize;
+
+                rect.X += dirX * step;
+                rect.Y += dirY * step;
+                traveledDist += step;
+                remainingDist -= step;
+
+                if (traveledDist >= maxDist)
+                {
+                    finished = true;
+                    return;
+                }
+
+                for (int t = 0; t < tiles.Count; t++)
+                {
+                    tile tl = tiles[t];
+                    if (tl.interact == true)
+                    {
+                        if (rect.X < tl.R.X + tl.R.Width &&
+                            rect.X + rect.Width > tl.R.X &&
+                            rect.Y < tl.R.Y + tl.R.Height &&
+                            rect.Y + rect.Height > tl.R.Y)
+                        {
+                            finished = true;
+                            return;
+                        }
+                    }
+                }
+
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    Enemy en = enemies[j];
+                    if (!en.isDead)
+                    {
+                        if (rect.X < en.R.X + en.R.Width &&
+                            rect.X + rect.Width > en.R.X &&
+                            rect.Y < en.R.Y + en.R.Height &&
+                            rect.Y + rect.Height > en.R.Y)
+                        {
+                            en.takeHit(damage);
+                            finished = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void draw(Graphics g)
+        {
+            Bitmap frame = anim.playFrame();
+            if (frame != null)
+                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
         }
     }
 
@@ -504,6 +691,7 @@ namespace General
         float prevBottom = 0f;
 
         Animation doubleJumpAnimation;
+        Animation fireballAnimation;
         public int level = 0;
 
         public AnimationController anim = new AnimationController();
@@ -515,7 +703,6 @@ namespace General
 
         public List<vfx> vfxes = new List<vfx>();
 
-        public int damage = 10;
 
         public bool isAttacking = false;
         public bool attackHasHit = false;
@@ -528,16 +715,52 @@ namespace General
 
         public float attackRange = 80f;
         public float attackHeightScale = 1.2f;
+
+        public List<Weapon> Weapons = new List<Weapon>();
+   
+        public int currentWeapon = 0;
+
+
+        public List<Fireball> fireballs = new List<Fireball>();
+        public Random rnd = new Random();
+
+        public bool isSpellCasting = false;
+        public bool isShooting = false;
+        public bool spellCastPaused = false;
+
+        public float fireballManaCost = 10f;
+        public float manaRegenRate = 0.5f;
+
+        public int fireballSpawnDelay = 5;
+        public int fireballSpawnTimer = 5;
+
+        public float mouseX = 0f;
+        public float mouseY = 0f;
         public void initVFX()
         {
             doubleJumpAnimation = new Animation();
             doubleJumpAnimation.name = "doubleJump";
-            doubleJumpAnimation.frameDelay = 2;
+            doubleJumpAnimation.frameDelay = 1;
 
             for (int i = 1; i <= 5; i++)
             {
                 Bitmap frame = new Bitmap("vfx/doubleJump/" + i + ".png");
                 doubleJumpAnimation.addFrame(frame);
+            }
+
+
+            fireballAnimation = new Animation();
+            fireballAnimation.name = "fireball";
+            fireballAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+
+                Bitmap frame;
+                if(i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
+
+                fireballAnimation.addFrame(frame);
             }
         }
         void createDoubleJumpVFX()
@@ -564,30 +787,57 @@ namespace General
             vfxes.Add(fx);
         }
 
+
+        void createFireballVFX()
+        {
+            vfx fx = new vfx();
+
+            fx.repeat = true;
+            fx.name = "fireball";
+            fx.anim.addAnim(fireballAnimation);
+            fx.anim.changeAnimation("fireball", -1);
+
+
+            fx.rect.Width = R.Width * 2;
+            fx.rect.Height = 90;
+
+            fx.rect.X = R.X + R.Width / 2 - fx.rect.Width / 2;
+
+            fx.offsetY = -45;
+
+            fx.followPlayer = true;
+
+
+            vfxes.Add(fx);
+        }
         public void Draw(Graphics g, bool showRanges)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
 
-            for (int i = vfxes.Count - 1; i >= 0; i--)
-            {
-                vfxes[i].draw(g, R);
 
-                if (vfxes[i].finished)
+            for (int i = 0; i < fireballs.Count; i++)
+            {
+                fireballs[i].draw(g);
+
+                if (showRanges)
                 {
-                    vfxes.RemoveAt(i);
+                    Pen fbPen = new Pen(Color.Red, 1);
+                    g.DrawRectangle(fbPen,fireballs[i].rect.X, fireballs[i].rect.Y, fireballs[i].rect.Width, fireballs[i].rect.Height);
                 }
             }
 
             Bitmap frame = anim.playFrame();
-
             if (frame != null)
-            {
+            { 
                 g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+
+                
             }
 
             if (showRanges)
             {
+                
                 Pen p = new Pen(Color.Lime, 2);
                 g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
 
@@ -599,7 +849,19 @@ namespace General
                 }
             }
 
+            for (int i = vfxes.Count - 1; i >= 0; i--)
+            {
+                vfxes[i].draw(g, R);
+
+                if (vfxes[i].finished)
+                {
+                    vfxes.RemoveAt(i);
+                }
+            }
+
+
             UI.draw(g, HP, mana, level);
+            UI.drawWeaponsUI(g, Weapons, currentWeapon);
         }
         public Hero(int startX, int startY, int w, int h)
         {
@@ -620,6 +882,29 @@ namespace General
 
             wasGrounded = true;
             isGrounded = true;
+
+
+            Weapon sword = new Weapon();
+            sword.damage = 25;
+            sword.order = 1;
+            sword.rangeH = 0;
+            sword.rangeW = 0;
+            sword.UIImage = new Bitmap("ui/Weapons/sword.png");
+            Weapons.Add(sword);
+
+            addFireballWeapon();
+        }
+
+        void addFireballWeapon()
+        {
+
+            Weapon fireball = new Weapon();
+            fireball.damage = 15;
+            fireball.order = 2;
+            fireball.rangeH = 20;
+            fireball.rangeW = 20;
+            fireball.UIImage = new Bitmap("ui/Weapons/fireball.png");
+            Weapons.Add(fireball);
         }
         void createAnim()
         {
@@ -647,8 +932,98 @@ namespace General
             }
         }
 
+        public void ManageWeapon()
+        {
+            if (currentWeapon == 0)
+            {
+                isShooting = false;
+                fireballSpawnTimer = fireballSpawnDelay;
+                removeOtherWeaponVFX();
+            }
+            else if (currentWeapon == 1)
+            {
+                isAttacking = false;
+                createFireballVFX();
+            }
+        }
+        void removeOtherWeaponVFX()
+        {
+            for(int i = 0; i< vfxes.Count; i++)
+            {
+                if(vfxes[i].name == "fireball")
+                {
+                    vfxes.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
         public bool isDoingCombo = false;
         public void startAttack()
+        {
+            if (currentWeapon == 0)
+            {
+                swordLogic();
+            }
+            else if(currentWeapon == 1)
+            {
+                fireballLogic();
+            }
+          
+        }
+
+        void fireballLogic()
+        {
+            isShooting = true;
+        }
+
+        public void stopFireball()
+        {
+            isShooting = false;
+            fireballSpawnTimer = fireballSpawnDelay;
+        }
+
+
+        public void updateFireballCast(List<Enemy> enemies, List<tile> tiles)
+        {
+            if (currentWeapon != 1) return;
+
+            if (isShooting && mana.mana >= fireballManaCost)
+            {
+                fireballSpawnTimer++;
+                if (fireballSpawnTimer >= fireballSpawnDelay)
+                {
+                    fireballSpawnTimer = 0;
+                    throwFireball();
+                }
+            }
+            else if (mana.mana < fireballManaCost)
+            {
+                isShooting = false;
+            }
+
+            for (int i = fireballs.Count - 1; i >= 0; i--)
+            {
+                fireballs[i].moveFireball(tiles, enemies);
+
+                if (fireballs[i].finished)
+                    fireballs.RemoveAt(i);
+            }
+        }
+
+        void throwFireball()
+        {
+            if (mana.mana < fireballManaCost) return;
+
+            float spawnX = R.X + R.Width / 2f;
+            float spawnY = R.Y;
+
+            Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY);
+            fireballs.Add(fb);
+
+            mana.mana -= fireballManaCost;
+            if (mana.mana < 0) mana.mana = 0;
+        }
+        void swordLogic()
         {
             if (isAttacking == true)
             {
@@ -670,7 +1045,6 @@ namespace General
             anim.changeAnimation("attack", -1);
             anim.restart();
         }
-
         public RectangleF getAttackHitBox()
         {
             float h = R.Height * attackHeightScale;
@@ -734,7 +1108,7 @@ namespace General
                         if (hitBox.X <= en.R.X + en.R.Width && hitBox.X + hitBox.Width >= en.R.X &&
                             hitBox.Y <= en.R.Y + en.R.Height && hitBox.Y + hitBox.Height >= en.R.Y)
                         {
-                            en.takeHit(damage);
+                            en.takeHit(Weapons[currentWeapon].damage);
                             // break;
                         }
 
@@ -753,7 +1127,12 @@ namespace General
             {
                 moveSpeed = speed * 2f;
             }
+
+            
             if (isAttacking == true && isGrounded == true) moveSpeed *= attackMoveMultiplier;
+
+            if (isShooting && currentWeapon == 1)
+                moveSpeed *= 0.75f;
 
             float xMove = 0f;
 
@@ -803,7 +1182,7 @@ namespace General
 
             Movement(tiles);
 
-            if (!isAttacking)
+            if (!isAttacking && !isAttacking)
                 updateAnimation();
         }
         public void Movement(List<tile> tiles)
@@ -1480,6 +1859,7 @@ namespace General
     }
     public partial class Form1 : Form
     {
+        Random Random = new Random();
         bool hasStarted = false;
 
         Bitmap button = new Bitmap("ui/menu/UI_TravelBook_Frame01a.png");
@@ -1514,6 +1894,18 @@ namespace General
 
             this.MouseMove += Form1_MouseMove;
             this.MouseDown += Form1_MouseDown;
+            this.MouseUp += Form1_MouseUp;
+        }
+
+        private void Form1_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (!hasStarted) return;
+
+            if (e.Button == MouseButtons.Left)
+            {
+                if (hero.currentWeapon == 1)
+                    hero.stopFireball();
+            }
         }
 
         private void Form1_MouseDown(object sender, MouseEventArgs e)
@@ -1531,6 +1923,8 @@ namespace General
             {
                 if (e.Button == MouseButtons.Left)
                 {
+                    hero.mouseX = e.X;
+                    hero.mouseY = e.Y;
                     hero.startAttack();
                 }
             }
@@ -1551,6 +1945,11 @@ namespace General
                         break;
                     }
                 }
+            }
+            else
+            {
+                hero.mouseX = e.X;
+                hero.mouseY = e.Y;
             }
         }
 
@@ -1677,13 +2076,42 @@ namespace General
                     if (showRanges == true) showRanges = false;
                     else showRanges = true;
                 }
+
+                if(hero.Weapons.Count > 1)
+                {
+                    if(e.KeyCode == Keys.D1)
+                    {
+                        hero.currentWeapon = 0;
+                        hero.ManageWeapon();
+                    }
+                    else if(e.KeyCode == Keys.D2)
+                    {
+                        hero.currentWeapon = 1;
+                        hero.ManageWeapon();
+
+                    }
+                    else if(hero.Weapons.Count >2 && e.KeyCode == Keys.D3)
+                    {
+                        hero.currentWeapon = 2;
+                        hero.ManageWeapon();
+
+
+                    }
+                }
             }
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
             hero.move(tiles);
-            hero.updateAttack(enemies);
+            if (hero.currentWeapon == 0)
+            {
+                hero.updateAttack(enemies);
+            }
+            else if (hero.currentWeapon == 1)
+                hero.updateFireballCast(enemies, tiles);
+
+            hero.mana.tick();
             handleEnemyMovement();
             drawDubb(this.CreateGraphics());
 
