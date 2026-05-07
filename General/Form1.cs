@@ -526,7 +526,9 @@ namespace General
 
     public class Fireball
     {
+        public bool isItSingle = false;
         public RectangleF rect;
+        public RectangleF SingleDrawRect;
         public float traveledDist = 0f;
         public float maxDist = 1000;
         public Animation animation = new Animation();
@@ -546,54 +548,81 @@ namespace General
         public int strongDamage = 30;
         public bool finished = false;
 
-        public Fireball(Random rr, float startX, float startY, float targetX, float targetY)
+        public Fireball(Random rr, float startX, float startY, float targetX, float targetY, bool isItSingle)
         {
-            float dx = targetX - startX;
-            float dy = targetY - startY;
+           
 
-            float biggest = dx;
-            if (biggest < 0) biggest = -biggest;
-            if (dy < 0 && -dy > biggest) biggest = -dy;
-            else if (dy > biggest) biggest = dy;
-
-            if (biggest == 0) biggest = 1;
-
-            dirX = dx / biggest;
-            dirY = dy / biggest;
-
-            int normOrStrong = rr.Next(0, 15);
-            if (normOrStrong != 0)
+            if (isItSingle == false)
             {
+                float dx = targetX - startX;
+                float dy = targetY - startY;
+
+                float biggest = dx;
+                if (biggest < 0) biggest = -biggest;
+                if (dy < 0 && -dy > biggest) biggest = -dy;
+                else if (dy > biggest) biggest = dy;
+
+                if (biggest == 0) biggest = 1;
+
+                dirX = dx / biggest;
+                dirY = dy / biggest;
+
+                int normOrStrong = rr.Next(0, 15);
                 Bitmap img;
                 for (int i = 1; i <= 5; i++)
                 {
                     img = new Bitmap("Abilities/fireball/normal/FB500-" + i.ToString() + ".png");
                     animation.addFrame(img);
                 }
-                rect = new RectangleF(startX, startY, 30, 30);
-                currentSpeed = speed;
+                if (normOrStrong != 0)
+                {
+                    rect = new RectangleF(startX, startY, 30, 30);
+                    currentSpeed = speed;
+                }
+                else
+                {
+                    strong = true;
+                    maxDist = maxDist * 1.5f;
+
+                    rect = new RectangleF(startX, startY, 60, 60);
+                    currentSpeed = strongSpeed;
+                    damage = 50;
+                }
+
+                anim.addAnim(animation);
+                anim.currAnim = 0;
             }
             else
             {
-                strong = true;
-                maxDist = maxDist * 1.5f;
+                dirX = 1f;
+                if(targetX < startX) dirX = -1f;
+
+                dirY = 0f;
+
+                this.isItSingle = true;
                 Bitmap img;
                 for (int i = 1; i <= 6; i++)
                 {
                     img = new Bitmap("Abilities/fireball/strong/" + i.ToString() + ".png");
                     animation.addFrame(img);
                 }
+
+                strong = true;
+                maxDist = 5000f;
                 rect = new RectangleF(startX, startY, 74, 52);
+                SingleDrawRect = new RectangleF(startX, startY, 74, 52);
                 currentSpeed = strongSpeed;
                 damage = strongDamage;
-            }
 
-            anim.addAnim(animation);
-            anim.currAnim = 0;
+                anim.addAnim(animation);
+                anim.currAnim = 0;
+            }
         }
+        
 
         public void moveFireball(List<tile> tiles, List<Enemy> enemies)
         {
+
             float speed = currentSpeed;
             float remainingDist = speed;
 
@@ -607,6 +636,8 @@ namespace General
                 traveledDist += step;
                 remainingDist -= step;
 
+                
+
                 if (traveledDist >= maxDist)
                 {
                     finished = true;
@@ -616,7 +647,75 @@ namespace General
                 for (int t = 0; t < tiles.Count; t++)
                 {
                     tile tl = tiles[t];
-                    if (tl.interact == true)
+                    if (tl.interact == true && tl.jumpThrough == false)
+                    {
+                        
+                        if (rect.X < tl.R.X + tl.R.Width &&
+                            rect.X + rect.Width > tl.R.X &&
+                            rect.Y < tl.R.Y + tl.R.Height &&
+                            rect.Y + rect.Height > tl.R.Y)
+                        {
+                            finished = true;
+                            return;
+                        }
+                    }
+                }
+
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    Enemy en = enemies[j];
+                    if (!en.isDead)
+                    {
+                        if (rect.X < en.R.X + en.R.Width &&
+                            rect.X + rect.Width > en.R.X &&
+                            rect.Y < en.R.Y + en.R.Height &&
+                            rect.Y + rect.Height > en.R.Y)
+                        {
+                            en.takeHit(damage);
+                            if (isItSingle == false)
+                            {
+                                finished = true;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void moveSingleFireball(List<tile> tiles, List<Enemy> enemies)
+        {
+            float remainingDist = currentSpeed;
+
+            while (remainingDist > 0f)
+            {
+                float step = remainingDist;
+                if (step > stepSize) step = stepSize;
+
+                rect.X += dirX * step;
+                traveledDist += step;
+                remainingDist -= step;
+
+                if (isItSingle == true)
+                {
+                    SingleDrawRect.X = rect.X;
+                    SingleDrawRect.Y = rect.Y;
+
+                    SingleDrawRect.Width += 0.2f;
+                    SingleDrawRect.Height += (0.2f * (52f / 74f));
+                    SingleDrawRect.Y -= 0.1f;
+                }
+
+                if (traveledDist >= maxDist)
+                {
+                    finished = true;
+                    return;
+                }
+
+                for (int t = 0; t < tiles.Count; t++)
+                {
+                    tile tl = tiles[t];
+                    if (tl.interact == true && tl.jumpThrough == false)
                     {
                         if (rect.X < tl.R.X + tl.R.Width &&
                             rect.X + rect.Width > tl.R.X &&
@@ -640,8 +739,6 @@ namespace General
                             rect.Y + rect.Height > en.R.Y)
                         {
                             en.takeHit(damage);
-                            finished = true;
-                            return;
                         }
                     }
                 }
@@ -651,8 +748,13 @@ namespace General
         public void draw(Graphics g)
         {
             Bitmap frame = anim.playFrame();
-            if (frame != null)
+            if ( isItSingle == false)
                 g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
+            else
+            {
+                g.DrawImage(frame, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
+
+            }
         }
     }
 
@@ -736,6 +838,61 @@ namespace General
 
         public float mouseX = 0f;
         public float mouseY = 0f;
+
+        public bool isCastingAbility = false;
+        private bool abilityFireballSpawned = false;
+        public float abilityManaCost = 50f;
+
+        public void startAbilityCast()
+        {
+            if (isCastingAbility) return;
+            if (mana.mana < abilityManaCost) return;
+
+            isCastingAbility = true;
+            abilityFireballSpawned = false;
+            isAttacking = false;
+            isShooting = false;
+
+            anim.changeAnimation("spell_cast", -1);
+            anim.restart();
+        }
+        public void updateSingleFireballAbility(List<Enemy> enemies, List<tile> tiles)
+        {
+            if (!isCastingAbility) return;
+
+            anim.changeAnimation("spell_cast", -1);
+
+            if (!abilityFireballSpawned && anim.currIdx >= 3)
+            {
+                abilityFireballSpawned = true;
+
+                float spawnX = R.X + R.Width / 2f;
+                if (facing == 'l') spawnX = R.X - 74;
+
+                float spawnY = R.Y + R.Height * 0.3f;
+
+                float targetX;
+                if (facing == 'r') targetX = spawnX + 2000f;
+                else targetX = spawnX - 2000f;
+                float targetY = spawnY;
+
+                Fireball fb = new Fireball(rnd, spawnX, spawnY, targetX, targetY, true);
+                fireballs.Add(fb);
+
+                mana.mana -= abilityManaCost;
+                if (mana.mana < 0) mana.mana = 0;
+            }
+
+            Animation spellAnim = anim.getCurrentAnimation();
+            if (anim.currIdx >= spellAnim.frames.Count - 1)
+            {
+                isCastingAbility = false;
+                abilityFireballSpawned = false;
+                isLanding = false;
+                wasGrounded = isGrounded;
+                updateAnimation();
+            }
+        }
         public void initVFX()
         {
             doubleJumpAnimation = new Animation();
@@ -943,7 +1100,9 @@ namespace General
             else if (currentWeapon == 1)
             {
                 isAttacking = false;
+                removeOtherWeaponVFX();
                 createFireballVFX();
+
             }
         }
         void removeOtherWeaponVFX()
@@ -1002,7 +1161,10 @@ namespace General
 
             for (int i = fireballs.Count - 1; i >= 0; i--)
             {
-                fireballs[i].moveFireball(tiles, enemies);
+                if (fireballs[i].isItSingle)
+                    fireballs[i].moveSingleFireball(tiles, enemies);
+                else
+                    fireballs[i].moveFireball(tiles, enemies);
 
                 if (fireballs[i].finished)
                     fireballs.RemoveAt(i);
@@ -1016,7 +1178,7 @@ namespace General
             float spawnX = R.X + R.Width / 2f;
             float spawnY = R.Y;
 
-            Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY);
+            Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY , false);
             fireballs.Add(fb);
 
             mana.mana -= fireballManaCost;
@@ -1130,8 +1292,8 @@ namespace General
             
             if (isAttacking == true && isGrounded == true) moveSpeed *= attackMoveMultiplier;
 
-            if (isShooting && currentWeapon == 1)
-                moveSpeed *= 0.75f;
+            if (isShooting && currentWeapon == 1) moveSpeed *= 0.75f;
+            if (isCastingAbility) moveSpeed = 0f;
 
             float xMove = 0f;
 
@@ -1189,21 +1351,25 @@ namespace General
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
 
-            if (ySpeed < 0)
+            if (isCastingAbility == false)
             {
-                ySpeed += gravity;
-            }
-            else
-            {
-                ySpeed += fallGravity;
-            }
 
-            if (ySpeed > maxFallSpeed)
-            {
-                ySpeed = maxFallSpeed;
-            }
+                if (ySpeed < 0)
+                {
+                    ySpeed += gravity;
+                }
+                else
+                {
+                    ySpeed += fallGravity;
+                }
 
-            R.Y += ySpeed;
+                if (ySpeed > maxFallSpeed)
+                {
+                    ySpeed = maxFallSpeed;
+                }
+
+                R.Y += ySpeed;
+            }
 
             isGrounded = false;
 
@@ -1346,6 +1512,12 @@ namespace General
         }
         public void updateAnimation()
         {
+            if (isCastingAbility)
+            {
+                anim.changeAnimation("spell_cast", -1);
+                return;
+            }
+
             if (isAttacking == true)
             {
                 anim.changeAnimation("attack", -1);
@@ -2099,7 +2271,12 @@ namespace General
                     else showRanges = true;
                 }
 
-                if(hero.Weapons.Count > 1)
+                if (e.KeyCode == Keys.E)
+                {
+                    hero.startAbilityCast();
+                }
+
+                if (hero.Weapons.Count > 1)
                 {
                     if(e.KeyCode == Keys.D1)
                     {
@@ -2131,6 +2308,7 @@ namespace General
                 hero.updateAttack(enemies);
             }
             hero.updateFireballCast(enemies, tiles);
+            hero.updateSingleFireballAbility(enemies, tiles);
 
             hero.mana.tick();
             handleEnemyMovement();
