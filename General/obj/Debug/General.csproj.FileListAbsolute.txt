@@ -16,3 +16,13 @@ C:\Users\User\source\repos\GameProject\General\obj\Debug\General.csproj.Generate
 C:\Users\User\source\repos\GameProject\General\obj\Debug\General.csproj.CoreCompileInputs.cache
 C:\Users\User\source\repos\GameProject\General\obj\Debug\General.exe
 C:\Users\User\source\repos\GameProject\General\obj\Debug\General.pdb
+E:\STUDY\multimedia\MultiMedia_GameProject\General\bin\Debug\General.exe.config
+E:\STUDY\multimedia\MultiMedia_GameProject\General\bin\Debug\General.exe
+E:\STUDY\multimedia\MultiMedia_GameProject\General\bin\Debug\General.pdb
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.csproj.AssemblyReference.cache
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.exe.config
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.Properties.Resources.resources
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.csproj.GenerateResource.cache
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.csproj.CoreCompileInputs.cache
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.exe
+E:\STUDY\multimedia\MultiMedia_GameProject\General\obj\Debug\General.pdb
