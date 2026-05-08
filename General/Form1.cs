@@ -796,11 +796,22 @@ namespace General
         public void draw(Graphics g)
         {
             Bitmap frame = anim.playFrame();
+            Bitmap imgToDraw = frame;
+            if (dirX == -1f)
+            {
+                imgToDraw = new Bitmap(frame);
+                imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            }
+
+
             if (isItSingle == false)
-                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
+            {
+                g.DrawImage(imgToDraw, rect.X, rect.Y, rect.Width, rect.Height);
+            }
             else
             {
-                g.DrawImage(frame, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
+                
+                g.DrawImage(imgToDraw, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
 
             }
         }
@@ -1113,7 +1124,8 @@ namespace General
             }
 
             Bitmap frame;
-            if (isDead == true)
+
+            if (isDead)
             {
                 frame = anim.playFrameOnce();
             }
@@ -1121,13 +1133,19 @@ namespace General
             {
                 frame = anim.playFrame();
             }
+
             if (frame != null)
             {
-                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                Bitmap imgToDraw = frame;
 
+                if (facing == 'l')
+                {
+                    imgToDraw = new Bitmap(frame);
+                    imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
+                }
 
+                g.DrawImage(imgToDraw, drawR.X, drawR.Y, drawR.Width, drawR.Height);
             }
-
             if (showRanges)
             {
 
@@ -1213,10 +1231,10 @@ namespace General
                 Animation a = new Animation();
                 a.name = folders[i];
                 if (folders[i] == "walking") a.frameDelay = 1;
-                else if (folders[i] == "idle") a.frameDelay = 2;
-                else if (folders[i] == "landing") a.frameDelay = 2;
-                else if (folders[i] == "taking_damage") a.frameDelay = 2;
-                else if (folders[i] == "death") a.frameDelay = 4;
+                else if (folders[i] == "idle") a.frameDelay = 1;
+                else if (folders[i] == "landing") a.frameDelay = 1;
+                else if (folders[i] == "taking_damage") a.frameDelay = 1;
+                else if (folders[i] == "death") a.frameDelay = 1;
                 string path = "Characters/Hero/Blue/" + folders[i] + "/";
                 for (int j = 1; j <= numFrames[i]; j++)
                 {
@@ -1787,6 +1805,7 @@ namespace General
         public float speed = 4f;
 
         public char moving = 'l';
+        public char facing = ' ';
         public bool isRunning = false;
 
         public float velocityY = 0f;
@@ -1855,6 +1874,7 @@ namespace General
             rightLimit = R.X + patrolDistance;
 
             moving = 'l';
+            facing = 'r';
 
             HP = new Health(50, 50);
             UI = new UIEntity(0, 0, 70, 15, false, true);
@@ -1885,7 +1905,15 @@ namespace General
 
                 if (frame != null)
                 {
-                    g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                    Bitmap imgToDraw = frame;
+
+                    if (facing == 'r')
+                    {
+                        imgToDraw = new Bitmap(frame);
+                        imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
+                    }
+
+                    g.DrawImage(imgToDraw, drawR.X, drawR.Y, drawR.Width, drawR.Height);
                 }
 
                 if (showRanges)
@@ -1917,23 +1945,23 @@ namespace General
                 }
                 else if (folders[i] == "run")
                 {
-                    a.frameDelay = 2;
+                    a.frameDelay = 1;
                 }
                 else if (folders[i] == "attack")
                 {
-                    a.frameDelay = 2;
+                    a.frameDelay = 1;
                 }
                 else if (folders[i] == "hit")
                 {
-                    a.frameDelay = 3;
+                    a.frameDelay = 1;
                 }
                 else if (folders[i] == "die")
                 {
-                    a.frameDelay = 3;
+                    a.frameDelay = 1;
                 }
                 else if (folders[i] == "stun-attack")
                 {
-                    a.frameDelay = 3;
+                    a.frameDelay = 1;
                 }
 
                 string path = "Characters/Enemies/Mushroom/" + folders[i] + "/";
@@ -2083,11 +2111,13 @@ namespace General
             {
                 distanceX = R.X - hero.R.X;
                 dir = 'l';
+                facing = 'l';
             }
             else if (R.X < hero.R.X)
             {
                 distanceX = hero.R.X - R.X;
                 dir = 'r';
+                facing = 'r';
             }
 
             if (R.Y > hero.R.Y)
@@ -2192,11 +2222,13 @@ namespace General
                             {
                                 R.X = t.R.X - R.Width;
                                 moving = 'l';
+                                facing = 'l';
                             }
                             else if (dx < 0)
                             {
                                 R.X = t.R.X + t.R.Width;
                                 moving = 'r';
+                                facing = 'r';
                             }
                         }
                     }
@@ -2325,10 +2357,12 @@ namespace General
                     if (moving == 'r')
                     {
                         moving = 'l';
+                        facing = 'l';
                     }
                     else if (moving == 'l')
                     {
                         moving = 'r';
+                        facing = 'r';
                     }
                 }
                 else
@@ -2367,6 +2401,7 @@ namespace General
                 velocityY = 0f;
 
                 moving = 'l';
+                facing = 'l';
 
                 isDead = false;
                 isTakingDamage = false;
