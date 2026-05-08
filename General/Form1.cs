@@ -2281,7 +2281,7 @@ namespace General
         {
             if (isDead == true)
             {
-                anim.changeAnimation("death", -1);
+                anim.changeAnimation("die", -1);
                 return;
             }
 
@@ -2709,7 +2709,7 @@ namespace General
                     hero.abilityKeyDown = true;
                     hero.startAbilityCast();
                 }
-                if(e.keyCode == Keys.R)
+                if(e.KeyCode == Keys.R)
                 {
                     if(hero.isDead == true)
                     {
