@@ -167,7 +167,7 @@ namespace General
             rect.Width = w;
             rect.Height = h;
 
-            if(isHero == true)
+            if (isHero == true)
             {
                 goldCoinIcon = new Bitmap("ui/Coins/Gold/1.png");
                 silverCoinIcon = new Bitmap("ui/Coins/Silver/1.png");
@@ -196,7 +196,7 @@ namespace General
 
         void drawHeroUI(Graphics g, Health hp, Mana mana, int coins)
         {
-            float iconBorderX = rect.X ;
+            float iconBorderX = rect.X;
             float iconBorderY = rect.Y + 15f;
 
             float iconBorderW = 78f;
@@ -228,7 +228,7 @@ namespace General
 
             float coinX = barX + 4;
             float coinY = manaBarY + manaBarH + 10;
-            drawCoins(g , coins , coinX , coinY);
+            drawCoins(g, coins, coinX, coinY);
 
             if (displayHPText)
             {
@@ -261,19 +261,19 @@ namespace General
             }
         }
 
-        public void drawCoins(Graphics g, int coins , float x , float y)
+        public void drawCoins(Graphics g, int coins, float x, float y)
         {
             int remaining = coins;
 
             int NGold = remaining / 1000;
             remaining = remaining - NGold * 1000;
 
-            int NSilver = remaining/100;
+            int NSilver = remaining / 100;
             remaining = remaining - NSilver * 100;
 
             int NBronze = remaining;
 
-     
+
             int wh = 15;
             int spacing = 25;
 
@@ -296,7 +296,7 @@ namespace General
 
 
         }
-        public void drawWeaponsUI(Graphics g , List<Weapon> weapons , int currentWeapon)
+        public void drawWeaponsUI(Graphics g, List<Weapon> weapons, int currentWeapon)
         {
             float spacing = 20f;
             float x = rect.X + rect.Width + 120;
@@ -848,29 +848,29 @@ namespace General
                 countLadders++;
             }
 
-            float remainingHeight = rect.Height - countLadders * tileHeight + (countLadders -1);
+            float remainingHeight = rect.Height - countLadders * tileHeight + (countLadders - 1);
 
             float y = rect.Y;
 
             for (int i = 0; i < countLadders; i++)
             {
-                g.DrawImage(ladderImg, rect.X, y, rect.Width,tileHeight);
+                g.DrawImage(ladderImg, rect.X, y, rect.Width, tileHeight);
 
-                y += tileHeight -1;
+                y += tileHeight - 1;
             }
 
             if (remainingHeight > 0)
             {
                 RectangleF rcDst = new RectangleF(rect.X, y, rect.Width, remainingHeight);
 
-                RectangleF rcSource = new RectangleF( 0, 0, ladderImg.Width, remainingHeight);
+                RectangleF rcSource = new RectangleF(0, 0, ladderImg.Width, remainingHeight);
 
-                g.DrawImage( ladderImg, rcDst, rcSource, GraphicsUnit.Pixel);
+                g.DrawImage(ladderImg, rcDst, rcSource, GraphicsUnit.Pixel);
             }
 
             if (showRange == true)
             {
-                g.DrawRectangle( Pens.Orange, rect.X, rect.Y, rect.Width, rect.Height);
+                g.DrawRectangle(Pens.Orange, rect.X, rect.Y, rect.Width, rect.Height);
             }
         }
     }
@@ -908,6 +908,9 @@ namespace General
         int landingTimer = 0;
 
         float prevBottom = 0f;
+
+        public bool isTakingDamage = false;
+        public int takingDamageTimer = 0;
 
         Animation doubleJumpAnimation;
         Animation fireballAnimation;
@@ -960,10 +963,14 @@ namespace General
         private bool abilityFireballSpawned = false;
         public float abilityManaCost = 50f;
         public bool abilityKeyDown = false;
-
+        public bool isDead = false;
 
         public void startAbilityCast()
         {
+            if (isTakingDamage == true)
+            {
+                return;
+            }
             if (isCastingAbility) return;
             if (mana.mana < abilityManaCost) return;
 
@@ -1105,7 +1112,15 @@ namespace General
                 }
             }
 
-            Bitmap frame = anim.playFrame();
+            Bitmap frame;
+            if (isDead == true)
+            {
+                frame = anim.playFrameOnce();
+            }
+            else
+            {
+                frame = anim.playFrame();
+            }
             if (frame != null)
             {
                 g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
@@ -1187,9 +1202,9 @@ namespace General
         void createAnim()
         {
             string[] folders = {"attack", "critical_attack", "crouch", "death",
-            "idle", "jump_reload", "ladder_climbing", "running", "shield_defence",
-            "sliding", "spell_cast", "taking_damage", "walking", "wall_sliding",
-            "falling", "landing", "jump_flying", "jump_preparation"};
+        "idle", "jump_reload", "ladder_climbing", "running", "shield_defence",
+        "sliding", "spell_cast", "taking_damage", "walking", "wall_sliding",
+        "falling", "landing", "jump_flying", "jump_preparation"};
 
             int[] numFrames = { 8, 8, 3, 12, 6, 3, 10, 8, 3, 8, 8, 4, 10, 4, 4, 3, 4, 2 };
 
@@ -1197,9 +1212,11 @@ namespace General
             {
                 Animation a = new Animation();
                 a.name = folders[i];
-                if (folders[i] == "walking") a.frameDelay = 0;
+                if (folders[i] == "walking") a.frameDelay = 1;
                 else if (folders[i] == "idle") a.frameDelay = 2;
                 else if (folders[i] == "landing") a.frameDelay = 2;
+                else if (folders[i] == "taking_damage") a.frameDelay = 2;
+                else if (folders[i] == "death") a.frameDelay = 4;
                 string path = "Characters/Hero/Blue/" + folders[i] + "/";
                 for (int j = 1; j <= numFrames[i]; j++)
                 {
@@ -1240,6 +1257,10 @@ namespace General
         public bool isDoingCombo = false;
         public void startAttack()
         {
+            if (isAttacking || isDead)
+            {
+                return;
+            }
             if (currentWeapon == 0)
             {
                 swordLogic();
@@ -1403,6 +1424,30 @@ namespace General
 
         public void move(List<tile> tiles)
         {
+            if (isDead == true)
+            {
+                moving = ' ';
+                isAttacking = false;
+                isShooting = false;
+                isCastingAbility = false;
+
+                Movement(tiles);
+                updateAnimation();
+                return;
+            }
+            if (isTakingDamage == true)
+            {
+                isAttacking = false;
+                isShooting = false;
+                isCastingAbility = false;
+                moving = ' ';
+                isGrounded = false;
+
+                Movement(tiles);
+                updateAnimation();
+                return;
+            }
+
             float moveSpeed = speed;
 
             if (isRunning == true)
@@ -1606,6 +1651,10 @@ namespace General
         }
         public void jump()
         {
+            if (isAttacking || isDead)
+            {
+                return;
+            }
             jumpHeld = true;
 
             if (isGrounded == true)
@@ -1633,6 +1682,23 @@ namespace General
         }
         public void updateAnimation()
         {
+            if (isDead == true)
+            {
+                anim.changeAnimation("death", -1);
+                return;
+            }
+            if (isTakingDamage)
+            {
+                anim.changeAnimation("taking_damage", -1);
+                takingDamageTimer--;
+
+                if (takingDamageTimer <= 0)
+                {
+                    isTakingDamage = false;
+                }
+
+                return;
+            }
             if (isCastingAbility)
             {
                 anim.changeAnimation("spell_cast", -1);
@@ -1675,8 +1741,44 @@ namespace General
             else
                 anim.changeAnimation("walking", -1);
         }
-    }
 
+        public void takeDamage(int amount)
+        {
+            if (isDead == true)
+            {
+                return;
+            }
+            if (isTakingDamage == true)
+            {
+                return;
+            }
+
+            HP.damage(amount);
+            isAttacking = false;
+            isShooting = false;
+            isCastingAbility = false;
+            moving = ' ';
+            jumpHeld = true;
+            if (HP.getHP() <= 0)
+            {
+                isDead = true;
+                isTakingDamage = false;
+
+                anim.changeAnimation("death", -1);
+                anim.restart();
+
+                return;
+            }
+
+            isTakingDamage = true;
+
+            anim.changeAnimation("taking_damage", -1);
+            anim.restart();
+
+            Animation dmgAnim = anim.getCurrentAnimation();
+            takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
+        }
+    }
     public class Enemy
     {
         public RectangleF R = new RectangleF();
@@ -1703,6 +1805,10 @@ namespace General
         public int attackTimer = 0;
         public int deathTimer = 0;
 
+        public int attackFrameTimer = 0;
+        public int attackCooldown = 0;
+        public bool attackDamageDone = false;
+
         public float startX = 0f;
         public float patrolDistance = 200f;
         public float leftLimit = 0f;
@@ -1722,6 +1828,7 @@ namespace General
         public float attackrange = 65;
         public float attackdis = 200;
         public bool attackmode = false;
+        public bool idle = false;
 
         public Health HP;
         public UIEntity UI;
@@ -1847,13 +1954,18 @@ namespace General
             {
                 return;
             }
+
             HP.damage(amount);
+
+            isAttacking = false;
+            attackmode = false;
+            attackFrameTimer = 0;
+            attackDamageDone = false;
 
             if (HP.getHP() <= 0)
             {
                 isDead = true;
                 isTakingDamage = false;
-                isAttacking = false;
 
                 deathTimer = 0;
 
@@ -1863,7 +1975,6 @@ namespace General
             else
             {
                 isTakingDamage = true;
-                isAttacking = false;
 
                 damageTimer = 15;
 
@@ -1874,16 +1985,59 @@ namespace General
 
         public void move(List<tile> tiles, Hero hero)
         {
+
             if (!spawn)
             {
                 return;
             }
-            if (isDead || isTakingDamage || isAttacking)
+
+            if (hero.isDead)
+            {
+                attackmode = false;
+                isAttacking = false;
+                attackFrameTimer = 0;
+                attackDamageDone = false;
+            }
+
+            if (attackCooldown > 0)
+            {
+                attackCooldown--;
+            }
+
+            if (isDead || isTakingDamage)
             {
                 applyPhysics(tiles);
                 updateAnimation();
                 return;
             }
+
+            if (isAttacking)
+            {
+                if (hero.isDead == true)
+                {
+                    attackmode = false;
+                    isAttacking = false;
+                    attackFrameTimer = 0;
+                    attackDamageDone = false;
+                }
+                if (attackFrameTimer <= 10 && attackDamageDone == false)
+                {
+                    hero.takeDamage(10);
+                    attackDamageDone = true;
+                }
+
+                applyPhysics(tiles);
+                updateAnimation();
+                return;
+            }
+
+            if (attackCooldown > 0)
+            {
+                anim.changeAnimation("idle", -1);
+                applyPhysics(tiles);
+                return;
+            }
+
             if (isWaiting)
             {
                 updateAnimation();
@@ -1919,59 +2073,78 @@ namespace General
                     isRunning = false;
                     isWaiting = true;
                 }
-
             }
-            float distance = 0;
-            char dir = ' ';
+
+            float distanceX = 0;
+            float distanceY = 0;
+            char dir = moving;
+
             if (R.X > hero.R.X)
             {
-                distance = R.X - hero.R.X;
+                distanceX = R.X - hero.R.X;
                 dir = 'l';
             }
             else if (R.X < hero.R.X)
             {
-                distance = hero.R.X - R.X;
+                distanceX = hero.R.X - R.X;
                 dir = 'r';
             }
 
-            if (distance <= attackdis)
+            if (R.Y > hero.R.Y)
+            {
+                distanceY = R.Y - hero.R.Y;
+            }
+            else if (hero.R.Y > R.Y)
+            {
+                distanceY = hero.R.Y - R.Y;
+            }
+
+            bool sameY = false;
+
+            if (distanceY < 50)
+            {
+                sameY = true;
+            }
+
+            if (distanceX <= attackdis && sameY == true && !hero.isDead)
             {
                 attackmode = true;
+            }
+            else
+            {
+                attackmode = false;
             }
 
             if (attackmode)
             {
                 moving = dir;
+
                 if (R.X > hero.R.X)
                 {
-                    distance = R.X - hero.R.X;
+                    distanceX = R.X - hero.R.X;
                     R.X -= 5;
+                    dx = -5;
                 }
                 else if (R.X < hero.R.X)
                 {
-                    distance = hero.R.X - R.X;
+                    distanceX = hero.R.X - R.X;
                     R.X += 5;
+                    dx = 5;
                 }
 
-                if (distance <= attackrange)
+                if (distanceX <= attackrange && attackCooldown <= 0 && !hero.isDead)
                 {
                     isAttacking = true;
-                }
+                    attackFrameTimer = 20;
+                    attackDamageDone = false;
 
-            }
-            if (isAttacking)
-            {
-                if (attackTimer < 0)
-                {
-                    hero.HP.damage(10);
-                    attackTimer = 100;
-                }
-                else
-                {
-                    attackTimer--;
+                    anim.changeAnimation("attack", -1);
+                    anim.restart();
+
+                    applyPhysics(tiles);
+                    return;
                 }
             }
-
 
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -1980,23 +2153,38 @@ namespace General
                 if (t.interact == true && t.jumpThrough == false)
                 {
                     bool overlappingX = false;
+
                     if (R.X + R.Width > t.R.X &&
-                        R.X < t.R.X + t.R.Width) overlappingX = true;
+                        R.X < t.R.X + t.R.Width)
+                    {
+                        overlappingX = true;
+                    }
 
                     bool overlappingY = false;
+
                     if (R.Y + R.Height > t.R.Y &&
-                        R.Y < t.R.Y + t.R.Height) overlappingY = true;
+                        R.Y < t.R.Y + t.R.Height)
+                    {
+                        overlappingY = true;
+                    }
 
                     if (overlappingX && overlappingY)
                     {
                         float overlapTop = R.Y;
-                        if (t.R.Y > overlapTop) overlapTop = t.R.Y;
+
+                        if (t.R.Y > overlapTop)
+                        {
+                            overlapTop = t.R.Y;
+                        }
 
                         float overlapBottom = R.Y + R.Height;
-                        if (t.R.Y + t.R.Height < R.Y + R.Height) overlapBottom = t.R.Y + t.R.Height;
+
+                        if (t.R.Y + t.R.Height < R.Y + R.Height)
+                        {
+                            overlapBottom = t.R.Y + t.R.Height;
+                        }
 
                         float overlapY = overlapBottom - overlapTop;
-
 
                         if (overlapY > 3f)
                         {
@@ -2091,14 +2279,9 @@ namespace General
         }
         public void updateAnimation()
         {
-            if (isDead)
+            if (isDead == true)
             {
-                if (anim.isCurrentAnimation("die") == false)
-                {
-                    anim.changeAnimation("die", -1);
-                    anim.restart();
-                }
-
+                anim.changeAnimation("death", -1);
                 return;
             }
 
@@ -2117,12 +2300,17 @@ namespace General
             if (isAttacking)
             {
                 anim.changeAnimation("attack", -1);
-                attackTimer--;
 
-                if (attackTimer <= 0)
+                attackFrameTimer--;
+
+                if (attackFrameTimer <= 0)
                 {
                     isAttacking = false;
+                    attackCooldown = 100;
+                    anim.changeAnimation("idle", -1);
+                    anim.restart();
                 }
+
                 return;
             }
 
@@ -2313,7 +2501,7 @@ namespace General
             }
         }
 
-        bool CheckIfWeaponUIClicked(int eX , int eY)
+        bool CheckIfWeaponUIClicked(int eX, int eY)
         {
             float spacing = 20f;
             float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
@@ -2331,7 +2519,7 @@ namespace General
                     hero.currentWeapon = i;
                     hero.ManageWeapon();
                     return true;
-  
+
                 }
                 x += wh + spacing;
             }
@@ -2521,6 +2709,13 @@ namespace General
                     hero.abilityKeyDown = true;
                     hero.startAbilityCast();
                 }
+                if(e.keyCode == Keys.R)
+                {
+                    if(hero.isDead == true)
+                    {
+                        hero.isDead = false;
+                    }
+                }
 
                 if (hero.Weapons.Count > 1)
                 {
@@ -2584,7 +2779,7 @@ namespace General
         {
             Ladder ladder;
 
-            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400,  400, false);
+            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400, 400, false);
             ladders.Add(ladder);
 
         }
@@ -2669,9 +2864,9 @@ namespace General
                 {
                     tiles[i].draw(g);
                 }
-                for(int i =0; i<ladders.Count; i++)
+                for (int i = 0; i < ladders.Count; i++)
                 {
-                    ladders[i].draw(g , showRanges);
+                    ladders[i].draw(g, showRanges);
                 }
                 for (int i = 0; i < enemies.Count; i++)
                 {
