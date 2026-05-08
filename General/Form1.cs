@@ -806,6 +806,75 @@ namespace General
         }
     }
 
+    public class Ladder
+    {
+        public RectangleF rect = new RectangleF();
+
+        public bool isMossy = false;
+
+        public Bitmap ladderImg;
+
+        int tileHeight;
+
+        public Ladder(float x, float y, float height, bool isMossy)
+        {
+            this.isMossy = isMossy;
+
+            if (isMossy == true)
+            {
+                ladderImg = new Bitmap("Tiles/Ladder/28x128/2.png");
+            }
+            else
+            {
+                ladderImg = new Bitmap("Tiles/Ladder/28x128/1.png");
+            }
+
+            tileHeight = ladderImg.Height;
+
+            rect.X = x;
+            rect.Y = y;
+
+            rect.Width = 75;
+
+            rect.Height = height;
+        }
+
+        public void draw(Graphics g, bool showRange)
+        {
+            int countLadders = 0;
+
+            while ((countLadders + 1) * tileHeight <= rect.Height)
+            {
+                countLadders++;
+            }
+
+            float remainingHeight = rect.Height - countLadders * tileHeight + (countLadders -1);
+
+            float y = rect.Y;
+
+            for (int i = 0; i < countLadders; i++)
+            {
+                g.DrawImage(ladderImg, rect.X, y, rect.Width,tileHeight);
+
+                y += tileHeight -1;
+            }
+
+            if (remainingHeight > 0)
+            {
+                RectangleF rcDst = new RectangleF(rect.X, y, rect.Width, remainingHeight);
+
+                RectangleF rcSource = new RectangleF( 0, 0, ladderImg.Width, remainingHeight);
+
+                g.DrawImage( ladderImg, rcDst, rcSource, GraphicsUnit.Pixel);
+            }
+
+            if (showRange == true)
+            {
+                g.DrawRectangle( Pens.Orange, rect.X, rect.Y, rect.Width, rect.Height);
+            }
+        }
+    }
+
     public class Hero
     {
         public RectangleF R = new Rectangle();
@@ -2211,6 +2280,7 @@ namespace General
         Hero hero;
         List<Enemy> enemies = new List<Enemy>();
         List<tile> tiles = new List<tile>();
+        List<Ladder> ladders = new List<Ladder>();
         Timer timer = new Timer();
 
         public Form1()
@@ -2501,6 +2571,8 @@ namespace General
 
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
             initTiles();
+            initLadders();
+
             initEnemies();
             initButtons();
             initMenu();
@@ -2508,6 +2580,14 @@ namespace General
 
         }
 
+        void initLadders()
+        {
+            Ladder ladder;
+
+            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400,  400, false);
+            ladders.Add(ladder);
+
+        }
         int getAboveGroundLoc(int idx)
         {
             return this.ClientSize.Height - 30 - enemyH[idx];
@@ -2588,6 +2668,10 @@ namespace General
                 for (int i = 0; i < tiles.Count; i++)
                 {
                     tiles[i].draw(g);
+                }
+                for(int i =0; i<ladders.Count; i++)
+                {
+                    ladders[i].draw(g , showRanges);
                 }
                 for (int i = 0; i < enemies.Count; i++)
                 {
