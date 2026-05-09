@@ -12,6 +12,776 @@ using System.IO;
 
 namespace General
 {
+    public class Save
+    {
+        public int timer = 0;
+        int max = 1000;
+        
+        public void save(Hero hero , List<Enemy> Enemies)
+        {
+            saveHero(hero);
+            saveEnemies( Enemies);
+
+        }
+        public void autoSave(Hero hero, List<Enemy> Enemies)
+        {
+            if(timer < max)
+            {
+                timer++;
+            }
+            else
+            {
+                timer = 0;
+                save(hero , Enemies);
+            }
+        }
+
+        void saveHero( Hero hero)
+        {
+
+            StreamWriter sw = new StreamWriter("Saves/hero.txt");
+
+            sw.WriteLine("X,Y:" + hero.R.X.ToString() + "," + hero.R.Y.ToString());
+            sw.WriteLine("Moving:" + hero.moving);
+            sw.WriteLine("ySpeed:" + hero.ySpeed.ToString());
+
+            sw.WriteLine("jumpsUsed:" + hero.jumpsUsed.ToString());
+            sw.WriteLine("isGrounded:" + hero.isGrounded.ToString());
+            sw.WriteLine("wasGrounded:" + hero.wasGrounded.ToString());
+            sw.WriteLine("isLanding:" + hero.isLanding.ToString());
+            sw.WriteLine("landingTimer:" + hero.landingTimer.ToString());
+            sw.WriteLine("prevBottom:" + hero.prevBottom.ToString());
+
+            sw.WriteLine("isTakingDamage:" + hero.isTakingDamage.ToString());
+            sw.WriteLine("takingDamageTimer:" + hero.takingDamageTimer.ToString());
+
+            sw.WriteLine("coins:" + hero.coins.ToString());
+
+            sw.WriteLine("isAttacking:" + hero.isAttacking.ToString());
+            sw.WriteLine("attackHasHit:" + hero.attackHasHit.ToString());
+
+            sw.WriteLine("maxHP:" + hero.HP.maxHP.ToString());
+            sw.WriteLine("HP:" + hero.HP.HP.ToString());
+
+            sw.WriteLine("maxMana:" + hero.mana.maxMana.ToString());
+            sw.WriteLine("mana:" + hero.mana.mana.ToString());
+            sw.WriteLine("regenRate:" + hero.mana.regenRate.ToString());
+
+            sw.WriteLine("facing:" + hero.facing.ToString());
+
+            for (int i = 0; i < hero.Weapons.Count; i++)
+            {
+                sw.WriteLine("Weapon" + i + "_Damage:" + hero.Weapons[i].damage.ToString());
+            }
+
+            sw.WriteLine("currentWeapon:" + hero.currentWeapon.ToString());
+
+            sw.WriteLine("isSpellCasting:" + hero.isSpellCasting.ToString());
+            sw.WriteLine("isShooting:" + hero.isShooting.ToString());
+            sw.WriteLine("spellCastPaused:" + hero.spellCastPaused.ToString());
+
+            sw.WriteLine("manaRegenRate:" + hero.manaRegenRate.ToString());
+
+            sw.WriteLine("isCastingAbility:" + hero.isCastingAbility.ToString());
+            sw.WriteLine("abilityFireballSpawned:" + hero.abilityFireballSpawned.ToString());
+            sw.WriteLine("abilityManaCost:" + hero.abilityManaCost.ToString());
+            sw.WriteLine("abilityKeyDown:" + hero.abilityKeyDown.ToString());
+
+            sw.WriteLine("isDead:" + hero.isDead.ToString());
+
+            sw.Close();
+        }
+
+        void saveEnemies(List<Enemy> enemies)
+        {
+            StreamWriter sw = new StreamWriter("Saves/Enemies.txt");
+
+            sw.WriteLine("EnemiesCount:" + enemies.Count.ToString());
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                Enemy enemy = enemies[i];
+
+                sw.WriteLine("Enemy" + i + "_X:" + enemy.R.X.ToString());
+                sw.WriteLine("Enemy" + i + "_Y:" + enemy.R.Y.ToString());
+
+                sw.WriteLine("Enemy" + i + "_speed:" + enemy.speed.ToString());
+
+                sw.WriteLine("Enemy" + i + "_moving:" + enemy.moving.ToString());
+                sw.WriteLine("Enemy" + i + "_facing:" + enemy.facing.ToString());
+                sw.WriteLine("Enemy" + i + "_isRunning:" + enemy.isRunning.ToString());
+
+                sw.WriteLine("Enemy" + i + "_velocityY:" + enemy.velocityY.ToString());
+                sw.WriteLine("Enemy" + i + "_gravity:" + enemy.gravity.ToString());
+                sw.WriteLine("Enemy" + i + "_max_speed:" + enemy.max_speed.ToString());
+
+                sw.WriteLine("Enemy" + i + "_isGrounded:" + enemy.isGrounded.ToString());
+                sw.WriteLine("Enemy" + i + "_wasGrounded:" + enemy.wasGrounded.ToString());
+                sw.WriteLine("Enemy" + i + "_prevBottom:" + enemy.prevBottom.ToString());
+
+                sw.WriteLine("Enemy" + i + "_isDead:" + enemy.isDead.ToString());
+                sw.WriteLine("Enemy" + i + "_isTakingDamage:" + enemy.isTakingDamage.ToString());
+                sw.WriteLine("Enemy" + i + "_isAttacking:" + enemy.isAttacking.ToString());
+
+                sw.WriteLine("Enemy" + i + "_damageTimer:" + enemy.damageTimer.ToString());
+                sw.WriteLine("Enemy" + i + "_attackTimer:" + enemy.attackTimer.ToString());
+                sw.WriteLine("Enemy" + i + "_deathTimer:" + enemy.deathTimer.ToString());
+
+                sw.WriteLine("Enemy" + i + "_attackFrameTimer:" + enemy.attackFrameTimer.ToString());
+                sw.WriteLine("Enemy" + i + "_attackCooldown:" + enemy.attackCooldown.ToString());
+                sw.WriteLine("Enemy" + i + "_attackDamageDone:" + enemy.attackDamageDone.ToString());
+
+                sw.WriteLine("Enemy" + i + "_startX:" + enemy.startX.ToString());
+                sw.WriteLine("Enemy" + i + "_patrolDistance:" + enemy.patrolDistance.ToString());
+                sw.WriteLine("Enemy" + i + "_leftLimit:" + enemy.leftLimit.ToString());
+                sw.WriteLine("Enemy" + i + "_rightLimit:" + enemy.rightLimit.ToString());
+
+                sw.WriteLine("Enemy" + i + "_spawnX:" + enemy.spawnX.ToString());
+                sw.WriteLine("Enemy" + i + "_spawnY:" + enemy.spawnY.ToString());
+                sw.WriteLine("Enemy" + i + "_CanSpawn:" + enemy.CanSpawn.ToString());
+                sw.WriteLine("Enemy" + i + "_spawnTime:" + enemy.spawnTime.ToString());
+
+                sw.WriteLine("Enemy" + i + "_isWaiting:" + enemy.isWaiting.ToString());
+                sw.WriteLine("Enemy" + i + "_waitTime:" + enemy.waitTime.ToString());
+                sw.WriteLine("Enemy" + i + "_waitingTimer:" + enemy.waitingTimer.ToString());
+
+                sw.WriteLine("Enemy" + i + "_spawnrange:" + enemy.spawnrange.ToString());
+                sw.WriteLine("Enemy" + i + "_spawn:" + enemy.spawn.ToString());
+
+                sw.WriteLine("Enemy" + i + "_attackrange:" + enemy.attackrange.ToString());
+                sw.WriteLine("Enemy" + i + "_attackdis:" + enemy.attackdis.ToString());
+                sw.WriteLine("Enemy" + i + "_attackmode:" + enemy.attackmode.ToString());
+
+                sw.WriteLine("Enemy" + i + "_idle:" + enemy.idle.ToString());
+
+                sw.WriteLine("Enemy" + i + "_enemyName:" + enemy.enemyName);
+
+                sw.WriteLine("Enemy" + i + "_maxHP:" + enemy.HP.maxHP.ToString());
+                sw.WriteLine("Enemy" + i + "_HP:" + enemy.HP.HP.ToString());
+            }
+            sw.Close();
+        }
+    }
+
+    public class Load
+    {
+        public void load(Hero hero, List<Enemy> enemies)
+        {
+            loadHero(hero);
+            loadEnemies(enemies);
+        }
+        int changeToInt(string val)
+        {
+            string num = "";
+            for (int i = 0; i < val.Length; i++)
+            {
+                if (val[i] == '.') break;
+                num += val[i];
+            }
+            return Convert.ToInt32(num);
+        }
+
+        void loadHero(Hero hero)
+        {
+            StreamReader sr = new StreamReader("Saves/hero.txt");
+
+            while (sr.EndOfStream == false)
+            {
+                string line = sr.ReadLine();
+
+                string[] data = splitLine(line);
+
+                string variable = data[0];
+                string val = data[1];
+
+                if (variable == "X,Y")
+                {
+                    string sx = "";
+                    string sy = "";
+
+                    bool foundComma = false;
+
+                    for (int i = 0; i < val.Length; i++)
+                    {
+                        if (val[i] == ',')
+                        {
+                            foundComma = true;
+                        }
+                        else
+                        {
+                            if (foundComma == false)
+                            {
+                                sx += val[i];
+                            }
+                            else
+                            {
+                                sy += val[i];
+                            }
+                        }
+                    }
+
+                    hero.R.X = changeToInt(sx);
+                    hero.R.Y = changeToInt(sy);
+                }
+
+                else if (variable == "Moving")
+                {
+                    hero.moving = val[0];
+                }
+
+                else if (variable == "ySpeed")
+                {
+                    hero.ySpeed = changeToInt(val);
+                }
+
+                else if (variable == "jumpsUsed")
+                {
+                    hero.jumpsUsed = changeToInt(val);
+                }
+
+                else if (variable == "isGrounded")
+                {
+                    if (val == "true")
+                    {
+                        hero.isGrounded = true;
+                    }
+                    else hero.isGrounded = false;
+                }
+
+                else if (variable == "wasGrounded")
+                {
+                    if (val == "true")
+                    {
+                        hero.wasGrounded = true;
+                    }
+                    else hero.wasGrounded = false;
+                }
+
+                else if (variable == "isLanding")
+                {
+                    if (val == "true")
+                    {
+                        hero.isLanding = true;
+                    }
+                    else hero.isLanding = false;
+                }
+
+                else if (variable == "landingTimer")
+                {
+                    hero.landingTimer = changeToInt(val);
+                }
+
+                else if (variable == "prevBottom")
+                {
+                    hero.prevBottom = changeToInt(val);
+                }
+
+                else if (variable == "isTakingDamage")
+                {
+                    if (val == "true")
+                    {
+                        hero.isTakingDamage= true;
+                    }
+                    else hero.isTakingDamage = false;
+                }
+
+                else if (variable == "takingDamageTimer")
+                {
+                    hero.takingDamageTimer = changeToInt(val);
+                }
+
+                else if (variable == "coins")
+                {
+                    hero.coins = changeToInt(val);
+                }
+
+                else if (variable == "isAttacking")
+                {
+                    if (val == "true")
+                    {
+                        hero.isAttacking = true;
+                    }
+                    else hero.isAttacking= false;
+                }
+
+                else if (variable == "attackHasHit")
+                {
+                    if (val == "true")
+                    {
+                        hero.attackHasHit= true;
+                    }
+                    else hero.attackHasHit = false;
+                }
+
+                else if (variable == "maxHP")
+                {
+                    hero.HP.maxHP = changeToInt(val);
+                }
+
+                else if (variable == "HP")
+                {
+                    hero.HP.HP = changeToInt(val);
+                }
+
+                else if (variable == "maxMana")
+                {
+                    hero.mana.maxMana = changeToInt(val);
+                }
+
+                else if (variable == "mana")
+                {
+                    hero.mana.mana = changeToInt(val);
+                }
+
+                else if (variable == "regenRate")
+                {
+                    hero.mana.regenRate = changeToInt(val);
+                }
+
+                else if (variable == "facing")
+                {
+                    hero.facing = val[0];
+                }
+
+                else if (variable == "Weapon0_Damage")
+                {
+                    hero.Weapons[0].damage = changeToInt(val);
+                }
+
+                else if (variable == "Weapon1_Damage")
+                {
+                    hero.Weapons[1].damage = changeToInt(val);
+                }
+
+                else if (variable == "Weapon2_Damage")
+                {
+                    hero.Weapons[2].damage = changeToInt(val);
+                }
+
+                else if (variable == "currentWeapon")
+                {
+                    hero.currentWeapon = changeToInt(val);
+                }
+
+                else if (variable == "isSpellCasting")
+                {
+                    if (val == "true")
+                    {
+                        hero.isSpellCasting = true;
+                    }
+                    else hero.isSpellCasting = false;
+                }
+
+                else if (variable == "isShooting")
+                {
+                    if (val == "true")
+                    {
+                        hero.isShooting = true;
+                    }
+                    else hero.isShooting = false;
+                }
+
+                else if (variable == "spellCastPaused")
+                {
+                    if (val == "true")
+                    {
+                        hero.spellCastPaused = true;
+                    }
+                    else hero.spellCastPaused = false;
+                }
+
+                else if (variable == "manaRegenRate")
+                {
+                    hero.manaRegenRate = changeToInt(val);
+                }
+
+                else if (variable == "isCastingAbility")
+                {
+                    if (val == "true")
+                    {
+                        hero.isCastingAbility = true;
+                    }
+                    else hero.isCastingAbility = false;
+                }
+
+                else if (variable == "abilityFireballSpawned")
+                {
+                    if (val == "true")
+                    {
+                        hero.abilityFireballSpawned = true;
+                    }
+                    else hero.abilityFireballSpawned= false;
+                }
+
+                else if (variable == "abilityManaCost")
+                {
+                    hero.abilityManaCost = changeToInt(val);
+                }
+
+                else if (variable == "abilityKeyDown")
+                {
+                    if (val == "true")
+                    {
+                        hero.abilityKeyDown = true;
+                    }
+                    else hero.abilityKeyDown = false;
+                }
+
+                else if (variable == "isDead")
+                {
+                    if (val == "true")
+                    {
+                        hero.isDead = true;
+                    }
+                    else hero.isDead = false;
+                }
+            }
+
+            sr.Close();
+        }
+
+        void loadEnemies(List<Enemy> enemies)
+        {
+            StreamReader sr = new StreamReader("Saves/Enemies.txt");
+
+            while (sr.EndOfStream == false)
+            {
+                string line = sr.ReadLine();
+
+                string[] data = splitLine(line);
+
+                string variable = data[0];
+                string val = data[1];
+
+                if (variable != "EnemiesCount")
+                {
+                    string num = "";
+                    bool foundUnderscore = false;
+
+                    for (int i = 5; i < variable.Length; i++)
+                    {
+                        if (variable[i] == '_')
+                        {
+                            foundUnderscore = true;
+                            break;
+                        }
+
+                        num += variable[i];
+                    }
+
+                    int enemyIndex = changeToInt(num);
+
+                    string property = "";
+                    bool startWriting = false;
+
+                    for (int i = 0; i < variable.Length; i++)
+                    {
+                        if (startWriting == true)
+                        {
+                            property += variable[i];
+                        }
+
+                        if (variable[i] == '_')
+                        {
+                            startWriting = true;
+                        }
+                    }
+
+                    Enemy enemy = enemies[enemyIndex];
+
+                    if (property == "X")
+                    {
+                        enemy.R.X = changeToInt(val);
+                    }
+
+                    else if (property == "Y")
+                    {
+                        enemy.R.Y = changeToInt(val);
+                    }
+
+                    else if (property == "speed")
+                    {
+                        enemy.speed = changeToInt(val);
+                    }
+
+                    else if (property == "moving")
+                    {
+                        enemy.moving = val[0];
+                    }
+
+                    else if (property == "facing")
+                    {
+                        enemy.facing = val[0];
+                    }
+
+                    else if (property == "isRunning")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isRunning = true;
+                        }
+                        else enemy.isRunning = false;
+                    }
+
+                    else if (property == "velocityY")
+                    {
+                        enemy.velocityY = changeToInt(val);
+                    }
+
+                    else if (property == "gravity")
+                    {
+                        enemy.gravity = changeToInt(val);
+                    }
+
+                    else if (property == "max_speed")
+                    {
+                        enemy.max_speed = changeToInt(val);
+                    }
+
+                    else if (property == "isGrounded")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isGrounded = true;
+                        }
+                        else enemy.isGrounded = false;
+                    }
+
+                    else if (property == "wasGrounded")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.wasGrounded = true;
+                        }
+                        else enemy.wasGrounded = false;
+                    }
+
+                    else if (property == "prevBottom")
+                    {
+                        enemy.prevBottom = changeToInt(val);
+                    }
+
+                    else if (property == "isDead")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isDead = true;
+                        }
+                        else enemy.isDead = false;
+                    }
+
+                    else if (property == "isTakingDamage")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isTakingDamage = true;
+                        }
+                        else enemy.isTakingDamage = false;
+                    }
+
+                    else if (property == "isAttacking")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isAttacking = true;
+                        }
+                        else enemy.isAttacking = false;
+                    }
+
+                    else if (property == "damageTimer")
+                    {
+                        enemy.damageTimer = changeToInt(val);
+                    }
+
+                    else if (property == "attackTimer")
+                    {
+                        enemy.attackTimer = changeToInt(val);
+                    }
+
+                    else if (property == "deathTimer")
+                    {
+                        enemy.deathTimer = changeToInt(val);
+                    }
+
+                    else if (property == "attackFrameTimer")
+                    {
+                        enemy.attackFrameTimer = changeToInt(val);
+                    }
+
+                    else if (property == "attackCooldown")
+                    {
+                        enemy.attackCooldown = changeToInt(val);
+                    }
+
+                    else if (property == "attackDamageDone")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.attackDamageDone = true;
+                        }
+                        else enemy.attackDamageDone = false; 
+                    }
+
+                    else if (property == "startX")
+                    {
+                        enemy.startX = changeToInt(val);
+                    }
+
+                    else if (property == "patrolDistance")
+                    {
+                        enemy.patrolDistance = changeToInt(val);
+                    }
+
+                    else if (property == "leftLimit")
+                    {
+                        enemy.leftLimit = changeToInt(val);
+                    }
+
+                    else if (property == "rightLimit")
+                    {
+                        enemy.rightLimit = changeToInt(val);
+                    }
+
+                    else if (property == "spawnX")
+                    {
+                        enemy.spawnX = changeToInt(val);
+                    }
+
+                    else if (property == "spawnY")
+                    {
+                        enemy.spawnY = changeToInt(val);
+                    }
+
+                    else if (property == "CanSpawn")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.CanSpawn = true;
+                        }
+                        else enemy.CanSpawn = false;
+                    }
+
+                    else if (property == "spawnTime")
+                    {
+                        enemy.spawnTime = changeToInt(val);
+                    }
+
+                    else if (property == "isWaiting")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.isWaiting = true;
+                        }
+                        else enemy.isWaiting = false;
+                    }
+
+                    else if (property == "waitTime")
+                    {
+                        enemy.waitTime = changeToInt(val);
+                    }
+
+                    else if (property == "waitingTimer")
+                    {
+                        enemy.waitingTimer = changeToInt(val);
+                    }
+
+                    else if (property == "spawnrange")
+                    {
+                        enemy.spawnrange = changeToInt(val);
+                    }
+
+                    else if (property == "spawn")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.spawn = true;
+                        }
+                        else enemy.spawn = false;
+                    }
+
+                    else if (property == "attackrange")
+                    {
+                        enemy.attackrange = changeToInt(val);
+                    }
+
+                    else if (property == "attackdis")
+                    {
+                        enemy.attackdis = changeToInt(val);
+                    }
+
+                    else if (property == "attackmode")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.attackmode = true;
+                        }
+                        else enemy.attackmode = false;
+                    }
+
+                    else if (property == "idle")
+                    {
+                        if (val == "true")
+                        {
+                            enemy.idle = true;
+                        }
+                        else enemy.idle = false;
+                    }
+
+                    else if (property == "enemyName")
+                    {
+                        enemy.enemyName = val;
+                    }
+
+                    else if (property == "maxHP")
+                    {
+                        enemy.HP.maxHP = changeToInt(val);
+                    }
+
+                    else if (property == "HP")
+                    {
+                        enemy.HP.HP = changeToInt(val);
+                    }
+                }
+            }
+
+            sr.Close();
+        }
+
+        string[] splitLine(string line)
+        {
+            string variable = "";
+            string val = "";
+
+            bool foundColon = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                if (line[i] == ':')
+                {
+                    foundColon = true;
+                }
+                else
+                {
+                    if (foundColon == false)
+                    {
+                        variable += line[i];
+                    }
+                    else
+                    {
+                        val += line[i];
+                    }
+                }
+            }
+
+            string[] lineVal = new string[2];
+
+            lineVal[0] = variable;
+            lineVal[1] = val;
+
+            return lineVal;
+        }
+
+    }
     public class Animation
     {
         public string name;
@@ -913,12 +1683,12 @@ namespace General
         public int maxJumps = 2;
 
         public bool isGrounded = false;
-        bool wasGrounded = false;
+        public bool wasGrounded = false;
 
         public bool isLanding = false;
-        int landingTimer = 0;
+        public int landingTimer = 0;
 
-        float prevBottom = 0f;
+        public float prevBottom = 0f;
 
         public bool isTakingDamage = false;
         public int takingDamageTimer = 0;
@@ -971,7 +1741,7 @@ namespace General
         public float mouseY = 0f;
 
         public bool isCastingAbility = false;
-        private bool abilityFireballSpawned = false;
+        public bool abilityFireballSpawned = false;
         public float abilityManaCost = 50f;
         public bool abilityKeyDown = false;
         public bool isDead = false;
@@ -1849,6 +2619,7 @@ namespace General
         public bool attackmode = false;
         public bool idle = false;
 
+        public string enemyName;
         public Health HP;
         public UIEntity UI;
 
@@ -2486,6 +3257,10 @@ namespace General
     }
     public partial class Form1 : Form
     {
+        Save save = new Save();
+        Load load = new Load();
+
+
         Random Random = new Random();
         bool hasStarted = false;
 
@@ -2662,6 +3437,10 @@ namespace General
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
+            if(e.KeyCode == Keys.O)
+            {
+                load.load(hero, enemies);
+            }
 
             if (hasStarted == false)
             {
@@ -2778,6 +3557,8 @@ namespace General
 
         private void Timer_Tick(object sender, EventArgs e)
         {
+            this.Text = save.timer.ToString();
+            save.autoSave(hero, enemies);
             hero.move(tiles);
             if (hero.currentWeapon == 0)
             {
@@ -2789,7 +3570,7 @@ namespace General
             hero.mana.tick();
             handleEnemyMovement();
 
-
+            
             drawDubb(this.CreateGraphics());
 
         }
