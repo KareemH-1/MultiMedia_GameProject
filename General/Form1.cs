@@ -46,11 +46,6 @@ namespace General
             sw.WriteLine("ySpeed:" + hero.ySpeed.ToString());
 
             sw.WriteLine("jumpsUsed:" + hero.jumpsUsed.ToString());
-            sw.WriteLine("isGrounded:" + hero.isGrounded.ToString());
-            sw.WriteLine("wasGrounded:" + hero.wasGrounded.ToString());
-            sw.WriteLine("isLanding:" + hero.isLanding.ToString());
-            sw.WriteLine("landingTimer:" + hero.landingTimer.ToString());
-            sw.WriteLine("prevBottom:" + hero.prevBottom.ToString());
 
             sw.WriteLine("isTakingDamage:" + hero.isTakingDamage.ToString());
             sw.WriteLine("takingDamageTimer:" + hero.takingDamageTimer.ToString());
@@ -239,42 +234,6 @@ namespace General
                     hero.jumpsUsed = changeToInt(val);
                 }
 
-                else if (variable == "isGrounded")
-                {
-                    if (val == "true")
-                    {
-                        hero.isGrounded = true;
-                    }
-                    else hero.isGrounded = false;
-                }
-
-                else if (variable == "wasGrounded")
-                {
-                    if (val == "true")
-                    {
-                        hero.wasGrounded = true;
-                    }
-                    else hero.wasGrounded = false;
-                }
-
-                else if (variable == "isLanding")
-                {
-                    if (val == "true")
-                    {
-                        hero.isLanding = true;
-                    }
-                    else hero.isLanding = false;
-                }
-
-                else if (variable == "landingTimer")
-                {
-                    hero.landingTimer = changeToInt(val);
-                }
-
-                else if (variable == "prevBottom")
-                {
-                    hero.prevBottom = changeToInt(val);
-                }
 
                 else if (variable == "isTakingDamage")
                 {
@@ -744,6 +703,7 @@ namespace General
                 }
             }
 
+            checkEnemies(enemies);
             sr.Close();
         }
 
@@ -779,6 +739,15 @@ namespace General
             lineVal[1] = val;
 
             return lineVal;
+        }
+
+        void checkEnemies(List<Enemy> enemies)
+        {
+            for(int i =0; i< enemies.Count; i++)
+            {
+                Enemy trav = enemies[i];
+                trav.takeHit(0);
+            }
         }
 
     }
@@ -2575,7 +2544,7 @@ namespace General
         public float speed = 4f;
 
         public char moving = 'l';
-        public char facing = ' ';
+        public char facing = 'l';
         public bool isRunning = false;
 
         public float velocityY = 0f;
@@ -2645,7 +2614,7 @@ namespace General
             rightLimit = R.X + patrolDistance;
 
             moving = 'l';
-            facing = 'r';
+            facing = 'l';
 
             HP = new Health(50, 50);
             UI = new UIEntity(0, 0, 70, 15, false, true);
@@ -2678,7 +2647,7 @@ namespace General
                 {
                     Bitmap imgToDraw = frame;
 
-                    if (facing == 'r')
+                    if (moving == 'r')
                     {
                         imgToDraw = new Bitmap(frame);
                         imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
@@ -2773,12 +2742,15 @@ namespace General
             }
             else
             {
-                isTakingDamage = true;
+                if (amount > 0)
+                {
+                    isTakingDamage = true;
 
-                damageTimer = 15;
+                    damageTimer = 15;
 
-                anim.changeAnimation("hit", -1);
-                anim.restart();
+                    anim.changeAnimation("hit", -1);
+                    anim.restart();
+                }
             }
         }
 
@@ -2862,6 +2834,7 @@ namespace General
                 {
                     R.X = leftLimit;
                     moving = 'l';
+                    facing = 'l';
                     isRunning = false;
                     isWaiting = true;
                 }
@@ -2869,6 +2842,8 @@ namespace General
                 {
                     R.X = rightLimit;
                     moving = 'r';
+                    facing = 'r';
+
                     isRunning = false;
                     isWaiting = true;
                 }
@@ -2919,6 +2894,7 @@ namespace General
             if (attackmode)
             {
                 moving = dir;
+                facing = dir;
 
                 if (R.X > hero.R.X)
                 {
