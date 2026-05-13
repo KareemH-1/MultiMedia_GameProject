@@ -2672,12 +2672,22 @@ namespace General
     {
         public RectangleF R = new RectangleF();
         public RectangleF drawR = new Rectangle();
+        public Random rr = new Random();
+
+        public string enemyName;
+        public string enemyType;
+        public string[] animFolders;
+        public int[] animFrames;
+        public string enemyFolder;
+
 
         public float speed = 4f;
 
         public char moving = 'l';
         public char facing = 'l';
+
         public bool isRunning = false;
+        public bool idle = false;
 
         public float velocityY = 0f;
         public float gravity = 1.2f;
@@ -2687,48 +2697,60 @@ namespace General
         public bool wasGrounded = false;
         public float prevBottom = 0f;
 
+        public Health HP;
+        public UIEntity UI;
+
         public bool isDead = false;
         public bool isTakingDamage = false;
         public bool isAttacking = false;
+        public bool isSleeping = false;
+        public bool isWakingUp = false;
+        public bool canMoveAfterWakeup = true;
+
+        public float wakeupDistance = 400f;
+
 
         public int damageTimer = 0;
-        public int attackTimer = 0;
         public int deathTimer = 0;
 
+        public int attackTimer = 0;
         public int attackFrameTimer = 0;
         public int attackCooldown = 0;
+        public string attackanimname;
+
         public bool attackDamageDone = false;
+        public bool attackmode = false;
+
+        public float attackrange = 65;
+        public float attackdis = 200;
 
         public float startX = 0f;
         public float patrolDistance = 200f;
         public float leftLimit = 0f;
         public float rightLimit = 0f;
 
-        public int spawnX = 0;
-        public int spawnY = 0;
-        public bool CanSpawn = false;
-        public int spawnTime = 600;
-
         public bool isWaiting = true;
         public int waitTime = 0;
         public int waitingTimer = 60;
 
-        public int spawnrange = 600;
+        public int spawnX = 0;
+        public int spawnY = 0;
+
+        public bool CanSpawn = false;
         public bool spawn = false;
-        public float attackrange = 65;
-        public float attackdis = 200;
-        public bool attackmode = false;
-        public bool idle = false;
+
+        public int spawnTime = 600;
+        public int spawnrange = 600;
 
         public bool coindropped = false;
 
-        public string enemyName;
-        public Health HP;
-        public UIEntity UI;
-
         public AnimationController anim = new AnimationController();
-        public Enemy(int startX, int startY, int w, int h)
+
+        public Enemy(int startX, int startY, int w, int h, string type)
         {
+            enemyType = type;
+            enemyName = type;
+
             spawnX = startX;
             spawnY = startY;
 
@@ -2742,23 +2764,80 @@ namespace General
             R.X = startX + (w - R.Width) / 2f;
             R.Y = startY + (h - R.Height);
 
-            this.startX = R.X;
+            setEnemyType(type);
 
+            this.startX = R.X;
             leftLimit = R.X - patrolDistance;
             rightLimit = R.X + patrolDistance;
 
             moving = 'l';
             facing = 'l';
 
-            HP = new Health(50, 50);
             UI = new UIEntity(0, 0, 70, 15, false, true);
 
             createAnim();
-            anim.changeAnimation("idle", -1);
 
             isGrounded = true;
             wasGrounded = true;
         }
+
+        void setEnemyType(string type)
+        {
+            if (type == "mushroom")
+            {
+                enemyName = "mushroom";
+                enemyFolder = "Mushroom";
+                attackanimname = "attack";
+
+                speed = 4f;
+                gravity = 1.2f;
+                max_speed = 25f;
+
+                patrolDistance = 200f;
+                attackrange = 65f;
+                attackdis = 200f;
+                isSleeping = false;
+                isWakingUp = false;
+                canMoveAfterWakeup = true;
+
+                spawnrange = 600;
+                spawnTime = 600;
+
+                HP = new Health(50, 50);
+
+                animFolders = new string[] { "attack", "die", "hit", "idle", "run", "stun-attack" };
+                animFrames = new int[] { 10, 15, 5, 7, 8, 24 };
+            }
+            else if (type == "bat")
+            {
+                enemyName = "bat";
+                enemyFolder = "Bat";
+
+                attackanimname = "attack1";
+                speed = 6f;
+                gravity = 0f;
+                max_speed = 20f;
+
+                patrolDistance = 300f;
+                attackrange = 50f;
+                attackdis = 250f;
+
+                isSleeping = true;
+                isWakingUp = false;
+                canMoveAfterWakeup = false;
+
+                wakeupDistance = 400f;
+
+                spawnrange = 700;
+                spawnTime = 500;
+
+                HP = new Health(30, 30);
+                animFolders = new string[] { "attack1", "attack2", "die", "hit", "idle", "run", "sleep", "wakeup" };
+
+                animFrames = new int[] { 8, 11, 12, 5, 9, 8, 3, 16 };
+            }
+        }
+
         public void draw(Graphics g, bool showRanges)
         {
             if (spawn)
@@ -2768,7 +2847,7 @@ namespace General
 
                 Bitmap frame;
 
-                if (isDead || isTakingDamage || isAttacking)
+                if (isDead || isTakingDamage || isAttacking || isWakingUp)
                 {
                     frame = anim.playFrameOnce();
                 }
@@ -2803,50 +2882,57 @@ namespace General
                 }
             }
         }
+
         void createAnim()
         {
-            string[] folders = { "attack", "die", "hit", "idle", "run", "stun-attack" };
-            int[] numFrames = { 10, 15, 5, 7, 8, 24 };
-
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < animFolders.Length; i++)
             {
                 Animation a = new Animation();
 
-                a.name = folders[i];
-                if (folders[i] == "idle")
+                a.name = animFolders[i];
+
+                if (animFolders[i] == "idle")
                 {
                     a.frameDelay = 2;
                 }
-                else if (folders[i] == "run")
+                else if (animFolders[i] == "sleep")
+                {
+                    a.frameDelay = 4;
+                }
+                else if (animFolders[i] == "wakeup")
+                {
+                    a.frameDelay = 2;
+                }
+                else if (animFolders[i] == "attack1" || animFolders[i] == "attack2")
                 {
                     a.frameDelay = 1;
                 }
-                else if (folders[i] == "attack")
+                else if (animFolders[i] == "die")
                 {
                     a.frameDelay = 1;
                 }
-                else if (folders[i] == "hit")
+                else if (animFolders[i] == "hit")
                 {
                     a.frameDelay = 1;
                 }
-                else if (folders[i] == "die")
+                else if (animFolders[i] == "run")
                 {
                     a.frameDelay = 1;
                 }
-                else if (folders[i] == "stun-attack")
+                else
                 {
                     a.frameDelay = 1;
                 }
 
-                string path = "Characters/Enemies/Mushroom/" + folders[i] + "/";
+                string path = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/";
 
-                for (int j = 1; j <= numFrames[i]; j++)
+                for (int j = 1; j <= animFrames[i]; j++)
                 {
                     Bitmap img = new Bitmap(path + j.ToString() + ".png");
                     a.frames.Add(img);
                 }
 
-                this.anim.addAnim(a);
+                anim.addAnim(a);
             }
         }
 
@@ -2888,12 +2974,79 @@ namespace General
             }
         }
 
+        float getDistanceFromHero(Hero hero)
+        {
+            float distanceX = 0;
+            float distanceY = 0;
+
+            if (R.X > hero.R.X)
+            {
+                distanceX = R.X - hero.R.X;
+            }
+            else
+            {
+                distanceX = hero.R.X - R.X;
+            }
+
+            if (R.Y > hero.R.Y)
+            {
+                distanceY = R.Y - hero.R.Y;
+            }
+            else
+            {
+                distanceY = hero.R.Y - R.Y;
+            }
+
+            return distanceX + distanceY;
+        }
+
         public void move(List<tile> tiles, Hero hero)
         {
-
             if (!spawn)
             {
                 return;
+            }
+
+            if (enemyName == "bat")
+            {
+                if (isSleeping)
+                {
+                    anim.changeAnimation("sleep", -1);
+
+                    float distanceFromHero = getDistanceFromHero(hero);
+
+                    if (distanceFromHero <= wakeupDistance)
+                    {
+                        isSleeping = false;
+                        isWakingUp = true;
+                        canMoveAfterWakeup = false;
+
+                        anim.changeAnimation("wakeup", -1);
+                        anim.restart();
+                    }
+
+                    return;
+                }
+                if (isWakingUp)
+                {
+                    anim.changeAnimation("wakeup", -1);
+
+                    if (anim.currIdx == anim.animations[anim.currAnim].frames.Count - 1)
+                    {
+                        isWakingUp = false;
+                        canMoveAfterWakeup = true;
+
+                        anim.changeAnimation("idle", -1);
+                        anim.restart();
+                    }
+
+                    return;
+                }
+
+                if (!canMoveAfterWakeup)
+                {
+                    return;
+                }
             }
 
             if (hero.isDead)
@@ -2925,11 +3078,16 @@ namespace General
                     attackFrameTimer = 0;
                     attackDamageDone = false;
                 }
-                if (attackFrameTimer <= 10 && attackDamageDone == false)
+                else
                 {
-                    hero.takeDamage(10);
-                    attackDamageDone = true;
+                    if (anim.currIdx >= 4 && attackDamageDone == false)
+                    {
+                        hero.takeDamage(10);
+                        attackDamageDone = true;
+                    }
                 }
+
+
 
                 applyPhysics(tiles);
                 updateAnimation();
@@ -2977,7 +3135,6 @@ namespace General
                     R.X = rightLimit;
                     moving = 'r';
                     facing = 'r';
-
                     isRunning = false;
                     isWaiting = true;
                 }
@@ -3048,8 +3205,26 @@ namespace General
                     isAttacking = true;
                     attackFrameTimer = 20;
                     attackDamageDone = false;
+                    if(enemyName == "bat")
+                    {
+                        int randomattaack = rr.Next(0, 2);
 
-                    anim.changeAnimation("attack", -1);
+                        if (randomattaack == 0)
+                        {
+                            attackanimname = "attack1";
+                        }
+                        else
+                        {
+                            attackanimname = "attack2";
+                        }
+                    }
+                    else
+                    {
+                        attackanimname = "attack";
+                    }
+
+
+                        anim.changeAnimation(attackanimname, -1);
                     anim.restart();
 
                     applyPhysics(tiles);
@@ -3117,9 +3292,9 @@ namespace General
             }
 
             applyPhysics(tiles);
-
             updateAnimation();
         }
+
         public void applyPhysics(List<tile> tiles)
         {
             wasGrounded = isGrounded;
@@ -3128,7 +3303,9 @@ namespace General
             velocityY += gravity;
 
             if (velocityY > max_speed)
+            {
                 velocityY = max_speed;
+            }
 
             R.Y += velocityY;
 
@@ -3202,12 +3379,24 @@ namespace General
             {
                 float x = R.X + (R.Width / 2);
                 float y = R.Y + (R.Height / 2);
+
+                DroppedCoin coin = new DroppedCoin(x, y, "copper");
+
+                droppedCoins.Add(coin);
+                coindropped = true;
+            }
+            else if (enemyName == "bat")
+            {
+                float x = R.X + (R.Width / 2);
+                float y = R.Y + (R.Height / 2);
+
                 DroppedCoin coin = new DroppedCoin(x, y, "copper");
 
                 droppedCoins.Add(coin);
                 coindropped = true;
             }
         }
+
         public void updateAnimation()
         {
             if (isDead == true)
@@ -3225,12 +3414,13 @@ namespace General
                 {
                     isTakingDamage = false;
                 }
+
                 return;
             }
 
             if (isAttacking)
             {
-                anim.changeAnimation("attack", -1);
+                anim.changeAnimation(attackanimname, -1);
 
                 attackFrameTimer--;
 
@@ -3253,6 +3443,7 @@ namespace General
                     anim.changeAnimation("run", -1);
                     isWaiting = false;
                     isRunning = true;
+
                     if (moving == 'r')
                     {
                         moving = 'l';
@@ -3270,30 +3461,28 @@ namespace General
                     anim.changeAnimation("idle", -1);
                     return;
                 }
-
             }
 
             if (isRunning)
             {
                 anim.changeAnimation("run", -1);
                 return;
-
             }
 
             if (isAttacking)
             {
-                anim.changeAnimation("attack", -1);
+                anim.changeAnimation(attackanimname, -1);
                 return;
             }
-
-
         }
+
         public void respawn()
         {
             if (CanSpawn)
             {
                 R.X = spawnX + (drawR.Width - R.Width) / 2f;
                 R.Y = spawnY;
+
                 drawR.X = spawnX;
                 drawR.Y = spawnY - (drawR.Height - R.Height);
 
@@ -3309,16 +3498,29 @@ namespace General
                 damageTimer = 0;
                 attackTimer = 0;
                 deathTimer = 0;
+                attackFrameTimer = 0;
+                attackCooldown = 0;
+                attackDamageDone = false;
+
+                attackmode = false;
+
+                isWaiting = true;
+                isRunning = false;
+                waitTime = 0;
 
                 isGrounded = true;
                 wasGrounded = true;
+
+                coindropped = false;
 
                 HP.maxHP = 50;
                 HP.HP = HP.maxHP;
 
                 anim.changeAnimation("idle", -1);
+                anim.restart();
             }
         }
+
     }
     public class tile
     {
@@ -3801,44 +4003,36 @@ namespace General
             ladders.Add(ladder);
 
         }
-        int getAboveGroundLoc(int idx)
+        int getAboveGroundLoc(int enemyH)
         {
-            return this.ClientSize.Height - 30 - enemyH[idx];
+            return this.ClientSize.Height - 30 - enemyH;
         }
-
-        int[] enemyW = { 120 };
-        int[] enemyH = { 96 };
-        string[] enemyType = { "mushroom" };
-
-
-
         void initEnemies()
         {
-            for (int i = 0; i < enemyType.Length; i++)
-            {
-                if (enemyType[i] == "mushroom")
-                {
-                    //call initMushroomEnemy later if its alot or just put all mushrooms here
+            Enemy en;
 
-                    Enemy en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
-                    en.CanSpawn = true;
-                    en.enemyName = "mushroom";
-                    enemies.Add(en);
+            // Mushroom size
+            int mushroomW = 120;
+            int mushroomH = 96;
+            int mushroomY = getAboveGroundLoc(mushroomH);
 
-                    en = new Enemy(700, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
-                    en.enemyName = "mushroom";
-                    enemies.Add(en);
-                    en = new Enemy(800, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
-                    en.enemyName = "mushroom";
-                    enemies.Add(en);
-                    en = new Enemy(900, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
-                    en.enemyName = "mushroom";
-                    enemies.Add(en);
-                }
+            en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
+            en.CanSpawn = true;
+            en.spawn = true;
+            enemies.Add(en);
 
-            }
+
+            int batW = 120;
+            int batH = 96;
+            int batY = getAboveGroundLoc(batH);
+
+            en = new Enemy(1000, batY, batW, batH, "bat");
+            en.CanSpawn = true;
+            en.spawn = true;
+            enemies.Add(en);
+
+
         }
-
         void initTiles()
         {
             tile pnn = new tile();
@@ -4279,7 +4473,7 @@ namespace General
                 }
                 else
                 {
-                    enemies[i].move(tiles,hero);
+                    enemies[i].move(tiles, hero);
                 }
             }
         }
