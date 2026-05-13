@@ -17,21 +17,52 @@ namespace General
         public int timer = 0;
         int max = 1000;
 
+        int idx = 0;
+
+        Font f = new Font("Palatino Linotype", 8f, FontStyle.Bold);
+
+        SolidBrush textBrush = new SolidBrush(Color.White);
+        SolidBrush bigoutline = new SolidBrush(Color.Black);
         public void save(Hero hero, List<Enemy> Enemies)
         {
             saveHero(hero);
             saveEnemies(Enemies);
 
         }
-        public void autoSave(Hero hero, List<Enemy> Enemies)
+        public void autoSave(Hero hero, List<Enemy> Enemies , Graphics g , int clientHeight)
         {
+            if(timer < 20)
+            {
+                string txt = "Saving";
+                if(idx % 4 == 1)
+                {
+                    txt += ".";
+                }
+                else if(idx %4 == 2)
+                {
+                    txt += "..";
+                }
+                else if(idx % 4 == 3)
+                {
+                    txt += "...";
+                }
+                g.DrawString(txt, f, bigoutline, 12, clientHeight- 50);
+                g.DrawString(txt, f, textBrush, 10, clientHeight - 48);
+
+                idx++;
+            }
+            else
+            {
+                idx = 0;
+            }
+
             if (timer < max)
             {
                 timer++;
             }
             else
             {
-                timer = 0;
+                idx = 0;
                 save(hero, Enemies);
             }
         }
@@ -81,6 +112,7 @@ namespace General
             sw.WriteLine("abilityFireballSpawned:" + hero.abilityFireballSpawned.ToString());
             sw.WriteLine("abilityManaCost:" + hero.abilityManaCost.ToString());
             sw.WriteLine("abilityKeyDown:" + hero.abilityKeyDown.ToString());
+            sw.WriteLine("isAbilityUnlocked:" + hero.isAbilityUnlocked.ToString());
 
             sw.WriteLine("isDead:" + hero.isDead.ToString());
 
@@ -160,10 +192,12 @@ namespace General
 
     public class Load
     {
-        public void load(Hero hero, List<Enemy> enemies)
+        public Hero load(Hero hero, List<Enemy> enemies , int clientHeight)
         {
-            loadHero(hero);
+            hero = loadHero(hero , clientHeight);
             loadEnemies(enemies);
+
+            return hero;
         }
         int changeToInt(string val)
         {
@@ -176,16 +210,20 @@ namespace General
             return Convert.ToInt32(num);
         }
 
-        void loadHero(Hero hero)
+        Hero loadHero(Hero hero , int clientHeight)
         {
-            StreamReader sr = new StreamReader("Saves/hero.txt");
 
+            StreamReader sr = new StreamReader("Saves/hero.txt");
             while (sr.EndOfStream == false)
             {
+                if(hero == null)
+                {
+                   hero = new Hero(30, clientHeight - 150 - 30, 150, 150);
+                }
                 string line = sr.ReadLine();
 
                 string[] data = splitLine(line);
-
+                
                 string variable = data[0];
                 string val = data[1];
 
@@ -219,6 +257,15 @@ namespace General
                     hero.R.Y = changeToInt(sy);
                 }
 
+
+                else if (variable == "isAbilityUnlocked")
+                {
+                    if (val == "true")
+                    {
+                        hero.isAbilityUnlocked = true;
+                    }
+                    else hero.isAbilityUnlocked = false;
+                }
                 else if (variable == "Moving")
                 {
                     hero.moving = val[0];
@@ -397,6 +444,7 @@ namespace General
             }
 
             sr.Close();
+            return hero;
         }
 
         void loadEnemies(List<Enemy> enemies)
@@ -1715,8 +1763,12 @@ namespace General
         public bool abilityKeyDown = false;
         public bool isDead = false;
 
+        public bool isAbilityUnlocked = true;
+
         public void startAbilityCast()
         {
+            if (isAbilityUnlocked == false) return;
+
             if (isTakingDamage == true)
             {
                 return;
@@ -1734,6 +1786,8 @@ namespace General
         }
         public void updateSingleFireballAbility(List<Enemy> enemies, List<tile> tiles)
         {
+            if (isAbilityUnlocked == false) return;
+
             if (!isCastingAbility) return;
 
             anim.changeAnimation("spell_cast", -1);
@@ -3340,6 +3394,7 @@ namespace General
 
         Bitmap button = new Bitmap("ui/menu/UI_TravelBook_Frame01a.png");
         int currentButton = 0;
+        int lastMenuScreen = 0;
 
         List<Bitmap> menuImgs = new List<Bitmap>();
         List<Button> btns = new List<Button>();
@@ -3418,6 +3473,12 @@ namespace General
                 if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
                             && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
                 {
+                    if (lastMenuScreen == 0)
+                    {
+                        startNewGame();
+                        save.save(hero, enemies);
+                    }
+
                     startGame();
                 }
             }
@@ -3436,6 +3497,12 @@ namespace General
                 }
             }
         }
+        bool IsLeftMenu(int i)
+        {
+            if (i >= 0 && i <= 3) return true;
+
+            return false;
+        }
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
@@ -3447,9 +3514,33 @@ namespace General
                     if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
                         && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
                     {
-                        currentButton = i;
-                        drawDubb(this.CreateGraphics());
-                        break;
+                        if (i != btns.Count - 1)
+                        {
+                            if (IsLeftMenu(currentButton) == true)
+                            {
+                                lastMenuScreen = currentButton;
+                            }
+
+                            currentButton = i;
+
+                            drawDubb(this.CreateGraphics());
+                            break;
+                        }
+                        else
+                        {
+                            if(currentButton == 0 || currentButton == 1)
+                            {
+                                if (IsLeftMenu(currentButton) == true)
+                                {
+                                    lastMenuScreen = currentButton;
+                                }
+
+                                currentButton = i;
+
+                                drawDubb(this.CreateGraphics());
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -3512,49 +3603,83 @@ namespace General
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.O)
-            {
-                load.load(hero, enemies);
-            }
+          
 
             if (hasStarted == false)
             {
                 if (e.KeyCode == Keys.Down)
                 {
-                    if (currentButton < btns.Count - 2) currentButton++;
-                    else currentButton = 0;
-                    drawDubb(this.CreateGraphics());
 
+                    if (currentButton < btns.Count - 2)
+                    {
+                        currentButton++;
+                    }
+                    else
+                    {
+                        currentButton = 0;
+                    }
+
+                    drawDubb(this.CreateGraphics());
                 }
+
                 if (e.KeyCode == Keys.Up)
                 {
-                    if (currentButton > 0) currentButton--;
-                    else currentButton = btns.Count - 2;
+                    if (currentButton > 0 && currentButton != btns.Count - 1)
+                    {
+                        currentButton--;
+                    }
+                    else
+                    {
+                        currentButton = btns.Count - 2;
+                    }
+
                     drawDubb(this.CreateGraphics());
                 }
 
                 if (currentButton == 0 || currentButton == 1)
                 {
-                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
+                    if (e.KeyCode == Keys.Right)
                     {
-                        currentButton = btns.Count - 1;
-                        drawDubb(this.CreateGraphics());
+                        if (IsLeftMenu(currentButton) == true)
+                        {
+                            lastMenuScreen = currentButton;
+                        }
 
-                    }
-                }
-                else if (currentButton == btns.Count - 1)
-                {
-                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Left)
-                    {
-                        currentButton = 0;
-                        drawDubb(this.CreateGraphics());
+                        if (currentButton == 1)
+                        {
+                            if (IsSaveAvailable() == true)
+                            {
+                                currentButton = btns.Count - 1;
+                            }
+                        }
+                        else
+                        {
+                            currentButton = btns.Count - 1;
+                        }
 
+                        drawDubb(this.CreateGraphics());
                     }
                 }
 
                 if (currentButton == btns.Count - 1)
                 {
-                    if (e.KeyCode == Keys.Enter) startGame();
+                    if (e.KeyCode == Keys.Left)
+                    {
+                        currentButton = 0;
+                        drawDubb(this.CreateGraphics());
+                    }
+
+                    if (e.KeyCode == Keys.Enter)
+                    {
+                        if (lastMenuScreen == 0)
+                        {
+                            startNewGame(); 
+                            save.save(hero, enemies);
+
+                        }
+
+                        startGame();
+                    }
                 }
             }
             else
@@ -3632,8 +3757,6 @@ namespace General
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            this.Text = save.timer.ToString();
-            save.autoSave(hero, enemies);
             hero.move(tiles);
             hero.collectDroppedCoins(droppedCoins);
             if (hero.currentWeapon == 0)
@@ -3656,12 +3779,15 @@ namespace General
             off = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
 
 
-            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
+            //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
             initTiles();
             initLadders();
 
             initEnemies();
             initButtons();
+
+            loadData();
+
             initMenu();
             drawDubb(this.CreateGraphics());
 
@@ -3753,6 +3879,8 @@ namespace General
 
             if (hasStarted == true)
             {
+                save.autoSave(hero, enemies ,g , this.ClientSize.Height);
+
                 for (int i = 0; i < tiles.Count; i++)
                 {
                     tiles[i].draw(g);
@@ -3813,7 +3941,7 @@ namespace General
             btns.Add(btn);
 
             ButtonsY += (h + 20);
-            btn = new Button(ButtonsX, ButtonsY, w, h, "Options");
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Controls");
             btns.Add(btn);
 
             ButtonsY += (h + 20);
@@ -3857,41 +3985,249 @@ namespace General
 
             Font f = new Font("Comic Sans MS", 18, FontStyle.Bold);
             SolidBrush bsh = new SolidBrush(Color.White);
+
             for (int i = 0; i < btns.Count; i++)
             {
                 bool isIt = false;
+
                 if (i == currentButton) isIt = true;
 
-
                 Button btn = btns[i];
-                if (i < btns.Count - 1 || currentButton == 0 || currentButton == 1 || currentButton == btns.Count - 1)
+
+                if (i != btns.Count - 1)
+                {
                     btn.draw(button, G, f, bsh, isIt);
+                }
             }
 
+            Button startBtn = btns[btns.Count - 1];
 
-            loadScreen(G, borderX + 60 + 100 + 20, borderY + 60, borderW - (60 + 100 + 20), borderHeight - 60);
+            bool startSelected = false;
+
+            if (currentButton == btns.Count - 1) startSelected = true;
+
+            if (currentButton == 0 || currentButton == btns.Count - 1)
+            {
+                startBtn.draw(button, G, f, bsh, startSelected);
+            }
+
+            if (currentButton == 1)
+            {
+                if (IsSaveAvailable() == true)
+                {
+                    startBtn.draw(button, G, f, bsh, startSelected);
+                }
+            }
+
+            loadScreen(G, borderX + 60, borderY + 160, borderW - (100), borderHeight - 60);
         }
 
         void loadScreen(Graphics G, int x, int y, int width, int height)
         {
-            if (currentButton == 0)
+            int screen = currentButton;
+
+            if (currentButton == btns.Count - 1)
             {
-                //show new game screen
+                screen = lastMenuScreen;
             }
-            if (currentButton == 1)
+
+            Font titleFont = new Font("Comic Sans MS", 22, FontStyle.Bold);
+            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+            Font smallFont = new Font("Comic Sans MS", 11, FontStyle.Bold);
+
+            SolidBrush white = new SolidBrush(Color.White);
+            SolidBrush gold = new SolidBrush(Color.FromArgb(255, 220, 120));
+
+            Bitmap slot = new Bitmap("ui/menu/slot.png");
+
+            Bitmap frameSelectA = new Bitmap("ui/menu/UI_TravelBook_FrameSelect01a.png");
+
+
+            if (screen == 0)
             {
-                //show load
+                drawNewGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold);
             }
-            if (currentButton == 0)
+            else if (screen == 1)
             {
-                //show options
+                drawLoadGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold, frameSelectA, slot);
             }
-            if (currentButton == 0)
+            else if (screen == 2)
             {
-                //show credits
+                drawControlsScreen(G, x, y, width, height, titleFont, normalFont,smallFont, white, gold);
+            }
+            else if (screen == 3)
+            {
+                drawCreditsScreen(G, x, y, width, height, titleFont, normalFont, white, gold);
             }
         }
+        void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold)
+        {
+            G.DrawString("Begin Your Journey", titleFont, gold, x + 20, y + 10);
 
+            
+        }
+
+        void drawLoadGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frameSelectA, Bitmap slot)
+        {
+            if (IsSaveAvailable() == false)
+            {
+                G.DrawString("No Saves Available", titleFont, Brushes.Red, x + 40, y + 120);
+                return;
+            }
+
+            drawBar(G, "Health", hero.HP.HP, hero.HP.maxHP, x + 170, y - 80, Brushes.DarkRed, Brushes.Red, smallFont);
+
+
+            drawBar(G, "Mana", hero.mana.mana, hero.mana.maxMana, x + 170, y - 40, Brushes.DarkBlue, Brushes.DeepSkyBlue, smallFont);
+
+
+            Rectangle saveRect = new Rectangle(x + 15, y + 10, width - 30, 420);
+
+            int textX = saveRect.X + 20;
+            int currentY = saveRect.Y;
+
+            G.DrawString("Last Save", titleFont, gold, textX, currentY);
+
+            currentY += 40;
+
+            G.DrawString("Coins : " + hero.coins, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            string weapon = "Sword";
+
+            if (hero.currentWeapon == 1) weapon = "Fireball";
+
+            G.DrawString("Current Weapon : " + weapon, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+
+            G.DrawString("Sword Damage : " + hero.Weapons[0].damage, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            if (hero.Weapons.Count > 1)
+            {
+                G.DrawString("Fireball Damage : " + hero.Weapons[1].damage, normalFont, white, textX, currentY);
+                currentY += 35;
+            }
+
+            if(hero.isAbilityUnlocked == true)
+                G.DrawString("Ability : Fire Blast", normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            G.DrawString("Ability Mana Cost : " + hero.abilityManaCost, normalFont, white, textX, currentY);
+
+            currentY += 50;
+
+            G.DrawString("Status : Alive", normalFont, Brushes.LightGreen, textX, currentY);
+
+            int slotY = currentY + 50;
+            int slotW = 70;
+            int slotSpacing = 18;
+
+            for (int i = 0; i < hero.Weapons.Count; i++)
+            {
+                int sx = x + 25 + (slotW + slotSpacing) * i;
+                
+                G.DrawImage(slot, sx, slotY, slotW, slotW);
+
+                G.DrawImage(hero.Weapons[i].UIImage, sx + slotW/2 - (slotW- 20)/2, slotY + slotW / 2 - (slotW - 20) / 2 , (slotW - 20) , (slotW - 20)); 
+            }
+
+        }
+
+        void drawControlsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold)
+        {
+            G.DrawString("Controls", titleFont, gold, x + 20, y + 10);
+
+
+            int textY = y + 100;
+            G.DrawString("Display Enemy Ranges : P", smallFont, white, x + 70, textY);
+            textY += 35;
+
+
+            G.DrawString("AD / Arrows -> Move", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("Space/ W -> Jump", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("Left Click -> Attack", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("1 / 2  -> Weapons", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("E -> Ability", smallFont, white, x + 70, textY);
+        }
+
+        void drawCreditsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, SolidBrush white, SolidBrush gold)
+        {
+            G.DrawString("Credits", titleFont, gold, x + 20, y + 10);
+
+
+            G.DrawString("Arcane", new Font("Comic Sans MS", 28, FontStyle.Bold), gold, x + 50, y + 110);
+
+            G.DrawString("Developed By:", normalFont, white, x + 50, y + 190);
+
+            G.DrawString("Kareem Ahmed Taha - 254914", normalFont, gold, x + 70, y + 250);
+
+            G.DrawString("Mostafa Mohamed Saeed - 254595", normalFont, gold, x + 70, y + 300);
+
+            Font smallFont = new Font("Comic Sans MS", 9, FontStyle.Italic);
+            G.DrawString("Developed as part of the multimedia project at MSA University" ,smallFont , white , x +70 , y + 340 );
+        }
+
+        void drawBar(Graphics G, string title, float value, float max, int x, int y, Brush backBrush, Brush fillBrush, Font smallFont)
+        {
+            G.DrawString(title, smallFont, Brushes.White, x, y);
+
+            Rectangle back = new Rectangle(x + 80, y + 4, 220, 18);
+
+            G.FillRectangle(backBrush, back);
+
+            float fillW = (220f * value / max);
+
+            G.FillRectangle(fillBrush, back.X, back.Y, fillW, back.Height);
+
+            G.DrawRectangle(Pens.Black, back);
+
+            G.DrawString(value.ToString() + " / " + max.ToString(), smallFont, Brushes.White, back.X + 70, back.Y - 2);
+        }
+
+        bool IsSaveAvailable()
+        {
+            if(hero == null || hero.isDead == true)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        void loadData()
+        {
+            hero = load.load(hero, enemies , this.ClientSize.Height);
+          
+        }
+
+        void startNewGame()
+        {
+            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
+            while(enemies.Count > 0)
+            {
+                enemies.RemoveAt(0);
+            }
+
+            initEnemies();
+        }
 
         void handleEnemyMovement()
         {
