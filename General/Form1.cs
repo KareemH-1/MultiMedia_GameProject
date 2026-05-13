@@ -72,6 +72,7 @@ namespace General
 
             StreamWriter sw = new StreamWriter("Saves/hero.txt");
 
+            sw.WriteLine("hero_color:" + hero.ColorIdx.ToString());
             sw.WriteLine("X,Y:" + hero.R.X.ToString() + "," + hero.R.Y.ToString());
             sw.WriteLine("Moving:" + hero.moving);
             sw.WriteLine("ySpeed:" + hero.ySpeed.ToString());
@@ -216,16 +217,21 @@ namespace General
             StreamReader sr = new StreamReader("Saves/hero.txt");
             while (sr.EndOfStream == false)
             {
-                if(hero == null)
-                {
-                   hero = new Hero(30, clientHeight - 150 - 30, 150, 150);
-                }
                 string line = sr.ReadLine();
+                
 
                 string[] data = splitLine(line);
                 
                 string variable = data[0];
                 string val = data[1];
+
+                if (variable == "hero_color")
+                {
+                    if (hero == null)
+                    {
+                        hero = new Hero(30, clientHeight - 150 - 30, 150, 150 , changeToInt(val));
+                    }
+                }
 
                 if (variable == "X,Y")
                 {
@@ -1675,6 +1681,7 @@ namespace General
 
     public class Hero
     {
+        public int ColorIdx = 0;
         public RectangleF R = new Rectangle();
         public RectangleF drawR = new Rectangle();
 
@@ -1984,8 +1991,10 @@ namespace General
             UI.draw(g, HP, mana, coins);
             UI.drawWeaponsUI(g, Weapons, currentWeapon);
         }
-        public Hero(int startX, int startY, int w, int h)
+        public Hero(int startX, int startY, int w, int h , int colorIdx)
         {
+            this.ColorIdx = colorIdx;
+
             drawR.X = startX;
             drawR.Y = startY;
             drawR.Width = w;
@@ -2036,6 +2045,15 @@ namespace General
 
             int[] numFrames = { 8, 8, 3, 12, 6, 3, 10, 8, 3, 8, 8, 4, 10, 4, 4, 3, 4, 2 };
 
+            string colorName;
+            if (ColorIdx == 0)
+            {
+                colorName = "Blue";
+            }
+            else if (ColorIdx == 1) colorName = "green";
+            else if (ColorIdx == 2) colorName = "purple";
+            else colorName = "red";
+
             for (int i = 0; i < 18; i++)
             {
                 Animation a = new Animation();
@@ -2045,7 +2063,7 @@ namespace General
                 else if (folders[i] == "landing") a.frameDelay = 1;
                 else if (folders[i] == "taking_damage") a.frameDelay = 1;
                 else if (folders[i] == "death") a.frameDelay = 1;
-                string path = "Characters/Hero/Blue/" + folders[i] + "/";
+                string path = "Characters/Hero/" +colorName +"/" + folders[i] + "/";
                 for (int j = 1; j <= numFrames[i]; j++)
                 {
                     Bitmap img = new Bitmap(path + j.ToString() + ".png");
@@ -3411,6 +3429,12 @@ namespace General
         List<DroppedCoin> droppedCoins = new List<DroppedCoin>();
         Timer timer = new Timer();
 
+
+        List<Animation> heroColors = new List<Animation>();
+        List<Rectangle> clrBtns = new List<Rectangle>();
+
+        int animIdx = 0;
+        int ChoiceIdx = 0;
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -3422,8 +3446,8 @@ namespace General
             this.BackColor = Color.FromArgb(115, 85, 87);
             this.Text = "Arcane";
             timer.Interval = 1;
-            timer.Stop();
             timer.Tick += Timer_Tick;
+            timer.Start();
 
             this.MouseMove += Form1_MouseMove;
             this.MouseDown += Form1_MouseDown;
@@ -3469,6 +3493,16 @@ namespace General
         {
             if (hasStarted == false)
             {
+                for (int i = 0; i < clrBtns.Count; i++)
+                {
+                    Rectangle btnC = clrBtns[i];
+                    if (e.X > btnC.X && e.X < btnC.X + btnC.Width
+                        && e.Y > btnC.Y && e.Y < btnC.Y + btnC.Height)
+                    {
+                        ChoiceIdx = i;
+                    }
+                }
+
                 Button btn = btns[btns.Count - 1];
                 if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
                             && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
@@ -3523,7 +3557,6 @@ namespace General
 
                             currentButton = i;
 
-                            drawDubb(this.CreateGraphics());
                             break;
                         }
                         else
@@ -3537,12 +3570,13 @@ namespace General
 
                                 currentButton = i;
 
-                                drawDubb(this.CreateGraphics());
                                 break;
                             }
                         }
                     }
                 }
+
+                
             }
             else
             {
@@ -3564,7 +3598,6 @@ namespace General
             {
                 menuImgs.RemoveAt(0);
             }
-            timer.Start();
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
@@ -3607,6 +3640,23 @@ namespace General
 
             if (hasStarted == false)
             {
+                if(e.KeyCode == Keys.D1)
+                {
+                    ChoiceIdx = 0;
+                }
+                else if (e.KeyCode == Keys.D2)
+                {
+                    ChoiceIdx = 1;
+                }
+                else if (e.KeyCode == Keys.D3)
+                {
+                    ChoiceIdx = 2;
+                }
+                else if (e.KeyCode == Keys.D4)
+                {
+                    ChoiceIdx = 3;
+                }
+
                 if (e.KeyCode == Keys.Down)
                 {
 
@@ -3619,7 +3669,6 @@ namespace General
                         currentButton = 0;
                     }
 
-                    drawDubb(this.CreateGraphics());
                 }
 
                 if (e.KeyCode == Keys.Up)
@@ -3633,7 +3682,6 @@ namespace General
                         currentButton = btns.Count - 2;
                     }
 
-                    drawDubb(this.CreateGraphics());
                 }
 
                 if (currentButton == 0 || currentButton == 1)
@@ -3657,7 +3705,6 @@ namespace General
                             currentButton = btns.Count - 1;
                         }
 
-                        drawDubb(this.CreateGraphics());
                     }
                 }
 
@@ -3666,7 +3713,6 @@ namespace General
                     if (e.KeyCode == Keys.Left)
                     {
                         currentButton = 0;
-                        drawDubb(this.CreateGraphics());
                     }
 
                     if (e.KeyCode == Keys.Enter)
@@ -3757,18 +3803,20 @@ namespace General
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            hero.move(tiles);
-            hero.collectDroppedCoins(droppedCoins);
-            if (hero.currentWeapon == 0)
+            if (hasStarted == true)
             {
-                hero.updateAttack(enemies);
+                hero.move(tiles);
+                hero.collectDroppedCoins(droppedCoins);
+                if (hero.currentWeapon == 0)
+                {
+                    hero.updateAttack(enemies);
+                }
+                hero.updateFireballCast(enemies, tiles);
+                hero.updateSingleFireballAbility(enemies, tiles);
+
+                hero.mana.tick();
+                handleEnemyMovement();
             }
-            hero.updateFireballCast(enemies, tiles);
-            hero.updateSingleFireballAbility(enemies, tiles);
-
-            hero.mana.tick();
-            handleEnemyMovement();
-
 
             drawDubb(this.CreateGraphics());
 
@@ -3925,6 +3973,54 @@ namespace General
             menuImgs.Add(img);
             img = new Bitmap("ui/hero_icon.png");
             menuImgs.Add(img);
+
+
+            Animation heroBlue = new Animation();
+            for(int i =1; i<= 6; i++)
+            {
+                string path = "characters/Hero/Blue/idle/" + i.ToString() + ".png";
+                Bitmap frame = new Bitmap(path);
+                heroBlue.frames.Add(frame);
+            }
+            heroColors.Add(heroBlue);
+
+            Rectangle btn = new Rectangle(0, 0, 0, 0);
+            clrBtns.Add(btn);
+            btn = new Rectangle(0, 0, 0, 0);
+            clrBtns.Add(btn);
+            btn = new Rectangle(0, 0, 0, 0);
+            clrBtns.Add(btn);
+            btn = new Rectangle(0, 0, 0, 0);
+            clrBtns.Add(btn);
+
+            Animation heroGreen = new Animation();
+            for (int i = 1; i <= 6; i++)
+            {
+                string path = "characters/Hero/green/idle/" + i.ToString() + ".png";
+                Bitmap frame = new Bitmap(path);
+                heroGreen.frames.Add(frame);
+            }
+            heroColors.Add(heroGreen);
+
+
+            Animation heroPurple = new Animation();
+            for (int i = 1; i <= 6; i++)
+            {
+                string path = "characters/Hero/purple/idle/" + i.ToString() + ".png";
+                Bitmap frame = new Bitmap(path);
+                heroPurple.frames.Add(frame);
+            }
+            heroColors.Add(heroPurple);
+
+
+            Animation heroRed = new Animation();
+            for (int i = 1; i <= 6; i++)
+            {
+                string path = "characters/Hero/red/idle/" + i.ToString() + ".png";
+                Bitmap frame = new Bitmap(path);
+                heroRed.frames.Add(frame);
+            }
+            heroColors.Add(heroRed);
         }
         void initButtons()
         {
@@ -4037,15 +4133,16 @@ namespace General
 
             SolidBrush white = new SolidBrush(Color.White);
             SolidBrush gold = new SolidBrush(Color.FromArgb(255, 220, 120));
-
+            
             Bitmap slot = new Bitmap("ui/menu/slot.png");
+            Bitmap selectedSlot = new Bitmap("ui/menu/slotSelected.png");
 
             Bitmap frameSelectA = new Bitmap("ui/menu/UI_TravelBook_FrameSelect01a.png");
 
 
             if (screen == 0)
             {
-                drawNewGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold);
+                drawNewGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold , slot , selectedSlot);
             }
             else if (screen == 1)
             {
@@ -4060,11 +4157,62 @@ namespace General
                 drawCreditsScreen(G, x, y, width, height, titleFont, normalFont, white, gold);
             }
         }
-        void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold)
+        void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold , Bitmap frame , Bitmap SelectedFrame)
         {
             G.DrawString("Begin Your Journey", titleFont, gold, x + 20, y + 10);
 
-            
+            x = x + 20;
+            y = y + 60;
+            G.DrawString("Choose a color for your hero", normalFont, white, x, y);
+
+            y += 30;
+
+            int widthF = 80; //56
+            int heightF = 80;
+
+            int currX = x;
+            for (int i = 0; i < heroColors.Count; i++)
+            {
+                if(i == ChoiceIdx)
+                {
+                    G.DrawImage(SelectedFrame, currX, y, widthF, heightF);   
+                }
+                else
+                {
+                    G.DrawImage(frame, currX, y, widthF, heightF);
+
+                }
+
+                Bitmap curr = heroColors[i].frames[animIdx];
+                G.DrawImage(curr, currX, y - 20 , 80, 80);
+
+                clrBtns[i] = new Rectangle(currX, y - 20, 80, 80);
+
+                currX += widthF + 10;
+            }
+
+            if (animIdx < heroColors[0].frames.Count - 1)
+            {
+                animIdx++;
+            }
+            else animIdx = 0;
+
+            int statsX = x;
+            int statsY = y + 120;
+
+            G.DrawString("Base Stats", titleFont, gold, statsX, statsY);
+
+            statsY += 40;
+
+            G.DrawString("HP: 100", normalFont, white, statsX, statsY);
+
+            statsY += 30;
+
+            G.DrawString("Mana: 100", normalFont, white, statsX, statsY);
+
+            statsY += 30;
+
+            G.DrawString("Speed: 6", normalFont, white, statsX, statsY);
         }
 
         void drawLoadGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frameSelectA, Bitmap slot)
@@ -4087,6 +4235,9 @@ namespace General
             int currentY = saveRect.Y;
 
             G.DrawString("Last Save", titleFont, gold, textX, currentY);
+
+            G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
+            G.DrawImage(heroColors[hero.ColorIdx].frames[0] , x + width - 120 - 20, currentY - 20, 120, 120);
 
             currentY += 40;
 
@@ -4150,6 +4301,10 @@ namespace General
 
 
             G.DrawString("AD / Arrows -> Move", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("LShift -> Run", smallFont, white, x + 70, textY);
 
             textY += 35;
 
@@ -4220,7 +4375,7 @@ namespace General
 
         void startNewGame()
         {
-            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
+            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150 , ChoiceIdx);
             while(enemies.Count > 0)
             {
                 enemies.RemoveAt(0);
