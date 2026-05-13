@@ -16,27 +16,27 @@ namespace General
     {
         public int timer = 0;
         int max = 1000;
-        
-        public void save(Hero hero , List<Enemy> Enemies)
+
+        public void save(Hero hero, List<Enemy> Enemies)
         {
             saveHero(hero);
-            saveEnemies( Enemies);
+            saveEnemies(Enemies);
 
         }
         public void autoSave(Hero hero, List<Enemy> Enemies)
         {
-            if(timer < max)
+            if (timer < max)
             {
                 timer++;
             }
             else
             {
                 timer = 0;
-                save(hero , Enemies);
+                save(hero, Enemies);
             }
         }
 
-        void saveHero( Hero hero)
+        void saveHero(Hero hero)
         {
 
             StreamWriter sw = new StreamWriter("Saves/hero.txt");
@@ -239,7 +239,7 @@ namespace General
                 {
                     if (val == "true")
                     {
-                        hero.isTakingDamage= true;
+                        hero.isTakingDamage = true;
                     }
                     else hero.isTakingDamage = false;
                 }
@@ -260,14 +260,14 @@ namespace General
                     {
                         hero.isAttacking = true;
                     }
-                    else hero.isAttacking= false;
+                    else hero.isAttacking = false;
                 }
 
                 else if (variable == "attackHasHit")
                 {
                     if (val == "true")
                     {
-                        hero.attackHasHit= true;
+                        hero.attackHasHit = true;
                     }
                     else hero.attackHasHit = false;
                 }
@@ -369,7 +369,7 @@ namespace General
                     {
                         hero.abilityFireballSpawned = true;
                     }
-                    else hero.abilityFireballSpawned= false;
+                    else hero.abilityFireballSpawned = false;
                 }
 
                 else if (variable == "abilityManaCost")
@@ -578,7 +578,7 @@ namespace General
                         {
                             enemy.attackDamageDone = true;
                         }
-                        else enemy.attackDamageDone = false; 
+                        else enemy.attackDamageDone = false;
                     }
 
                     else if (property == "startX")
@@ -743,7 +743,7 @@ namespace General
 
         void checkEnemies(List<Enemy> enemies)
         {
-            for(int i =0; i< enemies.Count; i++)
+            for (int i = 0; i < enemies.Count; i++)
             {
                 Enemy trav = enemies[i];
                 trav.takeHit(0);
@@ -1549,7 +1549,7 @@ namespace General
             }
             else
             {
-                
+
                 g.DrawImage(imgToDraw, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
 
             }
@@ -1822,7 +1822,24 @@ namespace General
             vfxes.Add(fx);
         }
 
+        public void collectDroppedCoins(List<DroppedCoin> droppedCoins)
+        {
+            for (int i = 0; i < droppedCoins.Count; i++)
+            {
+                DroppedCoin coin = droppedCoins[i];
 
+                if (R.X < coin.R.X + coin.R.Width &&
+                    R.X + R.Width > coin.R.X &&
+                    R.Y < coin.R.Y + coin.R.Height &&
+                    R.Y + R.Height > coin.R.Y)
+                {
+                    coins += coin.coinvalue;
+
+                    droppedCoins.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
         void createFireballVFX()
         {
             vfx fx = new vfx();
@@ -1864,7 +1881,7 @@ namespace General
 
             Bitmap frame;
 
-            if (isDead)
+            if (isDead ||isLanding)
             {
                 frame = anim.playFrameOnce();
             }
@@ -2364,8 +2381,8 @@ namespace General
                 if (wasGrounded == false)
                 {
                     isLanding = true;
-                    landingTimer = 6;
                     anim.changeAnimation("landing", -1);
+                    anim.restart();
                 }
             }
 
@@ -2536,6 +2553,67 @@ namespace General
             takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
         }
     }
+
+    public class DroppedCoin
+    {
+        public RectangleF R = new RectangleF();
+
+        public List<Bitmap> frames = new List<Bitmap>();
+        public int currFrame = 0;
+        public int frameDelay = 3;
+        public int frameDelayCount = 0;
+
+        public int coinvalue = 20;
+        public string cointype = "";
+
+        public DroppedCoin(float x, float y, string type)
+        {
+            cointype = type;
+
+            R.X = x;
+            R.Y = y;
+            R.Width = 25;
+            R.Height = 25;
+
+            if (type == "copper")
+            {
+                for (int i = 1; i <= 7; i++)
+                {
+                    Bitmap img = new Bitmap("Collectables/Coins/Bronze/" + i.ToString() + ".png");
+                    frames.Add(img);
+                }
+            }
+        }
+
+        public void updateAnimation()
+        {
+            frameDelayCount++;
+
+            if (frameDelayCount >= frameDelay)
+            {
+                frameDelayCount = 0;
+
+                currFrame++;
+
+                if (currFrame >= frames.Count)
+                {
+                    currFrame = 0;
+                }
+            }
+        }
+
+        public void draw(Graphics g)
+        {
+            if (frames.Count == 0)
+            {
+                return;
+            }
+
+            g.DrawImage(frames[currFrame], R.X, R.Y, R.Width, R.Height);
+
+            updateAnimation();
+        }
+    }
     public class Enemy
     {
         public RectangleF R = new RectangleF();
@@ -2588,6 +2666,8 @@ namespace General
         public bool attackmode = false;
         public bool idle = false;
 
+        public bool coindropped = false;
+
         public string enemyName;
         public Health HP;
         public UIEntity UI;
@@ -2634,7 +2714,7 @@ namespace General
 
                 Bitmap frame;
 
-                if (isDead)
+                if (isDead || isTakingDamage || isAttacking)
                 {
                     frame = anim.playFrameOnce();
                 }
@@ -3056,6 +3136,24 @@ namespace General
                 }
             }
         }
+
+        public void dropCoin(List<DroppedCoin> droppedCoins)
+        {
+            if (coindropped == true)
+            {
+                return;
+            }
+
+            if (enemyName == "mushroom")
+            {
+                float x = R.X + (R.Width / 2);
+                float y = R.Y + (R.Height / 2);
+                DroppedCoin coin = new DroppedCoin(x, y, "copper");
+
+                droppedCoins.Add(coin);
+                coindropped = true;
+            }
+        }
         public void updateAnimation()
         {
             if (isDead == true)
@@ -3248,13 +3346,14 @@ namespace General
 
 
         bool showRanges = false;
-        Bitmap off;
+        Bitmap off; 
         Random RR = new Random();
 
         Hero hero;
         List<Enemy> enemies = new List<Enemy>();
         List<tile> tiles = new List<tile>();
         List<Ladder> ladders = new List<Ladder>();
+        List<DroppedCoin> droppedCoins = new List<DroppedCoin>();
         Timer timer = new Timer();
 
         public Form1()
@@ -3413,7 +3512,7 @@ namespace General
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.KeyCode == Keys.O)
+            if (e.KeyCode == Keys.O)
             {
                 load.load(hero, enemies);
             }
@@ -3499,9 +3598,9 @@ namespace General
                     hero.abilityKeyDown = true;
                     hero.startAbilityCast();
                 }
-                if(e.KeyCode == Keys.R)
+                if (e.KeyCode == Keys.R)
                 {
-                    if(hero.isDead == true)
+                    if (hero.isDead == true)
                     {
                         hero.isDead = false;
                     }
@@ -3536,6 +3635,7 @@ namespace General
             this.Text = save.timer.ToString();
             save.autoSave(hero, enemies);
             hero.move(tiles);
+            hero.collectDroppedCoins(droppedCoins);
             if (hero.currentWeapon == 0)
             {
                 hero.updateAttack(enemies);
@@ -3546,7 +3646,7 @@ namespace General
             hero.mana.tick();
             handleEnemyMovement();
 
-            
+
             drawDubb(this.CreateGraphics());
 
         }
@@ -3582,7 +3682,7 @@ namespace General
 
         int[] enemyW = { 120 };
         int[] enemyH = { 96 };
-        string[] enemyType = { "Mushroom" };
+        string[] enemyType = { "mushroom" };
 
 
 
@@ -3590,22 +3690,23 @@ namespace General
         {
             for (int i = 0; i < enemyType.Length; i++)
             {
-                if (enemyType[i] == "Mushroom")
+                if (enemyType[i] == "mushroom")
                 {
                     //call initMushroomEnemy later if its alot or just put all mushrooms here
 
                     Enemy en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
                     en.CanSpawn = true;
-                    enemies.Add(en);
-
-                    en = new Enemy(600, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en.enemyName = "mushroom";
                     enemies.Add(en);
 
                     en = new Enemy(700, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en.enemyName = "mushroom";
                     enemies.Add(en);
                     en = new Enemy(800, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en.enemyName = "mushroom";
                     enemies.Add(en);
                     en = new Enemy(900, getAboveGroundLoc(0), enemyW[i], enemyH[0]);
+                    en.enemyName = "mushroom";
                     enemies.Add(en);
                 }
 
@@ -3663,6 +3764,10 @@ namespace General
                 for (int i = 0; i < enemies.Count; i++)
                 {
                     enemies[i].draw(g, showRanges);
+                }
+                for (int i = 0; i < droppedCoins.Count; i++)
+                {
+                    droppedCoins[i].draw(g);
                 }
 
                 hero.Draw(g, showRanges);
@@ -3807,27 +3912,40 @@ namespace General
                 }
                 if (enemies[i].isDead)
                 {
+                    enemies[i].dropCoin(droppedCoins);
+
                     if (enemies[i].anim.currIdx == enemies[i].anim.animations[enemies[i].anim.currAnim].frames.Count - 1)
                     {
                         if (enemies[i].CanSpawn == false)
                         {
                             enemies.RemoveAt(i);
                             i--;
-                            break;
+                        }
+                        else
+                        {
+                            enemies[i].deathTimer++;
+
+                            if (enemies[i].deathTimer >= enemies[i].spawnTime)
+                            {
+                                enemies[i].respawn();
+                            }
                         }
                     }
-
-                    enemies[i].deathTimer++;
-
-                    if (enemies[i].deathTimer >= enemies[i].spawnTime)
+                    else
                     {
-                        enemies[i].respawn();
+                        enemies[i].deathTimer++;
+
+                        if (enemies[i].deathTimer >= enemies[i].spawnTime)
+                        {
+                            enemies[i].respawn();
+                        }
                     }
                 }
-
-                enemies[i].move(tiles, hero);
+                else
+                {
+                    enemies[i].move(tiles,hero);
+                }
             }
         }
-
     }
 }
