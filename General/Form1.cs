@@ -1538,9 +1538,9 @@ namespace General
         public AnimationController anim = new AnimationController();
         public bool strong = false;
 
-        public float speed = 52f;
-        public float strongSpeed = 64f;
-        public float currentSpeed;
+        public float weakDivide = 7f;
+        public float strongDivide = 5f;
+        public float divide;
 
         public float dirX = 1f;
         public float dirY = 0f;
@@ -1557,30 +1557,6 @@ namespace General
 
             if (isItSingle == false)
             {
-                float dx = targetX - startX;
-                float dy = targetY - startY;
-
-                float biggest = dx;
-                if (biggest < 0)
-                {
-                    biggest = -biggest;
-                }
-                if (dy < 0 && -dy > biggest)
-                {
-                    biggest = -dy;
-                }
-                else if (dy > biggest)
-                {
-                    biggest = dy;
-                }
-
-                if (biggest == 0)
-                {
-                    biggest = 1;
-                }
-
-                dirX = dx / biggest;
-                dirY = dy / biggest;
 
                 int normOrStrong = rr.Next(0, 15);
                 Bitmap img;
@@ -1593,16 +1569,23 @@ namespace General
                 if (normOrStrong != 0)
                 {
                     rect = new rectF(startX, startY, 30, 30);
-                    currentSpeed = speed;
+                    divide = weakDivide;
                 }
                 else
                 {
                     strong = true;
                     maxDist = maxDist * 1.5f;
                     rect = new rectF(startX, startY, 40, 40);
-                    currentSpeed = strongSpeed;
+                    divide = strongDivide;
+
                     damage = 50;
                 }
+
+                float dx = targetX - startX;
+                float dy = targetY - startY;
+
+                dirX = dx / divide;
+                dirY = dy / divide;
             }
             else
             {
@@ -1612,20 +1595,34 @@ namespace General
                     dirX = -1f;
                 }
 
+                if(dirX == 1f)
+                {
+                    Bitmap img;
+                    for (int i = 1; i <= 6; i++)
+                    {
+                        img = new Bitmap("Abilities/fireball/strong/right/" + i.ToString() + ".png");
+                        animation.addFrame(img, false, false);
+                    }
+
+                }
+                else
+                {
+                    Bitmap img;
+                    for (int i = 1; i <= 6; i++)
+                    {
+                        img = new Bitmap("Abilities/fireball/strong/left/" + i.ToString() + ".png");
+                        animation.addFrame(img, false, false);
+                    }
+
+                }
                 dirY = 0f;
 
-                Bitmap img;
-                for (int i = 1; i <= 6; i++)
-                {
-                    img = new Bitmap("Abilities/fireball/strong/" + i.ToString() + ".png");
-                    animation.addFrame(img, false, false);
-                }
-
+              
                 strong = true;
                 maxDist = 5000f;
                 rect = new rectF(startX, startY, 74, 52);
                 SingleDrawRect = new rectF(startX, startY, 74, 52);
-                currentSpeed = strongSpeed;
+                divide = 45;
                 damage = strongDamage;
             }
 
@@ -1637,20 +1634,9 @@ namespace General
         public void moveFireball(List<tile> tiles, List<Enemy> enemies)
         {
 
-            float speed = currentSpeed;
-            float remainingDist = speed;
-
-            while (remainingDist > 0f)
-            {
-                float step = remainingDist;
-                if (step > stepSize) step = stepSize;
-
-                rect.X += dirX * step;
-                rect.Y += dirY * step;
-                traveledDist += step;
-                remainingDist -= step;
-
-
+                rect.X += dirX;
+                rect.Y += dirY;
+                traveledDist += 45;
 
                 if (traveledDist >= maxDist)
                 {
@@ -1693,13 +1679,13 @@ namespace General
                             }
                         }
                     }
+               
                 }
-            }
         }
 
         public void moveSingleFireball(List<tile> tiles, List<Enemy> enemies)
         {
-            float remainingDist = currentSpeed;
+            float remainingDist = 45;
 
             while (remainingDist > 0f)
             {
@@ -3119,15 +3105,11 @@ namespace General
             spawnX = startX;
             spawnY = startY;
 
-            drawR.X = startX;
-            drawR.Y = startY;
-            drawR.Width = w;
-            drawR.Height = h;
+            R.Width = w;
+            R.Height = h;
+            R.X = startX;
+            R.Y = startY;
 
-            R.Width = w * 0.45f;
-            R.Height = h * 0.60f;
-            R.X = startX + (w - R.Width) / 2f;
-            R.Y = startY + (h - R.Height);
 
             setEnemyType(type);
 
@@ -3160,6 +3142,11 @@ namespace General
         {
             if (type == "mushroom")
             {
+                drawR.X = R.X;
+                drawR.Y = R.Y;
+                drawR.Width = R.Width * 1.5f;
+                drawR.Height = R.Height * 1.5f;
+
                 enemyName = "mushroom";
                 enemyFolder = "Mushroom";
                 attackanimname = "attack";
@@ -3188,6 +3175,13 @@ namespace General
             }
             else if (type == "bat")
             {
+
+
+                drawR.X = R.X ;
+                drawR.Y = R.Y;
+                drawR.Width = R.Width * 2f;
+                drawR.Height = R.Height * 2f;
+
                 enemyName = "bat";
                 enemyFolder = "Bat";
 
@@ -4726,8 +4720,8 @@ namespace General
             Enemy en;
 
             // Mushroom size
-            int mushroomW = 120;
-            int mushroomH = 96;
+            int mushroomW = 90;
+            int mushroomH = 70;
             int mushroomY = getAboveGroundLoc(mushroomH);
 
             en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
@@ -4736,8 +4730,8 @@ namespace General
             enemies.Add(en);
 
 
-            int batW = 120;
-            int batH = 96;
+            int batW = 50;
+            int batH = 50;
             int batY = getAboveGroundLoc(batH);
 
             en = new Enemy(1000, batY, batW, batH, "bat");
