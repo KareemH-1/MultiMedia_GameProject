@@ -1423,6 +1423,36 @@ namespace General
             return frame;
         }
 
+        public Bitmap playCurrentFrame(bool facingLeft, bool useFacing)
+        {
+            if (animations.Count == 0)
+            {
+                return null;
+            }
+
+            List<Bitmap> frames;
+            if (useFacing)
+            {
+                frames = animations[currAnim].getFrames(facingLeft);
+            }
+            else
+            {
+                frames = animations[currAnim].frames;
+            }
+
+            if (frames.Count == 0)
+            {
+                return null;
+            }
+
+            if (currIdx >= frames.Count)
+            {
+                currIdx = frames.Count - 1;
+            }
+
+            return frames[currIdx];
+        }
+
         
 
         public Animation getCurrentAnimation()
@@ -1906,8 +1936,14 @@ namespace General
 
         public bool isAbilityUnlocked = true;
 
+        public bool isClimbing = false;
+        public float climbSpeed = 8f;
+        public char climbDir = ' ';
+        public bool isClimbingMoving = false;
         public void startAbilityCast()
         {
+            if ((isClimbing || isClimbingMoving)) return;
+
             if (isAbilityUnlocked == false) return;
 
             if (isTakingDamage == true)
@@ -2082,28 +2118,27 @@ namespace General
 
             Bitmap frame;
 
-                if (isDead || isLanding)
+            if (isDead || isLanding || (isClimbing && !isClimbingMoving))
+            {
+                if (isClimbing && !isClimbingMoving)
                 {
                     if (facing == 'l')
-                    {
-                        frame = anim.playFrameOnce(true, true);
-                    }
+                        frame = anim.playCurrentFrame(true, true);
                     else
-                    {
-                        frame = anim.playFrameOnce(false, true);
-                    }
+                        frame = anim.playCurrentFrame(false, true);
                 }
+                else if (facing == 'l')
+                    frame = anim.playFrameOnce(true, true);
                 else
-                {
-                    if (facing == 'l')
-                    {
-                        frame = anim.playFrame(true, true);
-                    }
-                    else
-                    {
-                        frame = anim.playFrame(false, true);
-                    }
-                }
+                    frame = anim.playFrameOnce(false, true);
+            }
+            else
+            {
+                if (facing == 'l')
+                    frame = anim.playFrame(true, true);
+                else
+                    frame = anim.playFrame(false, true);
+            }
 
             if (frame != null)
             {
@@ -2263,6 +2298,8 @@ namespace General
         public bool isDoingCombo = false;
         public void startAttack()
         {
+            if ((isClimbing || isClimbingMoving)) return;
+
             if (isAttacking || isDead)
             {
                 return;
@@ -2438,7 +2475,7 @@ namespace General
             }
         }
 
-        public void move(List<tile> tiles)
+        public void move(List<tile> tiles , List<Ladder> ladders)
         {
             if (isDead == true)
             {
@@ -2447,7 +2484,7 @@ namespace General
                 isShooting = false;
                 isCastingAbility = false;
 
-                Movement(tiles);
+                Movement(tiles , ladders);
                 updateAnimation();
                 return;
             }
@@ -2459,7 +2496,7 @@ namespace General
                 moving = ' ';
                 isGrounded = false;
 
-                Movement(tiles);
+                Movement(tiles , ladders);
                 updateAnimation();
                 return;
             }
@@ -2489,6 +2526,12 @@ namespace General
             }
 
             R.X += xMove;
+
+            if (isClimbing && xMove != 0f)
+            {
+                if (checkLadders(ladders) == -1)
+                    isClimbing = false;
+            }
 
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -2523,32 +2566,25 @@ namespace General
                 }
             }
 
-            Movement(tiles);
+            Movement(tiles , ladders);
 
             if (!isAttacking && !isAttacking)
                 updateAnimation();
         }
-        public void Movement(List<tile> tiles)
+        public void Movement(List<tile> tiles, List<Ladder> ladders)
         {
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
 
-            if (isCastingAbility == false)
+            if (isCastingAbility == false && isClimbing == false)
             {
-
                 if (ySpeed < 0)
-                {
                     ySpeed += gravity;
-                }
                 else
-                {
                     ySpeed += fallGravity;
-                }
 
                 if (ySpeed > maxFallSpeed)
-                {
                     ySpeed = maxFallSpeed;
-                }
 
                 R.Y += ySpeed;
             }
@@ -2561,42 +2597,20 @@ namespace General
 
                 if (t.interact == true)
                 {
-                    bool touchingX = false;
-
-                    if (R.X + R.Width > t.R.X &&
-                        R.X < t.R.X + t.R.Width)
-                    {
-                        touchingX = true;
-                    }
-
-                    if (touchingX == true)
+                    if (R.X + R.Width > t.R.X && R.X < t.R.X + t.R.Width)
                     {
                         if (t.jumpThrough == true)
                         {
-                            if (ySpeed >= 0)
+                            if (ySpeed >= 0 && prevBottom <= t.R.Y && R.Y + R.Height >= t.R.Y)
                             {
-                                if (prevBottom <= t.R.Y)
-                                {
-                                    if (R.Y + R.Height >= t.R.Y)
-                                    {
-                                        R.Y = t.R.Y - R.Height;
-                                        ySpeed = 0;
-                                        isGrounded = true;
-                                    }
-                                }
+                                R.Y = t.R.Y - R.Height;
+                                ySpeed = 0;
+                                isGrounded = true;
                             }
                         }
                         else
                         {
-                            bool touchingY = false;
-
-                            if (R.Y + R.Height > t.R.Y &&
-                                R.Y < t.R.Y + t.R.Height)
-                            {
-                                touchingY = true;
-                            }
-
-                            if (touchingY == true)
+                            if (R.Y + R.Height > t.R.Y && R.Y < t.R.Y + t.R.Height)
                             {
                                 if (ySpeed >= 0)
                                 {
@@ -2615,6 +2629,63 @@ namespace General
                 }
             }
 
+            for (int i = 0; i < ladders.Count; i++)
+            {
+                Ladder trav = ladders[i];
+
+                if (R.X + R.Width > trav.rect.X + 20 &&
+                    R.X < trav.rect.X + trav.rect.Width - 20 &&
+                    R.Y + R.Height >= trav.rect.Y &&
+                    R.Y < trav.rect.Y + trav.rect.Height)
+                {
+                    if (isClimbing)
+                    {
+                        isClimbingMoving = false;
+
+                        if (climbDir == 'u')
+                        {
+                            ySpeed = -climbSpeed;
+                            isClimbingMoving = true;
+                        }
+                        else if (climbDir == 'd')
+                        {
+                            ySpeed = climbSpeed;
+                            isClimbingMoving = true;
+                        }
+                        else
+                        {
+                            ySpeed = 0;
+                        }
+
+                        climbDir = ' ';
+                        R.Y += ySpeed;
+
+                        if (R.Y + R.Height <= trav.rect.Y)
+                        {
+                            R.Y = trav.rect.Y - R.Height;
+                            ySpeed = 0;
+                            isGrounded = true;
+                            isClimbing = false;
+                            jumpsUsed = 0;
+                        }
+                        else if (R.Y + R.Height >= trav.rect.Y + trav.rect.Height)
+                        {
+                            isClimbing = false;
+                            ySpeed = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (ySpeed >= 0 && prevBottom <= trav.rect.Y && R.Y + R.Height >= trav.rect.Y)
+                        {
+                            R.Y = trav.rect.Y - R.Height;
+                            ySpeed = 0;
+                            isGrounded = true;
+                        }
+                    }
+                }
+            }
+
             if (isGrounded == true)
             {
                 jumpsUsed = 0;
@@ -2628,32 +2699,105 @@ namespace General
                 }
             }
 
-            if (wasGrounded == true)
+            if (wasGrounded == true && isGrounded == false && jumpsUsed == 0)
+                jumpsUsed = 1;
+
+            if (!isClimbing)
             {
-                if (isGrounded == false)
-                {
-                    if (jumpsUsed == 0)
-                    {
-                        jumpsUsed = 1;
-                    }
-                }
+                isClimbingMoving = false;
+                climbDir = ' ';
             }
         }
 
-        public void checkUnder(List<tile> tiles)
+        public int checkLadders(List<Ladder> ladders)
         {
-            for (int i = 0; i < tiles.Count; i++)
+            for (int i = 0; i < ladders.Count; i++)
             {
-                tile trav = tiles[i];
-                if (trav.jumpThrough == true && trav.interact == true)
+                Ladder trav = ladders[i];
+                if (R.X + R.Width > trav.rect.X + 20 &&
+                    R.X < trav.rect.X + trav.rect.Width -20 &&
+                    R.Y + R.Height > trav.rect.Y + 5 &&
+                    R.Y < trav.rect.Y + trav.rect.Height)
                 {
-                    if (R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
-                        R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
+                    return i;
+                }
+            }
+            return -1;
+        }
+        public void checkUnder(List<tile> tiles, List<Ladder> ladders)
+        {
+            if (isClimbing)
+            {
+                climbDir = 'd';
+                return;
+            }
+
+            int ladderIdx = -1;
+
+            for (int i = 0; i < ladders.Count; i++)
+            {
+                Ladder trav = ladders[i];
+                if (R.X + R.Width > trav.rect.X + 20 &&
+                    R.X < trav.rect.X + trav.rect.Width -20 &&
+                    R.Y + R.Height >= trav.rect.Y - 2 &&
+                    R.Y + R.Height <= trav.rect.Y + 5)
+                {
+                    if(R.Y + R.Height >= trav.rect.Y)
                     {
-                        R.Y += 2;
+                        R.Y += 5;
+                    }
+                    ladderIdx = i;
+                }
+            }
+
+            if (ladderIdx == -1)
+            {
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    tile trav = tiles[i];
+                    if (trav.jumpThrough == true && trav.interact == true)
+                    {
+                        if (R.X <= trav.R.X + trav.R.Width && R.X + R.Width >= trav.R.X &&
+                            R.Y < trav.R.Y && R.Y + R.Height + 1 >= trav.R.Y)
+                        {
+                            R.Y += 2;
+                        }
                     }
                 }
             }
+            else
+            {
+                isClimbing = true;
+                isGrounded = false;
+                isLanding = false;
+                climbDir = 'd';
+                R.Y += climbSpeed;
+            }
+        }
+
+        public void climb(List<Ladder> ladders)
+        {
+            if (isClimbing)
+            {
+                climbDir = 'u';
+                return;
+            }
+
+            int ladderIdx = checkLadders(ladders);
+            if (ladderIdx != -1)
+            {
+                isClimbing = true;
+                isGrounded = false;
+                isLanding = false;
+                jumpHeld = false;
+                jumpsUsed = 0;
+                climbDir = 'u';
+            }
+        }
+
+        public void handleLadderMovement()
+        {
+            climbDir = 'u';
         }
         public void stopJump()
         {
@@ -2676,6 +2820,9 @@ namespace General
         }
         public void jump()
         {
+            isClimbing = false;
+            isClimbingMoving = false;
+            climbDir = ' ';
             if (isAttacking || isDead)
             {
                 return;
@@ -2724,6 +2871,11 @@ namespace General
 
                 return;
             }
+            if (isClimbing)
+            {
+                anim.changeAnimation("ladder_climbing", -1);
+                return;
+            }
             if (isCastingAbility)
             {
                 anim.changeAnimation("spell_cast", -1);
@@ -2769,6 +2921,8 @@ namespace General
 
         public void takeDamage(int amount)
         {
+            if ((isClimbing || isClimbingMoving)) return;
+
             if (isDead == true)
             {
                 return;
@@ -3916,6 +4070,7 @@ namespace General
 
         List<Animation> heroColors = new List<Animation>();
         List<rectF> clrBtns = new List<rectF>();
+        bool upHeld = false;
 
         int animIdx = 0;
         int ChoiceIdx = 0;
@@ -4206,6 +4361,9 @@ namespace General
             }
             if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
             {
+                if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
+                    upHeld = false;
+
                 hero.stopJump();
             }
 
@@ -4387,13 +4545,29 @@ namespace General
                     }
                     if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
                     {
-                        hero.checkUnder(tiles);
+                        hero.checkUnder(tiles , ladders);
                     }
                     if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                     {
-                        if (hero.jumpHeld == false)
+                        if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
-                            hero.jump();
+                            upHeld = true;
+                            hero.climb(ladders);
+
+                            if (hero.isClimbing == false)
+                            {
+                                if (hero.jumpHeld == false)
+                                {
+                                    hero.jump();
+                                }
+                            }
+                        }
+                        else if (e.KeyCode == Keys.Space)
+                        {
+                            if (hero.jumpHeld == false)
+                            {
+                                hero.jump();
+                            }
                         }
                     }
 
@@ -4494,7 +4668,11 @@ namespace General
                 }
                 else if (!hero.isDead)
                 {
-                    hero.move(tiles);
+                    if (upHeld == true)
+                    {
+                        hero.climb(ladders);
+                    }
+                    hero.move(tiles , ladders);
                     hero.collectDroppedCoins(droppedCoins);
                     if (hero.currentWeapon == 0)
                     {
