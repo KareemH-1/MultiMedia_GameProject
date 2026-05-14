@@ -29,7 +29,7 @@ Enemy0_spawnY:667
 Enemy0_CanSpawn:True
 Enemy0_spawnTime:600
 Enemy0_isWaiting:True
-Enemy0_waitTime:28
+Enemy0_waitTime:0
 Enemy0_waitingTimer:60
 Enemy0_spawnrange:600
 Enemy0_spawn:True

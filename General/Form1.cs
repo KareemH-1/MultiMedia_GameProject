@@ -910,6 +910,54 @@ namespace General
         public int order; //key number
 
     }
+
+    public class rectF
+    {
+        public float X;
+        public float Y;
+        public float Width;
+        public float Height;
+
+        public rectF()
+        {
+            X = 0;
+            Y = 0; 
+            Width = 0;
+            Height = 0;
+        }
+
+        public rectF(float x, float y, float width, float height)
+        {
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+        }
+    }
+
+    public class rect
+    {
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+
+        public rect()
+        {
+            X = 0;
+            Y = 0; 
+            Width = 0;
+            Height = 0;
+        }
+
+        public rect(int x, int y, int width, int height)
+        {
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+        }
+    }
     public class UIEntity
     {
         public bool isHero = false;
@@ -922,7 +970,7 @@ namespace General
 
         public bool displayName = false;
 
-        public RectangleF rect = new RectangleF();
+        public rectF rect = new rectF();
 
         Bitmap hpBorder = new Bitmap("ui/Health/bar.png");
         Bitmap hpBackground = new Bitmap("ui/Health/bar_background.png");
@@ -969,7 +1017,7 @@ namespace General
             }
         }
 
-        public void positionAbove(RectangleF ownerR, float gap)
+        public void positionAbove(rectF ownerR, float gap)
         {
             rect.X = ownerR.X + (ownerR.Width - rect.Width) / 2f;
             rect.Y = ownerR.Y - rect.Height - gap;
@@ -1327,7 +1375,7 @@ namespace General
         public AnimationController anim = new AnimationController();
 
         public string name;
-        public RectangleF rect = new RectangleF();
+        public rectF rect = new rectF();
 
         public bool finished = false;
         public bool followPlayer = false;
@@ -1339,7 +1387,7 @@ namespace General
         public int maxTimer = 20;
 
         public bool repeat = false;
-        public void draw(Graphics g, RectangleF ownerR)
+        public void draw(Graphics g, rectF ownerR)
         {
             if (followPlayer)
             {
@@ -1368,8 +1416,8 @@ namespace General
     public class Fireball
     {
         public bool isItSingle = false;
-        public RectangleF rect;
-        public RectangleF SingleDrawRect;
+        public rectF rect;
+        public rectF SingleDrawRect;
         public float traveledDist = 0f;
         public float maxDist = 1000;
         public Animation animation = new Animation();
@@ -1417,7 +1465,7 @@ namespace General
                 }
                 if (normOrStrong != 0)
                 {
-                    rect = new RectangleF(startX, startY, 30, 30);
+                    rect = new rectF(startX, startY, 30, 30);
                     currentSpeed = speed;
                 }
                 else
@@ -1425,7 +1473,7 @@ namespace General
                     strong = true;
                     maxDist = maxDist * 1.5f;
 
-                    rect = new RectangleF(startX, startY, 40, 40);
+                    rect = new rectF(startX, startY, 40, 40);
                     currentSpeed = strongSpeed;
                     damage = 50;
                 }
@@ -1450,8 +1498,8 @@ namespace General
 
                 strong = true;
                 maxDist = 5000f;
-                rect = new RectangleF(startX, startY, 74, 52);
-                SingleDrawRect = new RectangleF(startX, startY, 74, 52);
+                rect = new rectF(startX, startY, 74, 52);
+                SingleDrawRect = new rectF(startX, startY, 74, 52);
                 currentSpeed = strongSpeed;
                 damage = strongDamage;
 
@@ -1612,7 +1660,7 @@ namespace General
 
     public class Ladder
     {
-        public RectangleF rect = new RectangleF();
+        public rect rect = new rect();
 
         public bool isMossy = false;
 
@@ -1620,7 +1668,7 @@ namespace General
 
         int tileHeight;
 
-        public Ladder(float x, float y, float height, bool isMossy)
+        public Ladder(int x, int y, int height, bool isMossy)
         {
             this.isMossy = isMossy;
 
@@ -1645,16 +1693,12 @@ namespace General
 
         public void draw(Graphics g, bool showRange)
         {
-            int countLadders = 0;
+            int countLadders = rect.Height / tileHeight;
 
-            while ((countLadders + 1) * tileHeight <= rect.Height)
-            {
-                countLadders++;
-            }
+            int remainingHeight = rect.Height - countLadders * tileHeight + (countLadders - 1);
 
-            float remainingHeight = rect.Height - countLadders * tileHeight + (countLadders - 1);
 
-            float y = rect.Y;
+            int y = rect.Y;
 
             for (int i = 0; i < countLadders; i++)
             {
@@ -1665,9 +1709,9 @@ namespace General
 
             if (remainingHeight > 0)
             {
-                RectangleF rcDst = new RectangleF(rect.X, y, rect.Width, remainingHeight);
+                Rectangle rcDst = new Rectangle(rect.X, y, rect.Width, remainingHeight);
 
-                RectangleF rcSource = new RectangleF(0, 0, ladderImg.Width, remainingHeight);
+                Rectangle rcSource = new Rectangle(0, 0, ladderImg.Width, remainingHeight);
 
                 g.DrawImage(ladderImg, rcDst, rcSource, GraphicsUnit.Pixel);
             }
@@ -1682,8 +1726,8 @@ namespace General
     public class Hero
     {
         public int ColorIdx = 0;
-        public RectangleF R = new Rectangle();
-        public RectangleF drawR = new Rectangle();
+        public rectF R = new rectF();
+        public rectF drawR = new rectF();
 
         public float speed = 6f;
 
@@ -1971,7 +2015,7 @@ namespace General
 
                 if (isAttacking == true)
                 {
-                    RectangleF atk = getAttackHitBox();
+                    rectF atk = getAttackHitBox();
                     Pen atkPen = new Pen(Color.Orange, 2);
                     g.DrawRectangle(atkPen, atk.X, atk.Y, atk.Width, atk.Height);
                 }
@@ -2194,18 +2238,18 @@ namespace General
             anim.changeAnimation("attack", -1);
             anim.restart();
         }
-        public RectangleF getAttackHitBox()
+        public rectF getAttackHitBox()
         {
             float h = R.Height * attackHeightScale;
             float y = R.Y + (R.Height - h) / 2f;
 
             if (facing == 'r')
             {
-                return new RectangleF(R.X, y, R.Width + attackRange, h);
+                return new rectF(R.X, y, R.Width + attackRange, h);
             }
             else
             {
-                return new RectangleF(R.X - attackRange + 5, y, R.Width + attackRange, h);
+                return new rectF(R.X - attackRange + 5, y, R.Width + attackRange, h);
             }
         }
 
@@ -2246,7 +2290,7 @@ namespace General
 
             if (attackHasHit == false && anim.currIdx >= attackHitFrame - 1)
             {
-                RectangleF hitBox = getAttackHitBox();
+                rectF hitBox = getAttackHitBox();
 
                 for (int i = 0; i < enemies.Count; i++)
                 {
@@ -2628,7 +2672,7 @@ namespace General
 
     public class DroppedCoin
     {
-        public RectangleF R = new RectangleF();
+        public rectF R = new rectF();
 
         public List<Bitmap> frames = new List<Bitmap>();
         public int currFrame = 0;
@@ -2689,8 +2733,8 @@ namespace General
     }
     public class Enemy
     {
-        public RectangleF R = new RectangleF();
-        public RectangleF drawR = new Rectangle();
+        public rectF R = new rectF();
+        public rectF drawR = new rectF();
         public Random rr = new Random();
 
         public string enemyName;
@@ -3586,7 +3630,7 @@ namespace General
     }
     public class tile
     {
-        public Rectangle R = new Rectangle();
+        public rectF R = new rectF();
         public Color clr = Color.Black;
         public bool interact = false;
         public bool jumpThrough = false;
@@ -3608,7 +3652,7 @@ namespace General
 
     public class Button
     {
-        public Rectangle rect = new Rectangle();
+        public rectF rect = new rectF();
         string text;
 
         public Button(int x, int y, int w, int h, string text)
@@ -3629,7 +3673,7 @@ namespace General
                 drawSelectionIcon(g);
             }
 
-            int startX = rect.X + rect.Width / 2 - text.Length * 7;
+            int startX = (int)(rect.X + rect.Width / 2 - text.Length * 7);
             g.DrawString(text, f, bsh, startX, rect.Y + rect.Height / 2 - 22);
         }
 
@@ -3681,7 +3725,7 @@ namespace General
 
 
         List<Animation> heroColors = new List<Animation>();
-        List<Rectangle> clrBtns = new List<Rectangle>();
+        List<rectF> clrBtns = new List<rectF>();
 
         int animIdx = 0;
         int ChoiceIdx = 0;
@@ -3745,7 +3789,7 @@ namespace General
             {
                 for (int i = 0; i < clrBtns.Count; i++)
                 {
-                    Rectangle btnC = clrBtns[i];
+                    rectF btnC = clrBtns[i];
                     if (e.X > btnC.X && e.X < btnC.X + btnC.Width
                         && e.Y > btnC.Y && e.Y < btnC.Y + btnC.Height)
                     {
@@ -4417,13 +4461,13 @@ namespace General
             }
             heroColors.Add(heroBlue);
 
-            Rectangle btn = new Rectangle(0, 0, 0, 0);
+            rectF btn = new rectF(0, 0, 0, 0);
             clrBtns.Add(btn);
-            btn = new Rectangle(0, 0, 0, 0);
+            btn = new rectF(0, 0, 0, 0);
             clrBtns.Add(btn);
-            btn = new Rectangle(0, 0, 0, 0);
+            btn = new rectF(0, 0, 0, 0);
             clrBtns.Add(btn);
-            btn = new Rectangle(0, 0, 0, 0);
+            btn = new rectF(0, 0, 0, 0);
             clrBtns.Add(btn);
 
             Animation heroGreen = new Animation();
@@ -4619,7 +4663,7 @@ namespace General
                 Bitmap curr = heroColors[i].frames[animIdx];
                 G.DrawImage(curr, currX, y - 20 , 80, 80);
 
-                clrBtns[i] = new Rectangle(currX, y - 20, 80, 80);
+                clrBtns[i] = new rectF(currX, y - 20, 80, 80);
 
                 currX += widthF + 10;
             }
@@ -4662,10 +4706,10 @@ namespace General
             drawBar(G, "Mana", hero.mana.mana, hero.mana.maxMana, x + 170, y - 40, Brushes.DarkBlue, Brushes.DeepSkyBlue, smallFont);
 
 
-            Rectangle saveRect = new Rectangle(x + 15, y + 10, width - 30, 420);
+            rectF saveRect = new rectF(x + 15, y + 10, width - 30, 420);
 
-            int textX = saveRect.X + 20;
-            int currentY = saveRect.Y;
+            int textX = (int)saveRect.X + 20;
+            int currentY = (int)saveRect.Y;
 
             G.DrawString("Last Save", titleFont, gold, textX, currentY);
 
@@ -4777,15 +4821,15 @@ namespace General
         {
             G.DrawString(title, smallFont, Brushes.White, x, y);
 
-            Rectangle back = new Rectangle(x + 80, y + 4, 220, 18);
+            rectF back = new rectF(x + 80, y + 4, 220, 18);
 
-            G.FillRectangle(backBrush, back);
+            G.FillRectangle(backBrush, back.X, back.Y, back.Width, back.Height);
 
             float fillW = (220f * value / max);
 
             G.FillRectangle(fillBrush, back.X, back.Y, fillW, back.Height);
 
-            G.DrawRectangle(Pens.Black, back);
+            G.DrawRectangle(Pens.Black, back.X, back.Y, back.Width, back.Height);
 
             G.DrawString(value.ToString() + " / " + max.ToString(), smallFont, Brushes.White, back.X + 70, back.Y - 2);
         }
