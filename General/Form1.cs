@@ -787,7 +787,7 @@ namespace General
                 }
             }
 
-            string[] lineVal = new string[2];
+            string[] lineVal = {"" , ""};
 
             lineVal[0] = variable;
             lineVal[1] = val;
@@ -809,11 +809,56 @@ namespace General
     {
         public string name;
         public List<Bitmap> frames = new List<Bitmap>();
+        public List<Bitmap> leftFrames = new List<Bitmap>();
+        public List<Bitmap> rightFrames = new List<Bitmap>();
         public int frameDelay = 1;
 
-        public void addFrame(Bitmap img)
+        public void addFrame(Bitmap img, bool doDirections, bool isLeft)
         {
-            frames.Add(img);
+            if (doDirections)
+            {
+                if (isLeft)
+                {
+                    leftFrames.Add(img);
+                }
+                else
+                {
+                    rightFrames.Add(img);
+                }
+            }
+            else
+            {
+                frames.Add(img);
+            }
+        }
+
+        public List<Bitmap> getFrames(bool facingLeft)
+        {
+            if (facingLeft)
+            {
+                if (leftFrames.Count > 0)
+                {
+                    return leftFrames;
+                }
+                if (rightFrames.Count > 0)
+                {
+                    return rightFrames;
+                }
+            }
+
+            if (!facingLeft)
+            {
+                if (rightFrames.Count > 0)
+                {
+                    return rightFrames;
+                }
+                if (leftFrames.Count > 0)
+                {
+                    return leftFrames;
+                }
+            }
+
+            return frames;
         }
 
     }
@@ -1262,7 +1307,9 @@ namespace General
             if (name == "")
             {
                 if (index >= 0 && index < animations.Count)
+                {
                     newAnim = index;
+                }
             }
             else
             {
@@ -1289,17 +1336,34 @@ namespace General
                 frameDelayCount = 0;
             }
         }
-        public Bitmap playFrame()
+
+        public Bitmap playFrame(bool facingLeft, bool useFacing)
         {
             Bitmap frame = null;
 
-            if (currIdx >= animations[currAnim].frames.Count) currIdx = 0;
-
-            if (animations[currAnim].frames.Count > 0)
+            if (animations.Count == 0)
             {
-                frame = animations[currAnim].frames[currIdx];
+                return null;
+            }
 
+            List<Bitmap> frames;
+            if (useFacing)
+            {
+                frames = animations[currAnim].getFrames(facingLeft);
+            }
+            else
+            {
+                frames = animations[currAnim].frames;
+            }
 
+            if (currIdx >= frames.Count)
+            {
+                currIdx = 0;
+            }
+
+            if (frames.Count > 0)
+            {
+                frame = frames[currIdx];
             }
 
             frameDelayCount++;
@@ -1308,43 +1372,67 @@ namespace General
             {
                 frameDelayCount = 0;
 
-                if (currIdx < animations[currAnim].frames.Count - 1)
-                    currIdx++;
-                else
-                    currIdx = 0;
-            }
-
-            return frame;
-        }
-
-        public Bitmap playFrameOnce()
-        {
-            Bitmap frame = null;
-
-            if (currIdx >= animations[currAnim].frames.Count) currIdx = animations[currAnim].frames.Count - 1;
-
-            if (animations[currAnim].frames.Count > 0)
-            {
-                frame = animations[currAnim].frames[currIdx];
-            }
-
-            frameDelayCount++;
-
-            if (currIdx < animations[currAnim].frames.Count - 1)
-            {
-                if (frameDelayCount >= animations[currAnim].frameDelay)
+                if (currIdx < frames.Count - 1)
                 {
-                    frameDelayCount = 0;
-
-                    if (currIdx < animations[currAnim].frames.Count - 1)
-                        currIdx++;
-                    else
-                        currIdx = 0;
+                    currIdx++;
+                }
+                else
+                {
+                    currIdx = 0;
                 }
             }
 
             return frame;
         }
+        
+
+        public Bitmap playFrameOnce(bool facingLeft, bool useFacing)
+        {
+            Bitmap frame = null;
+
+            if (animations.Count == 0)
+            {
+                return null;
+            }
+
+            List<Bitmap> frames;
+            if (useFacing)
+            {
+                frames = animations[currAnim].getFrames(facingLeft);
+            }
+            else
+            {
+                frames = animations[currAnim].frames;
+            }
+
+            if (frames.Count == 0)
+            {
+                return null;
+            }
+
+            if (currIdx >= frames.Count)
+            {
+                currIdx = frames.Count - 1;
+            }
+
+            frame = frames[currIdx];
+
+            frameDelayCount++;
+
+            if (frameDelayCount >= animations[currAnim].frameDelay)
+            {
+                frameDelayCount = 0;
+
+                if (currIdx < frames.Count - 1)
+                {
+                    currIdx++;
+                }
+            }
+
+            return frame;
+        }
+
+        
 
         public Animation getCurrentAnimation()
         {
@@ -1359,7 +1447,12 @@ namespace General
             Animation a = getCurrentAnimation();
             if (a == null) return false;
 
-            return a.name == name;
+            if (a.name == name)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void restart()
@@ -1395,7 +1488,7 @@ namespace General
                 rect.Y = ownerR.Y + ownerR.Height - rect.Height + offsetY;
             }
 
-            Bitmap frame = anim.playFrame();
+            Bitmap frame = anim.playFrame(false, false);
 
             if (frame != null)
             {
@@ -1439,7 +1532,7 @@ namespace General
 
         public Fireball(Random rr, float startX, float startY, float targetX, float targetY, bool isItSingle)
         {
-
+            this.isItSingle = isItSingle;
 
             if (isItSingle == false)
             {
@@ -1447,11 +1540,23 @@ namespace General
                 float dy = targetY - startY;
 
                 float biggest = dx;
-                if (biggest < 0) biggest = -biggest;
-                if (dy < 0 && -dy > biggest) biggest = -dy;
-                else if (dy > biggest) biggest = dy;
+                if (biggest < 0)
+                {
+                    biggest = -biggest;
+                }
+                if (dy < 0 && -dy > biggest)
+                {
+                    biggest = -dy;
+                }
+                else if (dy > biggest)
+                {
+                    biggest = dy;
+                }
 
-                if (biggest == 0) biggest = 1;
+                if (biggest == 0)
+                {
+                    biggest = 1;
+                }
 
                 dirX = dx / biggest;
                 dirY = dy / biggest;
@@ -1461,8 +1566,9 @@ namespace General
                 for (int i = 1; i <= 5; i++)
                 {
                     img = new Bitmap("Abilities/fireball/normal/FB500-" + i.ToString() + ".png");
-                    animation.addFrame(img);
+                    animation.addFrame(img, false, false);
                 }
+
                 if (normOrStrong != 0)
                 {
                     rect = new rectF(startX, startY, 30, 30);
@@ -1472,28 +1578,26 @@ namespace General
                 {
                     strong = true;
                     maxDist = maxDist * 1.5f;
-
                     rect = new rectF(startX, startY, 40, 40);
                     currentSpeed = strongSpeed;
                     damage = 50;
                 }
-
-                anim.addAnim(animation);
-                anim.currAnim = 0;
             }
             else
             {
                 dirX = 1f;
-                if (targetX < startX) dirX = -1f;
+                if (targetX < startX)
+                {
+                    dirX = -1f;
+                }
 
                 dirY = 0f;
 
-                this.isItSingle = true;
                 Bitmap img;
                 for (int i = 1; i <= 6; i++)
                 {
                     img = new Bitmap("Abilities/fireball/strong/" + i.ToString() + ".png");
-                    animation.addFrame(img);
+                    animation.addFrame(img, false, false);
                 }
 
                 strong = true;
@@ -1502,10 +1606,10 @@ namespace General
                 SingleDrawRect = new rectF(startX, startY, 74, 52);
                 currentSpeed = strongSpeed;
                 damage = strongDamage;
-
-                anim.addAnim(animation);
-                anim.currAnim = 0;
             }
+
+            anim.addAnim(animation);
+            anim.currAnim = 0;
         }
 
 
@@ -1636,7 +1740,7 @@ namespace General
 
         public void draw(Graphics g)
         {
-            Bitmap frame = anim.playFrame();
+            Bitmap frame = anim.playFrame(false, false);
             Bitmap imgToDraw = frame;
             if (dirX == -1f)
             {
@@ -1865,7 +1969,12 @@ namespace General
             }
 
             Animation spellAnim = anim.getCurrentAnimation();
-            if (anim.currIdx >= spellAnim.frames.Count - 1)
+            if (spellAnim != null)
+            {
+                bool dirFacingL = false;
+                if(facing == 'l') dirFacingL = true;
+                List<Bitmap> spellFrames = spellAnim.getFrames(dirFacingL);
+                if (spellFrames.Count > 0 && anim.currIdx >= spellFrames.Count - 1)
             {
                 isCastingAbility = false;
                 abilityFireballSpawned = false;
@@ -1874,6 +1983,7 @@ namespace General
                 ySpeed = 0;
                 isGrounded = true;
                 updateAnimation();
+            }
             }
         }
         public void initVFX()
@@ -1885,7 +1995,7 @@ namespace General
             for (int i = 1; i <= 5; i++)
             {
                 Bitmap frame = new Bitmap("vfx/doubleJump/" + i + ".png");
-                doubleJumpAnimation.addFrame(frame);
+                doubleJumpAnimation.addFrame(frame, false, false);
             }
 
 
@@ -1900,7 +2010,7 @@ namespace General
                 if (i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
                 else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
 
-                fireballAnimation.addFrame(frame);
+                fireballAnimation.addFrame(frame, false, false);
             }
         }
         void createDoubleJumpVFX()
@@ -1986,26 +2096,32 @@ namespace General
 
             Bitmap frame;
 
-            if (isDead ||isLanding)
-            {
-                frame = anim.playFrameOnce();
-            }
-            else
-            {
-                frame = anim.playFrame();
-            }
+                if (isDead || isLanding)
+                {
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrameOnce(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrameOnce(false, true);
+                    }
+                }
+                else
+                {
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrame(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrame(false, true);
+                    }
+                }
 
             if (frame != null)
             {
-                Bitmap imgToDraw = frame;
-
-                if (facing == 'l')
-                {
-                    imgToDraw = new Bitmap(frame);
-                    imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
-                }
-
-                g.DrawImage(imgToDraw, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
             }
             if (showRanges)
             {
@@ -2107,12 +2223,26 @@ namespace General
                 else if (folders[i] == "landing") a.frameDelay = 1;
                 else if (folders[i] == "taking_damage") a.frameDelay = 1;
                 else if (folders[i] == "death") a.frameDelay = 1;
-                string path = "Characters/Hero/" +colorName +"/" + folders[i] + "/";
-                for (int j = 1; j <= numFrames[i]; j++)
+
+                string basePath = "Characters/Hero/" + colorName + "/" + folders[i] + "/";
+                string[] directions = { "left", "right" };
+
+                for (int d = 0; d < directions.Length; d++)
                 {
-                    Bitmap img = new Bitmap(path + j.ToString() + ".png");
-                    a.frames.Add(img);
+                    bool isLeft = false;
+
+                    if (directions[d] == "left")
+                    {
+                        isLeft = true;
+                    }
+
+                    for (int j = 1; j <= numFrames[i]; j++)
+                    {
+                        Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                        a.addFrame(img, true, isLeft);
+                    }
                 }
+
                 this.anim.addAnim(a);
             }
         }
@@ -2223,7 +2353,14 @@ namespace General
                 Animation attackAnim = anim.getCurrentAnimation();
                 if (attackAnim != null)
                 {
-                    int usableFrames = attackAnim.frames.Count - attackComboExtraFrames;
+                    bool dirFacingL = false;
+                    if(facing == 'l') dirFacingL = true;
+                    List<Bitmap> atkFrames = attackAnim.getFrames(dirFacingL);
+                    int usableFrames = atkFrames.Count - attackComboExtraFrames;
+                    if (usableFrames <= 0)
+                    {
+                        usableFrames = atkFrames.Count;
+                    }
                     if (anim.currIdx >= usableFrames)
                         isDoingCombo = true;
                 }
@@ -2262,18 +2399,21 @@ namespace General
             Animation attackAnim = anim.getCurrentAnimation();
             if (attackAnim == null) return;
 
-            int usableFrames = attackAnim.frames.Count - attackComboExtraFrames;
+            bool dirFacingL = false;
+            if(facing == 'l') dirFacingL = true;
+            List<Bitmap> attackFrames = attackAnim.getFrames(dirFacingL);
+
+            int usableFrames = attackFrames.Count - attackComboExtraFrames;
 
             if (usableFrames <= 0)
             {
-                usableFrames = attackAnim.frames.Count;
+                usableFrames = attackFrames.Count;
             }
 
             if (anim.currIdx >= usableFrames)
             {
                 isAttacking = false;
                 attackHasHit = false;
-
                 if (isDoingCombo)
                 {
                     isDoingCombo = false;
@@ -2535,8 +2675,17 @@ namespace General
 
             if (isGrounded == false && ySpeed < 0)
             {
-                if (ySpeed * 0.35 > jumpCutSpeed) ySpeed = ySpeed * 0.35f;
-                else ySpeed = jumpCutSpeed;
+                float minimumJumpVelocity = jumpPower * 0.65f;
+                float reducedVelocity = ySpeed * 0.35f;
+                
+                if (reducedVelocity < minimumJumpVelocity)
+                {
+                    ySpeed = minimumJumpVelocity;
+                }
+                else
+                {
+                    ySpeed = reducedVelocity;
+                }
             }
         }
         public void jump()
@@ -2666,7 +2815,20 @@ namespace General
             anim.restart();
 
             Animation dmgAnim = anim.getCurrentAnimation();
-            takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
+            if (dmgAnim != null)
+            {
+                bool dirFacingL = false;
+                if(facing == 'l') dirFacingL = true;
+                List<Bitmap> dmgFrames = dmgAnim.getFrames(dirFacingL);
+                if (dmgFrames.Count > 0)
+                {
+                    takingDamageTimer = dmgFrames.Count * dmgAnim.frameDelay;
+                }
+                else
+                {
+                    takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
+                }
+            }
         }
     }
 
@@ -2840,6 +3002,16 @@ namespace General
 
             createAnim();
 
+            if (isSleeping)
+            {
+                anim.changeAnimation("sleep", -1);
+            }
+            else
+            {
+                anim.changeAnimation("idle", -1);
+            }
+            anim.restart();
+
             isGrounded = true;
             wasGrounded = true;
         }
@@ -2868,8 +3040,11 @@ namespace General
 
                 HP = new Health(50, 50);
 
-                animFolders = new string[] { "attack", "die", "hit", "idle", "run", "stun-attack" };
-                animFrames = new int[] { 10, 15, 5, 7, 8, 24 };
+                string[] mushroomFolders = { "attack", "die", "hit", "idle", "run", "stun-attack" };
+                int[] mushroomFrames = { 10, 15, 5, 7, 8, 24 };
+
+                animFolders = mushroomFolders;
+                animFrames = mushroomFrames;
             }
             else if (type == "bat")
             {
@@ -2895,9 +3070,11 @@ namespace General
                 spawnTime = 500;
 
                 HP = new Health(30, 30);
-                animFolders = new string[] { "attack1", "attack2", "die", "hit", "idle", "run", "sleep", "wakeup" };
+                string[] batFolders = { "attack1", "attack2", "die", "hit", "idle", "run", "sleep", "wakeup" };
+                int[] batFrames = { 8, 11, 12, 5, 9, 8, 3, 16 };
 
-                animFrames = new int[] { 8, 11, 12, 5, 9, 8, 3, 16 };
+                animFolders = batFolders;
+                animFrames = batFrames;
             }
         }
 
@@ -2912,24 +3089,30 @@ namespace General
 
                 if (isDead || isTakingDamage || isAttacking || isWakingUp)
                 {
-                    frame = anim.playFrameOnce();
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrameOnce(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrameOnce(false, true);
+                    }
                 }
                 else
                 {
-                    frame = anim.playFrame();
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrame(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrame(false, true);
+                    }
                 }
 
                 if (frame != null)
                 {
-                    Bitmap imgToDraw = frame;
-
-                    if (moving == 'r')
-                    {
-                        imgToDraw = new Bitmap(frame);
-                        imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
-                    }
-
-                    g.DrawImage(imgToDraw, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                    g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
                 }
 
                 if (showRanges)
@@ -2987,12 +3170,23 @@ namespace General
                     a.frameDelay = 1;
                 }
 
-                string path = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/";
+                string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/";
+                string[] directions = { "left", "right" };
 
-                for (int j = 1; j <= animFrames[i]; j++)
+                for (int d = 0; d < directions.Length; d++)
                 {
-                    Bitmap img = new Bitmap(path + j.ToString() + ".png");
-                    a.frames.Add(img);
+                    bool isLeft = false;
+
+                    if (directions[d] == "left")
+                    {
+                        isLeft = true;
+                    }
+
+                    for (int j = 1; j <= animFrames[i]; j++)
+                    {
+                        Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                        a.addFrame(img, true, isLeft);
+                    }
                 }
 
                 anim.addAnim(a);
@@ -3094,13 +3288,20 @@ namespace General
                 {
                     anim.changeAnimation("wakeup", -1);
 
-                    if (anim.currIdx == anim.animations[anim.currAnim].frames.Count - 1)
+                    Animation currWake = anim.getCurrentAnimation();
+                    if (currWake != null)
                     {
-                        isWakingUp = false;
-                        canMoveAfterWakeup = true;
+                        bool dirFacingL = false;
+                        if(facing == 'l') dirFacingL = true;
+                        List<Bitmap> wakeFrames = currWake.getFrames(dirFacingL);
+                        if (wakeFrames.Count > 0 && anim.currIdx >= wakeFrames.Count - 1)
+                        {
+                            isWakingUp = false;
+                            canMoveAfterWakeup = true;
 
-                        anim.changeAnimation("idle", -1);
-                        anim.restart();
+                            anim.changeAnimation("idle", -1);
+                            anim.restart();
+                        }
                     }
 
                     return;
@@ -3211,13 +3412,11 @@ namespace General
             {
                 distanceX = R.X - hero.R.X;
                 dir = 'l';
-                facing = 'l';
             }
             else if (R.X < hero.R.X)
             {
                 distanceX = hero.R.X - R.X;
                 dir = 'r';
-                facing = 'r';
             }
 
             if (R.Y > hero.R.Y)
@@ -3920,6 +4119,11 @@ namespace General
             {
                 menuImgs.RemoveAt(0);
             }
+
+            while(heroColors.Count > 0)
+            {
+                heroColors.RemoveAt(0);
+            }
         }
 
         void pauseGame()
@@ -4207,9 +4411,9 @@ namespace General
                 hasStarted = false;
                 isGamePaused = false;
 
+                
                 initButtons();
                 initMenu();
-
                 timer.Start();
             }
         }
@@ -4455,7 +4659,7 @@ namespace General
             Animation heroBlue = new Animation();
             for(int i =1; i<= 6; i++)
             {
-                string path = "characters/Hero/Blue/idle/" + i.ToString() + ".png";
+                string path = "characters/Hero/Blue/idle/left/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
                 heroBlue.frames.Add(frame);
             }
@@ -4473,7 +4677,7 @@ namespace General
             Animation heroGreen = new Animation();
             for (int i = 1; i <= 6; i++)
             {
-                string path = "characters/Hero/green/idle/" + i.ToString() + ".png";
+                string path = "characters/Hero/green/idle/left/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
                 heroGreen.frames.Add(frame);
             }
@@ -4483,7 +4687,7 @@ namespace General
             Animation heroPurple = new Animation();
             for (int i = 1; i <= 6; i++)
             {
-                string path = "characters/Hero/purple/idle/" + i.ToString() + ".png";
+                string path = "characters/Hero/purple/idle/left/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
                 heroPurple.frames.Add(frame);
             }
@@ -4493,7 +4697,7 @@ namespace General
             Animation heroRed = new Animation();
             for (int i = 1; i <= 6; i++)
             {
-                string path = "characters/Hero/red/idle/" + i.ToString() + ".png";
+                string path = "characters/Hero/red/idle/left/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
                 heroRed.frames.Add(frame);
             }
@@ -4882,12 +5086,28 @@ namespace General
                 {
                     enemies[i].dropCoin(droppedCoins);
 
-                    if (enemies[i].anim.currIdx == enemies[i].anim.animations[enemies[i].anim.currAnim].frames.Count - 1)
+                    Animation currDead = enemies[i].anim.getCurrentAnimation();
+                    if (currDead != null)
                     {
-                        if (enemies[i].CanSpawn == false)
+                        bool dirFacingL = false;
+                        if(enemies[i].facing == 'l') dirFacingL = true;
+                        List<Bitmap> deadFrames = currDead.getFrames(dirFacingL);
+                        if (deadFrames.Count > 0 && enemies[i].anim.currIdx >= deadFrames.Count - 1)
                         {
-                            enemies.RemoveAt(i);
-                            i--;
+                            if (enemies[i].CanSpawn == false)
+                            {
+                                enemies.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                enemies[i].deathTimer++;
+
+                                if (enemies[i].deathTimer >= enemies[i].spawnTime)
+                                {
+                                    enemies[i].respawn();
+                                }
+                            }
                         }
                         else
                         {
@@ -4897,15 +5117,6 @@ namespace General
                             {
                                 enemies[i].respawn();
                             }
-                        }
-                    }
-                    else
-                    {
-                        enemies[i].deathTimer++;
-
-                        if (enemies[i].deathTimer >= enemies[i].spawnTime)
-                        {
-                            enemies[i].respawn();
                         }
                     }
                 }
