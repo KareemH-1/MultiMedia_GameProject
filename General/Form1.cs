@@ -115,8 +115,6 @@ namespace General
             sw.WriteLine("abilityKeyDown:" + hero.abilityKeyDown.ToString());
             sw.WriteLine("isAbilityUnlocked:" + hero.isAbilityUnlocked.ToString());
 
-            sw.WriteLine("isDead:" + hero.isDead.ToString());
-
             sw.Close();
         }
 
@@ -439,14 +437,7 @@ namespace General
                     else hero.abilityKeyDown = false;
                 }
 
-                else if (variable == "isDead")
-                {
-                    if (val == "true")
-                    {
-                        hero.isDead = true;
-                    }
-                    else hero.isDead = false;
-                }
+             
             }
 
             sr.Close();
@@ -3905,6 +3896,11 @@ namespace General
         List<Button> PauseBtns = new List<Button>();
         int currPauseBtn = 0;
 
+        List<Button> GameOverBtns = new List<Button>();
+        int currGameOverBtn = 0;
+        bool isGameOverScreenShown = false;
+        int gameOverScreenDelay = 0;
+        int gameOverScreenDelayMax = 10;
 
         bool showRanges = false;
         Bitmap off; 
@@ -4004,7 +4000,21 @@ namespace General
                     startGame();
                 }
             }
-            else if(isGamePaused == false)
+            else if (isGameOverScreenShown == true)
+            {
+                for (int i = 0; i < GameOverBtns.Count; i++)
+                {
+                    Button btn = GameOverBtns[i];
+                    if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                                && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                    {
+                        currGameOverBtn = i;
+                        manageGameOver();
+                        break;
+                    }
+                }
+            }
+            else if(isGamePaused == false && hero.isDead == false)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -4137,6 +4147,48 @@ namespace General
 
             timer.Start();
         }
+
+        void startGameOverScreen()
+        {
+            gameOverScreenDelay = 0;
+        }
+
+        void manageGameOver()
+        {
+            hero.isDead = false;
+            isGameOverScreenShown = false;
+            hasStarted = false;
+            while (GameOverBtns.Count > 0)
+            {
+                GameOverBtns.RemoveAt(0);
+            }
+            currGameOverBtn = 0;
+            gameOverScreenDelay = 0;
+            currentButton = 0;
+            lastMenuScreen = 0;
+            
+            while (btns.Count > 0)
+            {
+                btns.RemoveAt(0);
+            }
+            while (menuImgs.Count > 0)
+            {
+                menuImgs.RemoveAt(0);
+            }
+            while (heroColors.Count > 0)
+            {
+                heroColors.RemoveAt(0);
+            }
+            while (clrBtns.Count > 0)
+            {
+                clrBtns.RemoveAt(0);
+            }
+            
+            initMenu();
+            initButtons();
+            timer.Start();
+            drawDubb(this.CreateGraphics());
+        }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             if (hasStarted == false || isGamePaused == true) return;
@@ -4267,7 +4319,14 @@ namespace General
             }
             else
             {
-                if (isGamePaused == true)
+                if (isGameOverScreenShown == true)
+                {
+                    if (e.KeyCode == Keys.Enter)
+                    {
+                        manageGameOver();
+                    }
+                }
+                else if (isGamePaused == true)
                 {
                     if (e.KeyCode == Keys.Escape)
                     {
@@ -4316,12 +4375,12 @@ namespace General
                         isGamePaused = true;
                         pauseGame();
                     }
-                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
+                    if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
                     {
                         hero.moving = 'r';
                         hero.facing = 'r';
                     }
-                    if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
+                    if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
                     {
                         hero.moving = 'l';
                         hero.facing = 'l';
@@ -4417,17 +4476,36 @@ namespace General
         {
             if (hasStarted == true)
             {
-                hero.move(tiles);
-                hero.collectDroppedCoins(droppedCoins);
-                if (hero.currentWeapon == 0)
+                if (hero.isDead && !isGameOverScreenShown)
                 {
-                    hero.updateAttack(enemies);
+                    if (gameOverScreenDelay == 0)
+                    {
+                        startGameOverScreen();
+                    }
+                    
+                    gameOverScreenDelay++;
+                    if (gameOverScreenDelay >= gameOverScreenDelayMax)
+                    {
+                        isGameOverScreenShown = true;
+                        currGameOverBtn = 0;
+                        gameOverBtns();
+                        timer.Stop();
+                    }
                 }
-                hero.updateFireballCast(enemies, tiles);
-                hero.updateSingleFireballAbility(enemies, tiles);
+                else if (!hero.isDead)
+                {
+                    hero.move(tiles);
+                    hero.collectDroppedCoins(droppedCoins);
+                    if (hero.currentWeapon == 0)
+                    {
+                        hero.updateAttack(enemies);
+                    }
+                    hero.updateFireballCast(enemies, tiles);
+                    hero.updateSingleFireballAbility(enemies, tiles);
 
-                hero.mana.tick();
-                handleEnemyMovement();
+                    hero.mana.tick();
+                    handleEnemyMovement();
+                }
             }
 
             drawDubb(this.CreateGraphics());
@@ -4532,7 +4610,11 @@ namespace General
             if (hasStarted == true)
             {
 
-                if (isGamePaused == true)
+                if (isGameOverScreenShown == true)
+                {
+                    GameOverScreen(g);
+                }
+                else if (isGamePaused == true)
                 {
                     SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
                     g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
@@ -4628,6 +4710,45 @@ namespace General
             btn = new Button(ButtonsX, ButtonsY, w, h, "Main Menu");
             PauseBtns.Add(btn);
             
+        }
+
+        void gameOverBtns()
+        {
+            int w = 300, h = 60;
+
+            int ButtonsY = 280;
+            int ButtonsX = (this.ClientSize.Width / 2) - w / 2;
+
+            Button btn = new Button(ButtonsX, ButtonsY, w, h, "Main Menu");
+            GameOverBtns.Add(btn);
+        }
+
+        void GameOverScreen(Graphics g)
+        {
+            Font titleFont = new Font("Comic Sans MS", 28, FontStyle.Bold);
+            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+
+            SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
+            g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+            SolidBrush white = new SolidBrush(Color.White);
+            SolidBrush red = new SolidBrush(Color.Red);
+
+            int X = this.ClientSize.Width / 2;
+            int Y = 100;
+            string gameOverText = "GAME OVER";
+            g.DrawString(gameOverText, titleFont, red, X - 120, Y);
+
+            for (int i = 0; i < GameOverBtns.Count; i++)
+            {
+                bool isIt = false;
+
+                if (i == currGameOverBtn) isIt = true;
+
+                Button btn = GameOverBtns[i];
+
+                btn.draw(button, g, normalFont, white, isIt);
+            }
         }
 
         void initMenu()

@@ -1,4 +1,4 @@
-hero_color:3
+hero_color:2
 X,Y:75,665.5
 Moving: 
 ySpeed:0
@@ -26,4 +26,3 @@ abilityFireballSpawned:False
 abilityManaCost:50
 abilityKeyDown:False
 isAbilityUnlocked:True
-isDead:False
