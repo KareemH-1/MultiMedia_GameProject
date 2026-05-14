@@ -1,6 +1,6 @@
 EnemiesCount:2
 Enemy0_X:633
-Enemy0_Y:753.4
+Enemy0_Y:705.4
 Enemy0_speed:4
 Enemy0_moving:l
 Enemy0_facing:l
@@ -25,11 +25,11 @@ Enemy0_patrolDistance:200
 Enemy0_leftLimit:433
 Enemy0_rightLimit:833
 Enemy0_spawnX:600
-Enemy0_spawnY:715
+Enemy0_spawnY:667
 Enemy0_CanSpawn:True
 Enemy0_spawnTime:600
 Enemy0_isWaiting:True
-Enemy0_waitTime:0
+Enemy0_waitTime:28
 Enemy0_waitingTimer:60
 Enemy0_spawnrange:600
 Enemy0_spawn:True
@@ -41,7 +41,7 @@ Enemy0_enemyName:mushroom
 Enemy0_maxHP:50
 Enemy0_HP:50
 Enemy1_X:1033
-Enemy1_Y:753.4
+Enemy1_Y:705.4
 Enemy1_speed:6
 Enemy1_moving:l
 Enemy1_facing:l
@@ -66,7 +66,7 @@ Enemy1_patrolDistance:300
 Enemy1_leftLimit:733
 Enemy1_rightLimit:1333
 Enemy1_spawnX:1000
-Enemy1_spawnY:715
+Enemy1_spawnY:667
 Enemy1_CanSpawn:True
 Enemy1_spawnTime:500
 Enemy1_isWaiting:True

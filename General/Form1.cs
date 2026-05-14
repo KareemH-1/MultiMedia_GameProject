@@ -2638,9 +2638,10 @@ namespace General
         public int coinvalue = 20;
         public string cointype = "";
 
-        public DroppedCoin(float x, float y, string type)
+        public DroppedCoin(float x, float y, string type ,int val)
         {
             cointype = type;
+            coinvalue = val;
 
             R.X = x;
             R.Y = y;
@@ -3386,6 +3387,33 @@ namespace General
             }
         }
 
+        int calculateHowValue()
+        {
+            int multiplier = rr.Next(1, 5);
+            return (HP.maxHP / multiplier);
+        }
+
+        int[] calculateHowManyCoins()
+        {
+            int[] coins = { 0, 0, 0 }; //bronze , silver , gold
+            int val = calculateHowValue();
+
+            int remaining = val;
+
+            int NGold = remaining / 1000;
+            remaining = remaining - NGold * 1000;
+
+            int NSilver = remaining / 100;
+            remaining = remaining - NSilver * 100;
+
+            int NBronze = remaining;
+
+            coins[0] = NBronze;
+            coins[1] = NSilver;
+            coins[2] = NGold;
+
+            return coins;
+        }
         public void dropCoin(List<DroppedCoin> droppedCoins)
         {
             if (coindropped == true)
@@ -3398,9 +3426,17 @@ namespace General
                 float x = R.X + (R.Width / 2);
                 float y = R.Y + (R.Height / 2);
 
-                DroppedCoin coin = new DroppedCoin(x, y, "copper");
-
-                droppedCoins.Add(coin);
+                int[] howMany = calculateHowManyCoins();
+                for (int i = 0; i < 3; i++)
+                {
+                    string type;
+                    if (i == 0) type = "copper";
+                    else if (i == 1) type = "silver";
+                    else type = "gold";
+                    DroppedCoin coin = new DroppedCoin(x, y, type , howMany[i]);
+                    
+                    droppedCoins.Add(coin);
+                }
                 coindropped = true;
             }
             else if (enemyName == "bat")
@@ -3408,9 +3444,17 @@ namespace General
                 float x = R.X + (R.Width / 2);
                 float y = R.Y + (R.Height / 2);
 
-                DroppedCoin coin = new DroppedCoin(x, y, "copper");
+                int[] howMany = calculateHowManyCoins();
+                for (int i = 0; i < 3; i++)
+                {
+                    string type;
+                    if (i == 0) type = "copper";
+                    else if (i == 1) type = "silver";
+                    else type = "gold";
+                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
 
-                droppedCoins.Add(coin);
+                    droppedCoins.Add(coin);
+                }
                 coindropped = true;
             }
         }
@@ -3611,6 +3655,7 @@ namespace General
 
         Random Random = new Random();
         bool hasStarted = false;
+        bool isGamePaused = false;
 
         Bitmap button = new Bitmap("ui/menu/UI_TravelBook_Frame01a.png");
         int currentButton = 0;
@@ -3618,6 +3663,9 @@ namespace General
 
         List<Bitmap> menuImgs = new List<Bitmap>();
         List<Button> btns = new List<Button>();
+
+        List<Button> PauseBtns = new List<Button>();
+        int currPauseBtn = 0;
 
 
         bool showRanges = false;
@@ -3658,7 +3706,7 @@ namespace General
 
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (!hasStarted) return;
+            if (!hasStarted || isGamePaused == true) return;
 
             if (e.Button == MouseButtons.Left)
             {
@@ -3718,7 +3766,7 @@ namespace General
                     startGame();
                 }
             }
-            else
+            else if(isGamePaused == false)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -3729,6 +3777,19 @@ namespace General
                         hero.mouseX = e.X;
                         hero.mouseY = e.Y;
                         hero.startAttack();
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < PauseBtns.Count; i++)
+                {
+                    Button btn = PauseBtns[i];
+                    if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                                && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                    {
+                        managePause();
+                        break;
                     }
                 }
             }
@@ -3780,10 +3841,25 @@ namespace General
 
                 
             }
-            else
+            else if(isGamePaused == false)
             {
                 hero.mouseX = e.X;
                 hero.mouseY = e.Y;
+            }
+            else if(isGamePaused == true)
+            {
+                for (int i = 0; i < PauseBtns.Count; i++)
+                {
+                    Button btn = PauseBtns[i];
+                    if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                        && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                    {
+                        currPauseBtn = i;
+                        drawDubb(this.CreateGraphics());
+
+                        break;
+                    }
+                }
             }
         }
 
@@ -3802,9 +3878,25 @@ namespace General
             }
         }
 
+        void pauseGame()
+        {
+            timer.Stop();
+            pauseBtns();
+            drawDubb(this.CreateGraphics());
+        }
+
+        void resumeGame()
+        {
+            while(PauseBtns.Count > 0)
+            {
+                PauseBtns.RemoveAt(0);
+            }
+
+            timer.Start();
+        }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
-            if (hasStarted == false) return;
+            if (hasStarted == false || isGamePaused == true) return;
 
 
             if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
@@ -3838,11 +3930,11 @@ namespace General
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-          
+
 
             if (hasStarted == false)
             {
-                if(e.KeyCode == Keys.D1)
+                if (e.KeyCode == Keys.D1)
                 {
                     ChoiceIdx = 0;
                 }
@@ -3921,7 +4013,7 @@ namespace General
                     {
                         if (lastMenuScreen == 0)
                         {
-                            startNewGame(); 
+                            startNewGame();
                             save.save(hero, enemies);
 
                         }
@@ -3932,74 +4024,149 @@ namespace General
             }
             else
             {
-                if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
+                if (isGamePaused == true)
                 {
-                    hero.moving = 'r';
-                    hero.facing = 'r';
-                }
-                if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
-                {
-                    hero.moving = 'l';
-                    hero.facing = 'l';
-                }
-                if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
-                {
-                    hero.checkUnder(tiles);
-                }
-                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
-                {
-                    if (hero.jumpHeld == false)
+                    if (e.KeyCode == Keys.Escape)
                     {
-                        hero.jump();
+                        isGamePaused = false;
+                        resumeGame();
                     }
-                }
 
-                if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false)
-                {
-                    hero.isRunning = true;
-                }
-
-
-                if (e.KeyCode == Keys.P)
-                {
-                    if (showRanges == true) showRanges = false;
-                    else showRanges = true;
-                }
-
-                if (e.KeyCode == Keys.E && hero.abilityKeyDown == false)
-                {
-                    hero.abilityKeyDown = true;
-                    hero.startAbilityCast();
-                }
-                if (e.KeyCode == Keys.R)
-                {
-                    if (hero.isDead == true)
+                    if(e.KeyCode == Keys.Enter)
                     {
-                        hero.isDead = false;
+                        managePause();
                     }
-                }
+                    if (e.KeyCode == Keys.Down)
+                    {
 
-                if (hero.Weapons.Count > 1)
-                {
-                    if (e.KeyCode == Keys.D1)
-                    {
-                        hero.currentWeapon = 0;
-                        hero.ManageWeapon();
-                    }
-                    else if (e.KeyCode == Keys.D2)
-                    {
-                        hero.currentWeapon = 1;
-                        hero.ManageWeapon();
-
-                    }
-                    else if (hero.Weapons.Count > 2 && e.KeyCode == Keys.D3)
-                    {
-                        hero.currentWeapon = 2;
-                        hero.ManageWeapon();
+                        if (currPauseBtn < PauseBtns.Count - 1)
+                        {
+                            currPauseBtn++;
+                        }
+                        else
+                        {
+                            currPauseBtn = 0;
+                        }
+                        drawDubb(this.CreateGraphics());
 
 
                     }
+
+                    if (e.KeyCode == Keys.Up)
+                    {
+                        if (currPauseBtn > 0)
+                        {
+                            currPauseBtn--;
+                        }
+                        else
+                        {
+                            currPauseBtn = PauseBtns.Count - 2;
+                        }
+                        drawDubb(this.CreateGraphics());
+
+                    }
                 }
+                else
+                {
+                    if(e.KeyCode == Keys.Escape)
+                    {
+                        isGamePaused = true;
+                        pauseGame();
+                    }
+                    if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
+                    {
+                        hero.moving = 'r';
+                        hero.facing = 'r';
+                    }
+                    if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
+                    {
+                        hero.moving = 'l';
+                        hero.facing = 'l';
+                    }
+                    if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
+                    {
+                        hero.checkUnder(tiles);
+                    }
+                    if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
+                    {
+                        if (hero.jumpHeld == false)
+                        {
+                            hero.jump();
+                        }
+                    }
+
+                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false)
+                    {
+                        hero.isRunning = true;
+                    }
+
+
+                    if (e.KeyCode == Keys.P)
+                    {
+                        if (showRanges == true) showRanges = false;
+                        else showRanges = true;
+                    }
+
+                    if (e.KeyCode == Keys.E && hero.abilityKeyDown == false)
+                    {
+                        hero.abilityKeyDown = true;
+                        hero.startAbilityCast();
+                    }
+                    if (e.KeyCode == Keys.R)
+                    {
+                        if (hero.isDead == true)
+                        {
+                            hero.isDead = false;
+                        }
+                    }
+
+                    if (hero.Weapons.Count > 1)
+                    {
+                        if (e.KeyCode == Keys.D1)
+                        {
+                            hero.currentWeapon = 0;
+                            hero.ManageWeapon();
+                        }
+                        else if (e.KeyCode == Keys.D2)
+                        {
+                            hero.currentWeapon = 1;
+                            hero.ManageWeapon();
+
+                        }
+                        else if (hero.Weapons.Count > 2 && e.KeyCode == Keys.D3)
+                        {
+                            hero.currentWeapon = 2;
+                            hero.ManageWeapon();
+
+
+                        }
+                    }
+                }
+            }
+        }
+
+        void managePause()
+        {
+            if(currPauseBtn == 0)
+            {
+                isGamePaused = false;
+                resumeGame();
+            }
+            else if(currPauseBtn == 1 && PauseBtns.Count == 3) {
+                save.save(hero, enemies);
+                PauseBtns.RemoveAt(1);
+                drawDubb(this.CreateGraphics());
+
+            }
+            else if( currPauseBtn == 2 || (currPauseBtn == 1 && PauseBtns.Count == 2))
+            {
+                hasStarted = false;
+                isGamePaused = false;
+
+                initButtons();
+                initMenu();
+
+                timer.Start();
             }
         }
 
@@ -4121,31 +4288,103 @@ namespace General
 
             if (hasStarted == true)
             {
-                save.autoSave(hero, enemies ,g , this.ClientSize.Height);
 
-                for (int i = 0; i < tiles.Count; i++)
+                if (isGamePaused == true)
                 {
-                    tiles[i].draw(g);
+                    SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
+                    g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+                    PauseScreen(g);
                 }
-                for (int i = 0; i < ladders.Count; i++)
+                else
                 {
-                    ladders[i].draw(g, showRanges);
-                }
-                for (int i = 0; i < enemies.Count; i++)
-                {
-                    enemies[i].draw(g, showRanges);
-                }
-                for (int i = 0; i < droppedCoins.Count; i++)
-                {
-                    droppedCoins[i].draw(g);
+                    save.autoSave(hero, enemies, g, this.ClientSize.Height);
+
+                    for (int i = 0; i < tiles.Count; i++)
+                    {
+                        tiles[i].draw(g);
+                    }
+                    for (int i = 0; i < ladders.Count; i++)
+                    {
+                        ladders[i].draw(g, showRanges);
+                    }
+                    for (int i = 0; i < enemies.Count; i++)
+                    {
+                        enemies[i].draw(g, showRanges);
+                    }
+                    for (int i = 0; i < droppedCoins.Count; i++)
+                    {
+                        droppedCoins[i].draw(g);
+                    }
+
+                    hero.Draw(g, showRanges);
                 }
 
-                hero.Draw(g, showRanges);
             }
             else
             {
                 displayMenu(g);
             }
+        }
+
+        void PauseScreen(Graphics g)
+        {
+            Font titleFont = new Font("Comic Sans MS", 22, FontStyle.Bold);
+            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+            Font smallFont = new Font("Comic Sans MS", 11, FontStyle.Bold);
+
+            SolidBrush white = new SolidBrush(Color.White);
+
+            int X = this.ClientSize.Width / 2;
+            int Y = 200;
+            g.DrawString("Game is Paused", titleFont, white, X - 120, Y);
+
+            for (int i = 0; i < PauseBtns.Count; i++)
+            {
+                bool isIt = false;
+
+                if (i == currPauseBtn) isIt = true;
+
+                Button btn = PauseBtns[i];
+                
+                btn.draw(button, g, normalFont, white, isIt);
+                
+            }
+            if(PauseBtns.Count == 2)
+            {
+                int w = 300, h = 60;
+
+                int ButtonsY = 70 + 200;
+                int ButtonsX = (this.ClientSize.Width / 2) - w / 2;
+                ButtonsY += (h + 20);
+
+                g.DrawImage(button, ButtonsX, ButtonsY, w, h);
+
+                string text = "Saved";
+                int startX = ButtonsX + w / 2 - text.Length * 7;
+                g.DrawString(text, normalFont, white, startX, ButtonsY + h / 2 - 22);
+            }
+        }
+
+        void pauseBtns()
+        {
+           
+            int w = 300, h = 60;
+
+            int ButtonsY = 70 + 200;
+            int ButtonsX = (this.ClientSize.Width / 2)- w / 2;
+
+            Button btn = new Button(ButtonsX, ButtonsY, w, h, "Resume");
+            PauseBtns.Add(btn);
+
+            ButtonsY += (h + 20);
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Save Game");
+            PauseBtns.Add(btn);
+
+            ButtonsY += (h + 20);
+            btn = new Button(ButtonsX, ButtonsY, w, h, "Main Menu");
+            PauseBtns.Add(btn);
+            
         }
 
         void initMenu()
