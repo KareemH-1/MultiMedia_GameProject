@@ -1741,22 +1741,17 @@ namespace General
         public void draw(Graphics g)
         {
             Bitmap frame = anim.playFrame(false, false);
-            Bitmap imgToDraw = frame;
-            if (dirX == -1f)
-            {
-                imgToDraw = new Bitmap(frame);
-                imgToDraw.RotateFlip(RotateFlipType.RotateNoneFlipX);
-            }
+            
 
 
             if (isItSingle == false)
             {
-                g.DrawImage(imgToDraw, rect.X, rect.Y, rect.Width, rect.Height);
+                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
             }
             else
             {
 
-                g.DrawImage(imgToDraw, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
+                g.DrawImage(frame, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
 
             }
         }
