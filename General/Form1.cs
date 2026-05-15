@@ -1926,166 +1926,45 @@ namespace General
         public float climbSpeed = 8f;
         public char climbDir = ' ';
         public bool isClimbingMoving = false;
-        public void startAbilityCast()
+        public bool isDoingCombo = false;
+
+
+        //General
+        public Hero(int startX, int startY, int w, int h, int colorIdx)
         {
-            if ((isClimbing || isClimbingMoving)) return;
+            this.ColorIdx = colorIdx;
 
-            if (isAbilityUnlocked == false) return;
+            drawR.X = startX;
+            drawR.Y = startY;
+            drawR.Width = w;
+            drawR.Height = h;
 
-            if (isTakingDamage == true)
-            {
-                return;
-            }
-            if (isCastingAbility) return;
-            if (mana.mana < abilityManaCost) return;
+            R.Width = w * 0.4f;
+            R.Height = h * 0.65f;
+            R.X = startX + (w - R.Width) / 2f;
+            R.Y = startY + (h - R.Height);
 
-            isCastingAbility = true;
-            abilityFireballSpawned = false;
-            isAttacking = false;
-            isShooting = false;
+            createAnim();
+            initVFX();
 
-            anim.changeAnimation("spell_cast", -1);
-            anim.restart();
-        }
-        public void updateSingleFireballAbility(List<Enemy> enemies, List<tile> tiles)
-        {
-            if (isAbilityUnlocked == false) return;
+            anim.changeAnimation("idle", -1);
 
-            if (!isCastingAbility) return;
-
-            anim.changeAnimation("spell_cast", -1);
-
-            if (!abilityFireballSpawned && anim.currIdx >= 3)
-            {
-                abilityFireballSpawned = true;
-
-                float spawnX = R.X + R.Width / 2f;
-                if (facing == 'l') spawnX = R.X - 74;
-
-                float spawnY = R.Y + R.Height * 0.3f;
-
-                float targetX;
-                if (facing == 'r') targetX = spawnX + 2000f;
-                else targetX = spawnX - 2000f;
-                float targetY = spawnY;
-
-                Fireball fb = new Fireball(rnd, spawnX, spawnY, targetX, targetY, true);
-                fireballs.Add(fb);
-
-                mana.mana -= abilityManaCost;
-                if (mana.mana < 0) mana.mana = 0;
-            }
-
-            Animation spellAnim = anim.getCurrentAnimation();
-            if (spellAnim != null)
-            {
-                bool dirFacingL = false;
-                if(facing == 'l') dirFacingL = true;
-                List<Bitmap> spellFrames = spellAnim.getFrames(dirFacingL);
-                if (spellFrames.Count > 0 && anim.currIdx >= spellFrames.Count - 1)
-            {
-                isCastingAbility = false;
-                abilityFireballSpawned = false;
-                isLanding = false;
-                wasGrounded = isGrounded;
-                ySpeed = 0;
-                isGrounded = true;
-                updateAnimation();
-            }
-            }
-        }
-        public void initVFX()
-        {
-            doubleJumpAnimation = new Animation();
-            doubleJumpAnimation.name = "doubleJump";
-            doubleJumpAnimation.frameDelay = 1;
-
-            for (int i = 1; i <= 5; i++)
-            {
-                Bitmap frame = new Bitmap("vfx/doubleJump/" + i + ".png");
-                doubleJumpAnimation.addFrame(frame, false, false);
-            }
+            wasGrounded = true;
+            isGrounded = true;
 
 
-            fireballAnimation = new Animation();
-            fireballAnimation.name = "fireball";
-            fireballAnimation.frameDelay = 0;
+            Weapon sword = new Weapon();
+            sword.damage = 25;
+            sword.order = 1;
+            sword.rangeH = 0;
+            sword.rangeW = 0;
+            sword.UIImage = new Bitmap("ui/Weapons/sword.png");
+            Weapons.Add(sword);
 
-            for (int i = 0; i <= 15; i++)
-            {
-
-                Bitmap frame;
-                if (i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
-                else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
-
-                fireballAnimation.addFrame(frame, false, false);
-            }
-        }
-        void createDoubleJumpVFX()
-        {
-            vfx fx = new vfx();
-
-            fx.name = "doubleJump";
-            fx.maxTimer = 5;
-            fx.anim.addAnim(doubleJumpAnimation);
-            fx.anim.changeAnimation("doubleJump", -1);
-
-
-            fx.rect.Width = 90;
-            fx.rect.Height = 45;
-
-            fx.rect.X = R.X + R.Width / 2f - fx.rect.Width / 2f;
-            fx.rect.Y = R.Y + R.Height - fx.rect.Height / 2f - 20;
-
-            fx.followPlayer = false;
-
-
-            fx.maxTimer = doubleJumpAnimation.frames.Count * doubleJumpAnimation.frameDelay;
-
-            vfxes.Add(fx);
+            addFireballWeapon();
         }
 
-        public void collectDroppedCoins(List<DroppedCoin> droppedCoins)
-        {
-            for (int i = 0; i < droppedCoins.Count; i++)
-            {
-                DroppedCoin coin = droppedCoins[i];
-
-                if (R.X < coin.R.X + coin.R.Width &&
-                    R.X + R.Width > coin.R.X &&
-                    R.Y < coin.R.Y + coin.R.Height &&
-                    R.Y + R.Height > coin.R.Y)
-                {
-                    coins += coin.coinvalue;
-
-                    droppedCoins.RemoveAt(i);
-                    i--;
-                }
-            }
-        }
-        void createFireballVFX()
-        {
-            vfx fx = new vfx();
-
-            fx.repeat = true;
-            fx.name = "fireball";
-            fx.anim.addAnim(fireballAnimation);
-            fx.anim.changeAnimation("fireball", -1);
-
-
-            fx.rect.Width = R.Width * 2;
-            fx.rect.Height = 90;
-
-            fx.rect.X = R.X + R.Width / 2 - fx.rect.Width / 2;
-
-            fx.offsetY = -45;
-
-            fx.followPlayer = true;
-
-
-            vfxes.Add(fx);
-        }
-        public void Draw(Graphics g, bool showRanges , float camX)
+        public void Draw(Graphics g, bool showRanges, float camX)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
@@ -2158,51 +2037,77 @@ namespace General
             UI.draw(g, HP, mana, coins);
             UI.drawWeaponsUI(g, Weapons, currentWeapon);
         }
-        public Hero(int startX, int startY, int w, int h , int colorIdx)
+
+        public void initVFX()
         {
-            this.ColorIdx = colorIdx;
+            doubleJumpAnimation = new Animation();
+            doubleJumpAnimation.name = "doubleJump";
+            doubleJumpAnimation.frameDelay = 1;
 
-            drawR.X = startX;
-            drawR.Y = startY;
-            drawR.Width = w;
-            drawR.Height = h;
-
-            R.Width = w * 0.4f;
-            R.Height = h * 0.65f;
-            R.X = startX + (w - R.Width) / 2f;
-            R.Y = startY + (h - R.Height);
-
-            createAnim();
-            initVFX();
-
-            anim.changeAnimation("idle", -1);
-
-            wasGrounded = true;
-            isGrounded = true;
+            for (int i = 1; i <= 5; i++)
+            {
+                Bitmap frame = new Bitmap("vfx/doubleJump/" + i + ".png");
+                doubleJumpAnimation.addFrame(frame, false, false);
+            }
 
 
-            Weapon sword = new Weapon();
-            sword.damage = 25;
-            sword.order = 1;
-            sword.rangeH = 0;
-            sword.rangeW = 0;
-            sword.UIImage = new Bitmap("ui/Weapons/sword.png");
-            Weapons.Add(sword);
+            fireballAnimation = new Animation();
+            fireballAnimation.name = "fireball";
+            fireballAnimation.frameDelay = 0;
 
-            addFireballWeapon();
+            for (int i = 0; i <= 15; i++)
+            {
+
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
+
+                fireballAnimation.addFrame(frame, false, false);
+            }
+        }
+        
+        public void collectDroppedCoins(List<DroppedCoin> droppedCoins)
+        {
+            for (int i = 0; i < droppedCoins.Count; i++)
+            {
+                DroppedCoin coin = droppedCoins[i];
+
+                if (R.X < coin.R.X + coin.R.Width &&
+                    R.X + R.Width > coin.R.X &&
+                    R.Y < coin.R.Y + coin.R.Height &&
+                    R.Y + R.Height > coin.R.Y)
+                {
+                    coins += coin.coinvalue;
+
+                    droppedCoins.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+        
+        void createFireballVFX()
+        {
+            vfx fx = new vfx();
+
+            fx.repeat = true;
+            fx.name = "fireball";
+            fx.anim.addAnim(fireballAnimation);
+            fx.anim.changeAnimation("fireball", -1);
+
+
+            fx.rect.Width = R.Width * 2;
+            fx.rect.Height = 90;
+
+            fx.rect.X = R.X + R.Width / 2 - fx.rect.Width / 2;
+
+            fx.offsetY = -45;
+
+            fx.followPlayer = true;
+
+
+            vfxes.Add(fx);
         }
 
-        void addFireballWeapon()
-        {
-
-            Weapon fireball = new Weapon();
-            fireball.damage = 15;
-            fireball.order = 2;
-            fireball.rangeH = 20;
-            fireball.rangeW = 20;
-            fireball.UIImage = new Bitmap("ui/Weapons/fireball.png");
-            Weapons.Add(fireball);
-        }
         void createAnim()
         {
             string[] folders = {"attack", "critical_attack", "crouch", "death",
@@ -2270,6 +2175,7 @@ namespace General
 
             }
         }
+        
         void removeOtherWeaponVFX()
         {
             for (int i = 0; i < vfxes.Count; i++)
@@ -2281,7 +2187,232 @@ namespace General
                 }
             }
         }
-        public bool isDoingCombo = false;
+
+        public void updateAnimation()
+        {
+            if (isDead == true)
+            {
+                anim.changeAnimation("death", -1);
+                return;
+            }
+            if (isTakingDamage)
+            {
+                anim.changeAnimation("taking_damage", -1);
+                takingDamageTimer--;
+
+                if (takingDamageTimer <= 0)
+                {
+                    isTakingDamage = false;
+                }
+
+                return;
+            }
+            if (isClimbing)
+            {
+                anim.changeAnimation("ladder_climbing", -1);
+                return;
+            }
+            if (isCastingAbility)
+            {
+                anim.changeAnimation("spell_cast", -1);
+                return;
+            }
+
+            if (isAttacking == true)
+            {
+                anim.changeAnimation("attack", -1);
+                return;
+            }
+
+            if (isLanding)
+            {
+                landingTimer--;
+                if (landingTimer <= 0 || moving != ' ' || !isGrounded)
+                {
+                    isLanding = false;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            if (!isGrounded)
+            {
+                if (ySpeed < 0)
+                    anim.changeAnimation("jump_flying", -1);
+                else
+                    anim.changeAnimation("falling", -1);
+
+                return;
+            }
+
+            if (moving == ' ')
+                anim.changeAnimation("idle", -1);
+            else if (isRunning)
+                anim.changeAnimation("running", -1);
+            else
+                anim.changeAnimation("walking", -1);
+        }
+
+        public void takeDamage(int amount)
+        {
+            if ((isClimbing || isClimbingMoving)) return;
+
+            if (isDead == true)
+            {
+                return;
+            }
+            if (isTakingDamage == true)
+            {
+                return;
+            }
+
+            HP.damage(amount);
+            isAttacking = false;
+            isShooting = false;
+            isCastingAbility = false;
+            moving = ' ';
+            jumpHeld = true;
+            if (HP.getHP() <= 0)
+            {
+                isDead = true;
+                isTakingDamage = false;
+
+                anim.changeAnimation("death", -1);
+                anim.restart();
+
+                return;
+            }
+
+            isTakingDamage = true;
+
+            anim.changeAnimation("taking_damage", -1);
+            anim.restart();
+
+            Animation dmgAnim = anim.getCurrentAnimation();
+            if (dmgAnim != null)
+            {
+                bool dirFacingL = false;
+                if (facing == 'l') dirFacingL = true;
+                List<Bitmap> dmgFrames = dmgAnim.getFrames(dirFacingL);
+                if (dmgFrames.Count > 0)
+                {
+                    takingDamageTimer = dmgFrames.Count * dmgAnim.frameDelay;
+                }
+                else
+                {
+                    takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
+                }
+            }
+        }
+
+        // Attack
+        public void startAbilityCast()
+        {
+            if ((isClimbing || isClimbingMoving)) return;
+
+            if (isAbilityUnlocked == false) return;
+
+            if (isTakingDamage == true)
+            {
+                return;
+            }
+            if (isCastingAbility) return;
+            if (mana.mana < abilityManaCost) return;
+
+            isCastingAbility = true;
+            abilityFireballSpawned = false;
+            isAttacking = false;
+            isShooting = false;
+
+            anim.changeAnimation("spell_cast", -1);
+            anim.restart();
+        }
+        
+        public void updateSingleFireballAbility(List<Enemy> enemies, List<tile> tiles)
+        {
+            if (isAbilityUnlocked == false) return;
+
+            if (!isCastingAbility) return;
+
+            anim.changeAnimation("spell_cast", -1);
+
+            if (!abilityFireballSpawned && anim.currIdx >= 3)
+            {
+                abilityFireballSpawned = true;
+
+                float spawnX = R.X + R.Width / 2f;
+                if (facing == 'l') spawnX = R.X - 74;
+
+                float spawnY = R.Y + R.Height * 0.3f;
+
+                float targetX;
+                if (facing == 'r') targetX = spawnX + 2000f;
+                else targetX = spawnX - 2000f;
+                float targetY = spawnY;
+
+                Fireball fb = new Fireball(rnd, spawnX, spawnY, targetX, targetY, true);
+                fireballs.Add(fb);
+
+                mana.mana -= abilityManaCost;
+                if (mana.mana < 0) mana.mana = 0;
+            }
+
+            Animation spellAnim = anim.getCurrentAnimation();
+            if (spellAnim != null)
+            {
+                bool dirFacingL = false;
+                if(facing == 'l') dirFacingL = true;
+                List<Bitmap> spellFrames = spellAnim.getFrames(dirFacingL);
+                if (spellFrames.Count > 0 && anim.currIdx >= spellFrames.Count - 1)
+            {
+                isCastingAbility = false;
+                abilityFireballSpawned = false;
+                isLanding = false;
+                wasGrounded = isGrounded;
+                ySpeed = 0;
+                isGrounded = true;
+                updateAnimation();
+            }
+            }
+        }
+        
+        void createDoubleJumpVFX()
+        {
+            vfx fx = new vfx();
+
+            fx.name = "doubleJump";
+            fx.maxTimer = 5;
+            fx.anim.addAnim(doubleJumpAnimation);
+            fx.anim.changeAnimation("doubleJump", -1);
+
+
+            fx.rect.Width = 90;
+            fx.rect.Height = 45;
+
+            fx.rect.X = R.X + R.Width / 2f - fx.rect.Width / 2f;
+            fx.rect.Y = R.Y + R.Height - fx.rect.Height / 2f - 20;
+
+            fx.followPlayer = false;
+
+
+            fx.maxTimer = doubleJumpAnimation.frames.Count * doubleJumpAnimation.frameDelay;
+
+            vfxes.Add(fx);
+        }
+
+        void addFireballWeapon()
+        {
+
+            Weapon fireball = new Weapon();
+            fireball.damage = 15;
+            fireball.order = 2;
+            fireball.rangeH = 20;
+            fireball.rangeW = 20;
+            fireball.UIImage = new Bitmap("ui/Weapons/fireball.png");
+            Weapons.Add(fireball);
+        }
         public void startAttack()
         {
             if ((isClimbing || isClimbingMoving)) return;
@@ -2311,7 +2442,6 @@ namespace General
             isShooting = false;
             fireballSpawnTimer = fireballSpawnDelay;
         }
-
 
         public void updateFireballCast(List<Enemy> enemies, List<tile> tiles)
         {
@@ -2355,6 +2485,7 @@ namespace General
             mana.mana -= fireballManaCost;
             if (mana.mana < 0) mana.mana = 0;
         }
+        
         void swordLogic()
         {
             if (isAttacking == true)
@@ -2384,6 +2515,7 @@ namespace General
             anim.changeAnimation("attack", -1);
             anim.restart();
         }
+        
         public rectF getAttackHitBox()
         {
             float h = R.Height * attackHeightScale;
@@ -2460,7 +2592,8 @@ namespace General
                 attackHasHit = true;
             }
         }
-
+       
+        //movement
         public void move(List<tile> tiles , List<Ladder> ladders)
         {
             if (isDead == true)
@@ -2557,6 +2690,7 @@ namespace General
             if (!isAttacking && !isAttacking)
                 updateAnimation();
         }
+        
         public void Movement(List<tile> tiles, List<Ladder> ladders)
         {
             wasGrounded = isGrounded;
@@ -2710,6 +2844,7 @@ namespace General
             }
             return -1;
         }
+       
         public void checkUnder(List<tile> tiles, List<Ladder> ladders)
         {
             if (isClimbing)
@@ -2785,6 +2920,7 @@ namespace General
         {
             climbDir = 'u';
         }
+        
         public void stopJump()
         {
             jumpHeld = false;
@@ -2804,6 +2940,7 @@ namespace General
                 }
             }
         }
+        
         public void jump()
         {
             isClimbing = false;
@@ -2838,124 +2975,7 @@ namespace General
                 }
             }
         }
-        public void updateAnimation()
-        {
-            if (isDead == true)
-            {
-                anim.changeAnimation("death", -1);
-                return;
-            }
-            if (isTakingDamage)
-            {
-                anim.changeAnimation("taking_damage", -1);
-                takingDamageTimer--;
-
-                if (takingDamageTimer <= 0)
-                {
-                    isTakingDamage = false;
-                }
-
-                return;
-            }
-            if (isClimbing)
-            {
-                anim.changeAnimation("ladder_climbing", -1);
-                return;
-            }
-            if (isCastingAbility)
-            {
-                anim.changeAnimation("spell_cast", -1);
-                return;
-            }
-
-            if (isAttacking == true)
-            {
-                anim.changeAnimation("attack", -1);
-                return;
-            }
-
-            if (isLanding)
-            {
-                landingTimer--;
-                if (landingTimer <= 0 || moving != ' ' || !isGrounded)
-                {
-                    isLanding = false;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (!isGrounded)
-            {
-                if (ySpeed < 0)
-                    anim.changeAnimation("jump_flying", -1);
-                else
-                    anim.changeAnimation("falling", -1);
-
-                return;
-            }
-
-            if (moving == ' ')
-                anim.changeAnimation("idle", -1);
-            else if (isRunning)
-                anim.changeAnimation("running", -1);
-            else
-                anim.changeAnimation("walking", -1);
-        }
-
-        public void takeDamage(int amount)
-        {
-            if ((isClimbing || isClimbingMoving)) return;
-
-            if (isDead == true)
-            {
-                return;
-            }
-            if (isTakingDamage == true)
-            {
-                return;
-            }
-
-            HP.damage(amount);
-            isAttacking = false;
-            isShooting = false;
-            isCastingAbility = false;
-            moving = ' ';
-            jumpHeld = true;
-            if (HP.getHP() <= 0)
-            {
-                isDead = true;
-                isTakingDamage = false;
-
-                anim.changeAnimation("death", -1);
-                anim.restart();
-
-                return;
-            }
-
-            isTakingDamage = true;
-
-            anim.changeAnimation("taking_damage", -1);
-            anim.restart();
-
-            Animation dmgAnim = anim.getCurrentAnimation();
-            if (dmgAnim != null)
-            {
-                bool dirFacingL = false;
-                if(facing == 'l') dirFacingL = true;
-                List<Bitmap> dmgFrames = dmgAnim.getFrames(dirFacingL);
-                if (dmgFrames.Count > 0)
-                {
-                    takingDamageTimer = dmgFrames.Count * dmgAnim.frameDelay;
-                }
-                else
-                {
-                    takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
-                }
-            }
-        }
+        
     }
 
     public class DroppedCoin
@@ -4035,7 +4055,6 @@ namespace General
     {
         Save save = new Save();
         Load load = new Load();
-
 
         Random Random = new Random();
         bool hasStarted = false;
