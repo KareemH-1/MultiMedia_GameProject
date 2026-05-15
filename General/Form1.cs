@@ -1569,7 +1569,7 @@ namespace General
         public int maxTimer = 20;
 
         public bool repeat = false;
-        public void draw(Graphics g, rectF ownerR)
+        public void draw(Graphics g, rectF ownerR , float camX)
         {
             if (followPlayer)
             {
@@ -1581,7 +1581,7 @@ namespace General
 
             if (frame != null)
             {
-                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
+                g.DrawImage(frame, rect.X - camX, rect.Y, rect.Width, rect.Height);
             }
             if (repeat == false)
             {
@@ -1813,7 +1813,7 @@ namespace General
             }
         }
 
-        public void draw(Graphics g)
+        public void draw(Graphics g , float camX)
         {
             Bitmap frame = anim.playFrame(false, false);
             
@@ -1821,12 +1821,12 @@ namespace General
 
             if (isItSingle == false)
             {
-                g.DrawImage(frame, rect.X, rect.Y, rect.Width, rect.Height);
+                g.DrawImage(frame, rect.X - camX, rect.Y, rect.Width, rect.Height);
             }
             else
             {
 
-                g.DrawImage(frame, SingleDrawRect.X, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
+                g.DrawImage(frame, SingleDrawRect.X - camX, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
 
             }
         }
@@ -2040,7 +2040,7 @@ namespace General
 
             for (int i = 0; i < fireballs.Count; i++)
             {
-                fireballs[i].draw(g);
+                fireballs[i].draw(g , camX);
 
                 if (showRanges)
                 {
@@ -2093,7 +2093,7 @@ namespace General
 
             for (int i = vfxes.Count - 1; i >= 0; i--)
             {
-                vfxes[i].draw(g, R);
+                vfxes[i].draw(g, R , camX);
 
                 if (vfxes[i].finished)
                 {
@@ -3095,14 +3095,14 @@ namespace General
             }
         }
 
-        public void draw(Graphics g)
+        public void draw(Graphics g , float camX)
         {
             if (frames.Count == 0)
             {
                 return;
             }
 
-            g.DrawImage(frames[currFrame], R.X, R.Y, R.Width, R.Height);
+            g.DrawImage(frames[currFrame], R.X - camX, R.Y, R.Width, R.Height);
 
             updateAnimation();
         }
@@ -3521,7 +3521,7 @@ namespace General
                     if (currWake != null)
                     {
                         bool dirFacingL = false;
-                        if(facing == 'l') dirFacingL = true;
+                        if (facing == 'l') dirFacingL = true;
                         List<Bitmap> wakeFrames = currWake.getFrames(dirFacingL);
                         if (wakeFrames.Count > 0 && anim.currIdx >= wakeFrames.Count - 1)
                         {
@@ -3587,12 +3587,7 @@ namespace General
                 return;
             }
 
-            if (attackCooldown > 0)
-            {
-                anim.changeAnimation("idle", -1);
-                applyPhysics(tiles);
-                return;
-            }
+
 
             if (isWaiting)
             {
@@ -3663,14 +3658,69 @@ namespace General
             {
                 sameY = true;
             }
-
-            if (distanceX <= attackdis && sameY == true && !hero.isDead)
+            bool wasInAttackMode = attackmode;
+            if (enemyName == "bat")
             {
-                attackmode = true;
+                if (distanceX <= 500 && distanceY <= 300 && !hero.isDead)
+                {
+                    attackmode = true;
+                }
+                else
+                {
+                    attackmode = false;
+                }
             }
             else
             {
-                attackmode = false;
+                if (distanceX <= attackdis && sameY == true && !hero.isDead)
+                {
+                    attackmode = true;
+                }
+                else
+                {
+                    attackmode = false;
+
+                    if (wasInAttackMode == true)
+                    {
+                        isAttacking = false;
+                        attackDamageDone = false;
+
+                        isWaiting = false;
+                        isRunning = true;
+
+                        if (R.X <= leftLimit)
+                        {
+                            R.X = leftLimit;
+                            moving = 'r';
+                            facing = 'r';
+                        }
+                        else if (R.X >= rightLimit)
+                        {
+                            R.X = rightLimit;
+                            moving = 'l';
+                            facing = 'l';
+                        }
+                        else
+                        {
+                            float distToLeft = R.X - leftLimit;
+                            float distToRight = rightLimit - R.X;
+
+                            if (distToLeft < distToRight)
+                            {
+                                moving = 'r';
+                                facing = 'r';
+                            }
+                            else
+                            {
+                                moving = 'l';
+                                facing = 'l';
+                            }
+                        }
+
+                        anim.changeAnimation("run", -1);
+                        anim.restart();
+                    }
+                }
             }
 
             if (attackmode)
@@ -3678,26 +3728,92 @@ namespace General
                 moving = dir;
                 facing = dir;
 
-                if (R.X > hero.R.X)
+                if (enemyName == "bat")
                 {
-                    distanceX = R.X - hero.R.X;
-                    R.X -= 5;
-                    dx = -5;
-                }
-                else if (R.X < hero.R.X)
-                {
-                    distanceX = hero.R.X - R.X;
-                    R.X += 5;
-                    dx = 5;
-                }
+                    float moveX = 0f;
+                    float moveY = 0f;
 
-                if (distanceX <= attackrange && attackCooldown <= 0 && !hero.isDead)
-                {
-                    isAttacking = true;
-                    attackFrameTimer = 20;
-                    attackDamageDone = false;
-                    if(enemyName == "bat")
+                    if (distanceX > attackrange)
                     {
+                        isWaiting = false;
+                        isRunning = true;
+
+                        if (R.X > hero.R.X)
+                        {
+                            R.X -= speed;
+                            dx = -speed;
+                            moving = 'l';
+                            facing = 'l';
+                        }
+                        else if (R.X < hero.R.X)
+                        {
+                            R.X += speed;
+                            dx = speed;
+                            moving = 'r';
+                            facing = 'r';
+                        }
+
+                        anim.changeAnimation("run", -1);
+                    }
+
+                    if (distanceY > attackrange)
+                    {
+                        if (R.Y > hero.R.Y)
+                        {
+                            moveY = -speed;
+                        }
+                        else if (R.Y < hero.R.Y)
+                        {
+                            moveY = speed;
+                        }
+                    }
+
+                    R.X += moveX;
+                    R.Y += moveY;
+                    dx = moveX;
+
+                    if (moveX != 0 || moveY != 0)
+                    {
+                        anim.changeAnimation("run", -1);
+                    }
+
+                    distanceX = 0;
+                    distanceY = 0;
+
+                    if (R.X > hero.R.X)
+                    {
+                        distanceX = R.X - hero.R.X;
+                    }
+                    else
+                    {
+                        distanceX = hero.R.X - R.X;
+                    }
+
+                    if (R.Y > hero.R.Y)
+                    {
+                        distanceY = R.Y - hero.R.Y;
+                    }
+                    else
+                    {
+                        distanceY = hero.R.Y - R.Y;
+                    }
+
+                    if (distanceX <= attackrange && distanceY <= attackrange && attackCooldown > 0)
+                    {
+                        moving = ' ';
+                        isRunning = false;
+                        anim.changeAnimation("idle", -1);
+
+                        applyPhysics(tiles);
+                        return;
+                    }
+
+                    if (distanceX <= attackrange && distanceY <= attackrange && attackCooldown <= 0 && !hero.isDead)
+                    {
+                        isAttacking = true;
+                        attackFrameTimer = 20;
+                        attackDamageDone = false;
+
                         int randomattaack = rr.Next(0, 2);
 
                         if (randomattaack == 0)
@@ -3708,21 +3824,64 @@ namespace General
                         {
                             attackanimname = "attack2";
                         }
-                    }
-                    else
-                    {
-                        attackanimname = "attack";
-                    }
-
 
                         anim.changeAnimation(attackanimname, -1);
-                    anim.restart();
+                        anim.restart();
 
-                    applyPhysics(tiles);
-                    return;
+                        applyPhysics(tiles);
+                        return;
+                    }
+                }
+                else
+                {
+                    if (distanceX <= attackrange)
+                    {
+                        if (attackCooldown > 0)
+                        {
+                            moving = ' ';
+                            isRunning = false;
+                            anim.changeAnimation("idle", -1);
+
+                            applyPhysics(tiles);
+                            return;
+                        }
+
+                        if (attackCooldown <= 0 && !hero.isDead)
+                        {
+                            isAttacking = true;
+                            attackFrameTimer = 20;
+                            attackDamageDone = false;
+                            attackanimname = "attack";
+
+                            anim.changeAnimation(attackanimname, -1);
+                            anim.restart();
+
+                            applyPhysics(tiles);
+                            return;
+                        }
+                    }
+
+                    if (distanceX > attackrange)
+                    {
+                        if (R.X > hero.R.X)
+                        {
+                            R.X -= speed;
+                            dx = -speed;
+                            moving = 'l';
+                            facing = 'l';
+                        }
+                        else if (R.X < hero.R.X)
+                        {
+                            R.X += speed;
+                            dx = speed;
+                            moving = 'r';
+                            facing = 'r';
+                        }
+
+                        anim.changeAnimation("run", -1);
+                    }
                 }
             }
-
             for (int i = 0; i < tiles.Count; i++)
             {
                 tile t = tiles[i];
@@ -4238,7 +4397,7 @@ namespace General
 
             int batW = 50;
             int batH = 50;
-            int batY = getAboveGroundLoc(batH , height);
+            int batY = getAboveGroundLoc(batH + 300, height);
 
             en = new Enemy(1000, batY, batW, batH, "bat");
             en.CanSpawn = true;
@@ -5041,7 +5200,7 @@ namespace General
                     }
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
-                        droppedCoins[i].draw(g);
+                        droppedCoins[i].draw(g , camX);
                     }
 
                     hero.Draw(g, showRanges, camX);
@@ -5828,3 +5987,4 @@ namespace General
         }
     }
 }
+    
