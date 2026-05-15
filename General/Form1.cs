@@ -63,6 +63,7 @@ namespace General
             }
             else
             {
+                timer = 0;
                 idx = 0;
                 save(hero, Enemies , level);
             }
@@ -200,265 +201,316 @@ namespace General
     public class Load
     {
         public int level;
+
         public void loadLevel()
         {
+
             StreamReader sr = new StreamReader("Saves/level.txt");
             string lvl = sr.ReadLine();
-            level = changeToInt(lvl);
             sr.Close();
-        }
-        public Hero load(Hero hero, List<Enemy> enemies , int clientHeight)
-        {
-            hero = loadHero(hero , clientHeight);
-            loadEnemies(enemies);
 
+            if (lvl != null)
+            {
+                level = changeToInt(lvl);
+            }
+            else
+            {
+                level = 0;
+            }
+        }
+
+        public Hero load(Hero hero, List<Enemy> enemies, int clientHeight)
+        {
+         
+
+            hero = loadHero(hero, clientHeight);
+
+            loadEnemies(enemies);
             return hero;
         }
+
         int changeToInt(string val)
         {
+            bool negative = false;
+            if (val.Length > 0 && val[0] == '-')
+            {
+                negative = true;
+            }
+
             string num = "";
-            for (int i = 0; i < val.Length; i++)
+            int start = 0;
+            if (negative == true)
+            {
+                start = 1;
+            }
+
+            for (int i = start; i < val.Length; i++)
             {
                 if (val[i] == '.') break;
                 num += val[i];
             }
-            return Convert.ToInt32(num);
+
+            if (num == "")
+            {
+                return 0;
+            }
+
+            int result = Convert.ToInt32(num);
+
+            if (negative == false)
+            {
+                return result;
+            }
+            else
+            {
+                return -result;
+            }
         }
 
-        Hero loadHero(Hero hero , int clientHeight)
+        Hero loadHero(Hero hero, int clientHeight)
         {
-
             StreamReader sr = new StreamReader("Saves/hero.txt");
+
             while (sr.EndOfStream == false)
             {
                 string line = sr.ReadLine();
-                
 
-                string[] data = splitLine(line);
-                
-                string variable = data[0];
-                string val = data[1];
-
-                if(variable == "level")
+                if (line != null)
                 {
-                    level = changeToInt(val);
-                }
+                    string[] data = splitLine(line);
+                    string variable = data[0];
+                    string val = data[1];
 
-                if (variable == "hero_color")
-                {
-                    if (hero == null)
+                    if (variable == "hero_color")
                     {
-                        hero = new Hero(30, clientHeight - 150 - 30, 150, 150 , changeToInt(val));
-                    }
-                }
-
-                if (variable == "X,Y")
-                {
-                    string sx = "";
-                    string sy = "";
-
-                    bool foundComma = false;
-
-                    for (int i = 0; i < val.Length; i++)
-                    {
-                        if (val[i] == ',')
+                        if (hero == null)
                         {
-                            foundComma = true;
+                            hero = new Hero(30, clientHeight - 150 - 30, 150, 150, changeToInt(val));
                         }
-                        else
+                    }
+
+                    if (hero != null)
+                    {
+                        if (variable == "X,Y")
                         {
-                            if (foundComma == false)
+                            string sx = "";
+                            string sy = "";
+                            bool foundComma = false;
+
+                            for (int i = 0; i < val.Length; i++)
                             {
-                                sx += val[i];
+                                if (val[i] == ',')
+                                {
+                                    foundComma = true;
+                                }
+                                else if (foundComma == false)
+                                {
+                                    sx += val[i];
+                                }
+                                else
+                                {
+                                    sy += val[i];
+                                }
+                            }
+
+                            hero.R.X = changeToInt(sx);
+                            hero.R.Y = changeToInt(sy);
+                        }
+                        else if (variable == "isAbilityUnlocked")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isAbilityUnlocked = true;
                             }
                             else
                             {
-                                sy += val[i];
+                                hero.isAbilityUnlocked = false;
+                            }
+                        }
+                        else if (variable == "Moving")
+                        {
+                            if (val.Length > 0)
+                            {
+                                hero.moving = val[0];
+                            }
+                        }
+                        else if (variable == "ySpeed")
+                        {
+                            hero.ySpeed = changeToInt(val);
+                        }
+                        else if (variable == "jumpsUsed")
+                        {
+                            hero.jumpsUsed = changeToInt(val);
+                        }
+                        else if (variable == "isTakingDamage")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isTakingDamage = true;
+                            }
+                            else
+                            {
+                                hero.isTakingDamage = false;
+                            }
+                        }
+                        else if (variable == "takingDamageTimer")
+                        {
+                            hero.takingDamageTimer = changeToInt(val);
+                        }
+                        else if (variable == "coins")
+                        {
+                            hero.coins = changeToInt(val);
+                        }
+                        else if (variable == "isAttacking")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isAttacking = true;
+                            }
+                            else
+                            {
+                                hero.isAttacking = false;
+                            }
+                        }
+                        else if (variable == "attackHasHit")
+                        {
+                            if (val == "True")
+                            {
+                                hero.attackHasHit = true;
+                            }
+                            else
+                            {
+                                hero.attackHasHit = false;
+                            }
+                        }
+                        else if (variable == "maxHP")
+                        {
+                            hero.HP.maxHP = changeToInt(val);
+                        }
+                        else if (variable == "HP")
+                        {
+                            hero.HP.HP = changeToInt(val);
+                        }
+                        else if (variable == "maxMana")
+                        {
+                            hero.mana.maxMana = changeToInt(val);
+                        }
+                        else if (variable == "mana")
+                        {
+                            hero.mana.mana = changeToInt(val);
+                        }
+                        else if (variable == "regenRate")
+                        {
+                            hero.mana.regenRate = changeToInt(val);
+                        }
+                        else if (variable == "facing")
+                        {
+                            if (val.Length > 0)
+                            {
+                                hero.facing = val[0];
+                            }
+                        }
+                        else if (variable == "Weapon0_Damage")
+                        {
+                            if (hero.Weapons.Count > 0)
+                            {
+                                hero.Weapons[0].damage = changeToInt(val);
+                            }
+                        }
+                        else if (variable == "Weapon1_Damage")
+                        {
+                            if (hero.Weapons.Count > 1)
+                            {
+                                hero.Weapons[1].damage = changeToInt(val);
+                            }
+                        }
+                        else if (variable == "Weapon2_Damage")
+                        {
+                            if (hero.Weapons.Count > 2)
+                            {
+                                hero.Weapons[2].damage = changeToInt(val);
+                            }
+                        }
+                        else if (variable == "currentWeapon")
+                        {
+                            hero.currentWeapon = changeToInt(val);
+                        }
+                        else if (variable == "isSpellCasting")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isSpellCasting = true;
+                            }
+                            else
+                            {
+                                hero.isSpellCasting = false;
+                            }
+                        }
+                        else if (variable == "isShooting")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isShooting = true;
+                            }
+                            else
+                            {
+                                hero.isShooting = false;
+                            }
+                        }
+                        else if (variable == "spellCastPaused")
+                        {
+                            if (val == "True")
+                            {
+                                hero.spellCastPaused = true;
+                            }
+                            else
+                            {
+                                hero.spellCastPaused = false;
+                            }
+                        }
+                        else if (variable == "manaRegenRate")
+                        {
+                            hero.manaRegenRate = changeToInt(val);
+                        }
+                        else if (variable == "isCastingAbility")
+                        {
+                            if (val == "True")
+                            {
+                                hero.isCastingAbility = true;
+                            }
+                            else
+                            {
+                                hero.isCastingAbility = false;
+                            }
+                        }
+                        else if (variable == "abilityFireballSpawned")
+                        {
+                            if (val == "True")
+                            {
+                                hero.abilityFireballSpawned = true;
+                            }
+                            else
+                            {
+                                hero.abilityFireballSpawned = false;
+                            }
+                        }
+                        else if (variable == "abilityManaCost")
+                        {
+                            hero.abilityManaCost = changeToInt(val);
+                        }
+                        else if (variable == "abilityKeyDown")
+                        {
+                            if (val == "True")
+                            {
+                                hero.abilityKeyDown = true;
+                            }
+                            else
+                            {
+                                hero.abilityKeyDown = false;
                             }
                         }
                     }
-
-                    hero.R.X = changeToInt(sx);
-                    hero.R.Y = changeToInt(sy);
                 }
-
-
-                else if (variable == "isAbilityUnlocked")
-                {
-                    if (val == "true")
-                    {
-                        hero.isAbilityUnlocked = true;
-                    }
-                    else hero.isAbilityUnlocked = false;
-                }
-                else if (variable == "Moving")
-                {
-                    hero.moving = val[0];
-                }
-
-                else if (variable == "ySpeed")
-                {
-                    hero.ySpeed = changeToInt(val);
-                }
-
-                else if (variable == "jumpsUsed")
-                {
-                    hero.jumpsUsed = changeToInt(val);
-                }
-
-
-                else if (variable == "isTakingDamage")
-                {
-                    if (val == "true")
-                    {
-                        hero.isTakingDamage = true;
-                    }
-                    else hero.isTakingDamage = false;
-                }
-
-                else if (variable == "takingDamageTimer")
-                {
-                    hero.takingDamageTimer = changeToInt(val);
-                }
-
-                else if (variable == "coins")
-                {
-                    hero.coins = changeToInt(val);
-                }
-
-                else if (variable == "isAttacking")
-                {
-                    if (val == "true")
-                    {
-                        hero.isAttacking = true;
-                    }
-                    else hero.isAttacking = false;
-                }
-
-                else if (variable == "attackHasHit")
-                {
-                    if (val == "true")
-                    {
-                        hero.attackHasHit = true;
-                    }
-                    else hero.attackHasHit = false;
-                }
-
-                else if (variable == "maxHP")
-                {
-                    hero.HP.maxHP = changeToInt(val);
-                }
-
-                else if (variable == "HP")
-                {
-                    hero.HP.HP = changeToInt(val);
-                }
-
-                else if (variable == "maxMana")
-                {
-                    hero.mana.maxMana = changeToInt(val);
-                }
-
-                else if (variable == "mana")
-                {
-                    hero.mana.mana = changeToInt(val);
-                }
-
-                else if (variable == "regenRate")
-                {
-                    hero.mana.regenRate = changeToInt(val);
-                }
-
-                else if (variable == "facing")
-                {
-                    hero.facing = val[0];
-                }
-
-                else if (variable == "Weapon0_Damage")
-                {
-                    hero.Weapons[0].damage = changeToInt(val);
-                }
-
-                else if (variable == "Weapon1_Damage")
-                {
-                    hero.Weapons[1].damage = changeToInt(val);
-                }
-
-                else if (variable == "Weapon2_Damage")
-                {
-                    hero.Weapons[2].damage = changeToInt(val);
-                }
-
-                else if (variable == "currentWeapon")
-                {
-                    hero.currentWeapon = changeToInt(val);
-                }
-
-                else if (variable == "isSpellCasting")
-                {
-                    if (val == "true")
-                    {
-                        hero.isSpellCasting = true;
-                    }
-                    else hero.isSpellCasting = false;
-                }
-
-                else if (variable == "isShooting")
-                {
-                    if (val == "true")
-                    {
-                        hero.isShooting = true;
-                    }
-                    else hero.isShooting = false;
-                }
-
-                else if (variable == "spellCastPaused")
-                {
-                    if (val == "true")
-                    {
-                        hero.spellCastPaused = true;
-                    }
-                    else hero.spellCastPaused = false;
-                }
-
-                else if (variable == "manaRegenRate")
-                {
-                    hero.manaRegenRate = changeToInt(val);
-                }
-
-                else if (variable == "isCastingAbility")
-                {
-                    if (val == "true")
-                    {
-                        hero.isCastingAbility = true;
-                    }
-                    else hero.isCastingAbility = false;
-                }
-
-                else if (variable == "abilityFireballSpawned")
-                {
-                    if (val == "true")
-                    {
-                        hero.abilityFireballSpawned = true;
-                    }
-                    else hero.abilityFireballSpawned = false;
-                }
-
-                else if (variable == "abilityManaCost")
-                {
-                    hero.abilityManaCost = changeToInt(val);
-                }
-
-                else if (variable == "abilityKeyDown")
-                {
-                    if (val == "true")
-                    {
-                        hero.abilityKeyDown = true;
-                    }
-                    else hero.abilityKeyDown = false;
-                }
-
-             
             }
 
             sr.Close();
@@ -473,298 +525,300 @@ namespace General
             {
                 string line = sr.ReadLine();
 
-                string[] data = splitLine(line);
-
-                string variable = data[0];
-                string val = data[1];
-
-                if (variable != "EnemiesCount")
+                if(line != null)
                 {
-                    string num = "";
-                    bool foundUnderscore = false;
+                    string[] data = splitLine(line);
+                    string variable = data[0];
+                    string val = data[1];
 
-                    for (int i = 5; i < variable.Length; i++)
+                    if (variable != "EnemiesCount")
                     {
-                        if (variable[i] == '_')
+                        int underscorePos = -1;
+                        for (int i = 5; i < variable.Length; i++)
                         {
-                            foundUnderscore = true;
-                            break;
+                            if (variable[i] == '_')
+                            {
+                                underscorePos = i;
+                                break;
+                            }
                         }
 
-                        num += variable[i];
-                    }
-
-                    int enemyIndex = changeToInt(num);
-
-                    string property = "";
-                    bool startWriting = false;
-
-                    for (int i = 0; i < variable.Length; i++)
-                    {
-                        if (startWriting == true)
+                        if(underscorePos != -1)
                         {
-                            property += variable[i];
+                            string numStr = "";
+                            for (int i = 5; i < underscorePos; i++)
+                            {
+                                numStr += variable[i];
+                            }
+
+                            string property = "";
+                            for (int i = underscorePos + 1; i < variable.Length; i++)
+                            {
+                                property += variable[i];
+                            }
+
+                            int enemyIndex = changeToInt(numStr);
+
+                            if (enemyIndex >= 0 && enemyIndex < enemies.Count)
+                            {
+                                Enemy enemy = enemies[enemyIndex];
+
+                                if (property == "X")
+                                {
+                                    enemy.R.X = changeToInt(val);
+                                }
+                                else if (property == "Y")
+                                {
+                                    enemy.R.Y = changeToInt(val);
+                                }
+                                else if (property == "speed")
+                                {
+                                    enemy.speed = changeToInt(val);
+                                }
+                                else if (property == "moving")
+                                {
+                                    if (val.Length > 0)
+                                    {
+                                        enemy.moving = val[0];
+                                    }
+                                }
+                                else if (property == "facing")
+                                {
+                                    if (val.Length > 0)
+                                    {
+                                        enemy.facing = val[0];
+                                    }
+                                }
+                                else if (property == "isRunning")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isRunning = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isRunning = false;
+                                    }
+                                }
+                                else if (property == "velocityY")
+                                {
+                                    enemy.velocityY = changeToInt(val);
+                                }
+                                else if (property == "gravity")
+                                {
+                                    enemy.gravity = changeToInt(val);
+                                }
+                                else if (property == "max_speed")
+                                {
+                                    enemy.max_speed = changeToInt(val);
+                                }
+                                else if (property == "isGrounded")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isGrounded = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isGrounded = false;
+                                    }
+                                }
+                                else if (property == "wasGrounded")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.wasGrounded = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.wasGrounded = false;
+                                    }
+                                }
+                                else if (property == "prevBottom")
+                                {
+                                    enemy.prevBottom = changeToInt(val);
+                                }
+                                else if (property == "isDead")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isDead = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isDead = false;
+                                    }
+                                }
+                                else if (property == "isTakingDamage")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isTakingDamage = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isTakingDamage = false;
+                                    }
+                                }
+                                else if (property == "isAttacking")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isAttacking = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isAttacking = false;
+                                    }
+                                }
+                                else if (property == "damageTimer")
+                                {
+                                    enemy.damageTimer = changeToInt(val);
+                                }
+                                else if (property == "attackTimer")
+                                {
+                                    enemy.attackTimer = changeToInt(val);
+                                }
+                                else if (property == "deathTimer")
+                                {
+                                    enemy.deathTimer = changeToInt(val);
+                                }
+                                else if (property == "attackFrameTimer")
+                                {
+                                    enemy.attackFrameTimer = changeToInt(val);
+                                }
+                                else if (property == "attackCooldown")
+                                {
+                                    enemy.attackCooldown = changeToInt(val);
+                                }
+                                else if (property == "attackDamageDone")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.attackDamageDone = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.attackDamageDone = false;
+                                    }
+                                }
+                                else if (property == "startX")
+                                {
+                                    enemy.startX = changeToInt(val);
+                                }
+                                else if (property == "patrolDistance")
+                                {
+                                    enemy.patrolDistance = changeToInt(val);
+                                }
+                                else if (property == "leftLimit")
+                                {
+                                    enemy.leftLimit = changeToInt(val);
+                                }
+                                else if (property == "rightLimit")
+                                {
+                                    enemy.rightLimit = changeToInt(val);
+                                }
+                                else if (property == "spawnX")
+                                {
+                                    enemy.spawnX = changeToInt(val);
+                                }
+                                else if (property == "spawnY")
+                                {
+                                    enemy.spawnY = changeToInt(val);
+                                }
+                                else if (property == "CanSpawn")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.CanSpawn = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.CanSpawn = false;
+                                    }
+                                }
+                                else if (property == "spawnTime")
+                                {
+                                    enemy.spawnTime = changeToInt(val);
+                                }
+                                else if (property == "isWaiting")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.isWaiting = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.isWaiting = false;
+                                    }
+                                }
+                                else if (property == "waitTime")
+                                {
+                                    enemy.waitTime = changeToInt(val);
+                                }
+                                else if (property == "waitingTimer")
+                                {
+                                    enemy.waitingTimer = changeToInt(val);
+                                }
+                                else if (property == "spawnrange")
+                                {
+                                    enemy.spawnrange = changeToInt(val);
+                                }
+                                else if (property == "spawn")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.spawn = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.spawn = false;
+                                    }
+                                }
+                                else if (property == "attackrange")
+                                {
+                                    enemy.attackrange = changeToInt(val);
+                                }
+                                else if (property == "attackdis")
+                                {
+                                    enemy.attackdis = changeToInt(val);
+                                }
+                                else if (property == "attackmode")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.attackmode = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.attackmode = false;
+                                    }
+                                }
+                                else if (property == "idle")
+                                {
+                                    if (val == "True")
+                                    {
+                                        enemy.idle = true;
+                                    }
+                                    else
+                                    {
+                                        enemy.idle = false;
+                                    }
+                                }
+                                else if (property == "enemyName")
+                                {
+                                    enemy.enemyName = val;
+                                }
+                                else if (property == "maxHP")
+                                {
+                                    enemy.HP.maxHP = changeToInt(val);
+                                }
+                                else if (property == "HP")
+                                {
+                                    enemy.HP.HP = changeToInt(val);
+                                }
+                            }
                         }
-
-                        if (variable[i] == '_')
-                        {
-                            startWriting = true;
-                        }
-                    }
-
-                    Enemy enemy = enemies[enemyIndex];
-
-                    if (property == "X")
-                    {
-                        enemy.R.X = changeToInt(val);
-                    }
-
-                    else if (property == "Y")
-                    {
-                        enemy.R.Y = changeToInt(val);
-                    }
-
-                    else if (property == "speed")
-                    {
-                        enemy.speed = changeToInt(val);
-                    }
-
-                    else if (property == "moving")
-                    {
-                        enemy.moving = val[0];
-                    }
-
-                    else if (property == "facing")
-                    {
-                        enemy.facing = val[0];
-                    }
-
-                    else if (property == "isRunning")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isRunning = true;
-                        }
-                        else enemy.isRunning = false;
-                    }
-
-                    else if (property == "velocityY")
-                    {
-                        enemy.velocityY = changeToInt(val);
-                    }
-
-                    else if (property == "gravity")
-                    {
-                        enemy.gravity = changeToInt(val);
-                    }
-
-                    else if (property == "max_speed")
-                    {
-                        enemy.max_speed = changeToInt(val);
-                    }
-
-                    else if (property == "isGrounded")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isGrounded = true;
-                        }
-                        else enemy.isGrounded = false;
-                    }
-
-                    else if (property == "wasGrounded")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.wasGrounded = true;
-                        }
-                        else enemy.wasGrounded = false;
-                    }
-
-                    else if (property == "prevBottom")
-                    {
-                        enemy.prevBottom = changeToInt(val);
-                    }
-
-                    else if (property == "isDead")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isDead = true;
-                        }
-                        else enemy.isDead = false;
-                    }
-
-                    else if (property == "isTakingDamage")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isTakingDamage = true;
-                        }
-                        else enemy.isTakingDamage = false;
-                    }
-
-                    else if (property == "isAttacking")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isAttacking = true;
-                        }
-                        else enemy.isAttacking = false;
-                    }
-
-                    else if (property == "damageTimer")
-                    {
-                        enemy.damageTimer = changeToInt(val);
-                    }
-
-                    else if (property == "attackTimer")
-                    {
-                        enemy.attackTimer = changeToInt(val);
-                    }
-
-                    else if (property == "deathTimer")
-                    {
-                        enemy.deathTimer = changeToInt(val);
-                    }
-
-                    else if (property == "attackFrameTimer")
-                    {
-                        enemy.attackFrameTimer = changeToInt(val);
-                    }
-
-                    else if (property == "attackCooldown")
-                    {
-                        enemy.attackCooldown = changeToInt(val);
-                    }
-
-                    else if (property == "attackDamageDone")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.attackDamageDone = true;
-                        }
-                        else enemy.attackDamageDone = false;
-                    }
-
-                    else if (property == "startX")
-                    {
-                        enemy.startX = changeToInt(val);
-                    }
-
-                    else if (property == "patrolDistance")
-                    {
-                        enemy.patrolDistance = changeToInt(val);
-                    }
-
-                    else if (property == "leftLimit")
-                    {
-                        enemy.leftLimit = changeToInt(val);
-                    }
-
-                    else if (property == "rightLimit")
-                    {
-                        enemy.rightLimit = changeToInt(val);
-                    }
-
-                    else if (property == "spawnX")
-                    {
-                        enemy.spawnX = changeToInt(val);
-                    }
-
-                    else if (property == "spawnY")
-                    {
-                        enemy.spawnY = changeToInt(val);
-                    }
-
-                    else if (property == "CanSpawn")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.CanSpawn = true;
-                        }
-                        else enemy.CanSpawn = false;
-                    }
-
-                    else if (property == "spawnTime")
-                    {
-                        enemy.spawnTime = changeToInt(val);
-                    }
-
-                    else if (property == "isWaiting")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.isWaiting = true;
-                        }
-                        else enemy.isWaiting = false;
-                    }
-
-                    else if (property == "waitTime")
-                    {
-                        enemy.waitTime = changeToInt(val);
-                    }
-
-                    else if (property == "waitingTimer")
-                    {
-                        enemy.waitingTimer = changeToInt(val);
-                    }
-
-                    else if (property == "spawnrange")
-                    {
-                        enemy.spawnrange = changeToInt(val);
-                    }
-
-                    else if (property == "spawn")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.spawn = true;
-                        }
-                        else enemy.spawn = false;
-                    }
-
-                    else if (property == "attackrange")
-                    {
-                        enemy.attackrange = changeToInt(val);
-                    }
-
-                    else if (property == "attackdis")
-                    {
-                        enemy.attackdis = changeToInt(val);
-                    }
-
-                    else if (property == "attackmode")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.attackmode = true;
-                        }
-                        else enemy.attackmode = false;
-                    }
-
-                    else if (property == "idle")
-                    {
-                        if (val == "true")
-                        {
-                            enemy.idle = true;
-                        }
-                        else enemy.idle = false;
-                    }
-
-                    else if (property == "enemyName")
-                    {
-                        enemy.enemyName = val;
-                    }
-
-                    else if (property == "maxHP")
-                    {
-                        enemy.HP.maxHP = changeToInt(val);
-                    }
-
-                    else if (property == "HP")
-                    {
-                        enemy.HP.HP = changeToInt(val);
                     }
                 }
             }
@@ -777,7 +831,6 @@ namespace General
         {
             string variable = "";
             string val = "";
-
             bool foundColon = false;
 
             for (int i = 0; i < line.Length; i++)
@@ -786,24 +839,19 @@ namespace General
                 {
                     foundColon = true;
                 }
+                else if (foundColon == false)
+                {
+                    variable += line[i];
+                }
                 else
                 {
-                    if (foundColon == false)
-                    {
-                        variable += line[i];
-                    }
-                    else
-                    {
-                        val += line[i];
-                    }
+                    val += line[i];
                 }
             }
 
-            string[] lineVal = {"" , ""};
-
+            string[] lineVal = { "", "" };
             lineVal[0] = variable;
             lineVal[1] = val;
-
             return lineVal;
         }
 
@@ -815,7 +863,6 @@ namespace General
                 trav.takeHit(0);
             }
         }
-
     }
     public class Animation
     {
@@ -4972,7 +5019,6 @@ namespace General
                 }
                 else
                 {
-                    save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
 
                     Rectangle rcDst = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
 
@@ -4999,6 +5045,7 @@ namespace General
                     }
 
                     hero.Draw(g, showRanges, camX);
+                    save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
                 }
 
             }
