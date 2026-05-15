@@ -23,6 +23,17 @@ namespace General
 
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
+
+        string boolToText(bool value)
+        {
+            if (value == true)
+            {
+                return "True";
+            }
+
+            return "False";
+        }
+
         public void save(Hero hero, List<Enemy> Enemies , int level)
         {
             saveLvl(level);
@@ -88,13 +99,13 @@ namespace General
 
             sw.WriteLine("jumpsUsed:" + hero.jumpsUsed.ToString());
 
-            sw.WriteLine("isTakingDamage:" + hero.isTakingDamage.ToString());
+            sw.WriteLine("isTakingDamage:" + boolToText(hero.isTakingDamage));
             sw.WriteLine("takingDamageTimer:" + hero.takingDamageTimer.ToString());
 
             sw.WriteLine("coins:" + hero.coins.ToString());
 
-            sw.WriteLine("isAttacking:" + hero.isAttacking.ToString());
-            sw.WriteLine("attackHasHit:" + hero.attackHasHit.ToString());
+            sw.WriteLine("isAttacking:" + boolToText(hero.isAttacking));
+            sw.WriteLine("attackHasHit:" + boolToText(hero.attackHasHit));
 
             sw.WriteLine("maxHP:" + hero.HP.maxHP.ToString());
             sw.WriteLine("HP:" + hero.HP.HP.ToString());
@@ -112,17 +123,17 @@ namespace General
 
             sw.WriteLine("currentWeapon:" + hero.currentWeapon.ToString());
 
-            sw.WriteLine("isSpellCasting:" + hero.isSpellCasting.ToString());
-            sw.WriteLine("isShooting:" + hero.isShooting.ToString());
-            sw.WriteLine("spellCastPaused:" + hero.spellCastPaused.ToString());
+            sw.WriteLine("isSpellCasting:" + boolToText(hero.isSpellCasting));
+            sw.WriteLine("isShooting:" + boolToText(hero.isShooting));
+            sw.WriteLine("spellCastPaused:" + boolToText(hero.spellCastPaused));
 
             sw.WriteLine("manaRegenRate:" + hero.manaRegenRate.ToString());
 
-            sw.WriteLine("isCastingAbility:" + hero.isCastingAbility.ToString());
-            sw.WriteLine("abilityFireballSpawned:" + hero.abilityFireballSpawned.ToString());
+            sw.WriteLine("isCastingAbility:" + boolToText(hero.isCastingAbility));
+            sw.WriteLine("abilityFireballSpawned:" + boolToText(hero.abilityFireballSpawned));
             sw.WriteLine("abilityManaCost:" + hero.abilityManaCost.ToString());
-            sw.WriteLine("abilityKeyDown:" + hero.abilityKeyDown.ToString());
-            sw.WriteLine("isAbilityUnlocked:" + hero.isAbilityUnlocked.ToString());
+            sw.WriteLine("abilityKeyDown:" + boolToText(hero.abilityKeyDown));
+            sw.WriteLine("isAbilityUnlocked:" + boolToText(hero.isAbilityUnlocked));
 
             sw.Close();
         }
@@ -144,19 +155,19 @@ namespace General
 
                 sw.WriteLine("Enemy" + i + "_moving:" + enemy.moving.ToString());
                 sw.WriteLine("Enemy" + i + "_facing:" + enemy.facing.ToString());
-                sw.WriteLine("Enemy" + i + "_isRunning:" + enemy.isRunning.ToString());
+                sw.WriteLine("Enemy" + i + "_isRunning:" + boolToText(enemy.isRunning));
 
                 sw.WriteLine("Enemy" + i + "_velocityY:" + enemy.velocityY.ToString());
                 sw.WriteLine("Enemy" + i + "_gravity:" + enemy.gravity.ToString());
                 sw.WriteLine("Enemy" + i + "_max_speed:" + enemy.max_speed.ToString());
 
-                sw.WriteLine("Enemy" + i + "_isGrounded:" + enemy.isGrounded.ToString());
-                sw.WriteLine("Enemy" + i + "_wasGrounded:" + enemy.wasGrounded.ToString());
+                sw.WriteLine("Enemy" + i + "_isGrounded:" + boolToText(enemy.isGrounded));
+                sw.WriteLine("Enemy" + i + "_wasGrounded:" + boolToText(enemy.wasGrounded));
                 sw.WriteLine("Enemy" + i + "_prevBottom:" + enemy.prevBottom.ToString());
 
-                sw.WriteLine("Enemy" + i + "_isDead:" + enemy.isDead.ToString());
-                sw.WriteLine("Enemy" + i + "_isTakingDamage:" + enemy.isTakingDamage.ToString());
-                sw.WriteLine("Enemy" + i + "_isAttacking:" + enemy.isAttacking.ToString());
+                sw.WriteLine("Enemy" + i + "_isDead:" + boolToText(enemy.isDead));
+                sw.WriteLine("Enemy" + i + "_isTakingDamage:" + boolToText(enemy.isTakingDamage));
+                sw.WriteLine("Enemy" + i + "_isAttacking:" + boolToText(enemy.isAttacking));
 
                 sw.WriteLine("Enemy" + i + "_damageTimer:" + enemy.damageTimer.ToString());
                 sw.WriteLine("Enemy" + i + "_attackTimer:" + enemy.attackTimer.ToString());
@@ -164,7 +175,7 @@ namespace General
 
                 sw.WriteLine("Enemy" + i + "_attackFrameTimer:" + enemy.attackFrameTimer.ToString());
                 sw.WriteLine("Enemy" + i + "_attackCooldown:" + enemy.attackCooldown.ToString());
-                sw.WriteLine("Enemy" + i + "_attackDamageDone:" + enemy.attackDamageDone.ToString());
+                sw.WriteLine("Enemy" + i + "_attackDamageDone:" + boolToText(enemy.attackDamageDone));
 
                 sw.WriteLine("Enemy" + i + "_startX:" + enemy.startX.ToString());
                 sw.WriteLine("Enemy" + i + "_patrolDistance:" + enemy.patrolDistance.ToString());
@@ -173,21 +184,21 @@ namespace General
 
                 sw.WriteLine("Enemy" + i + "_spawnX:" + enemy.spawnX.ToString());
                 sw.WriteLine("Enemy" + i + "_spawnY:" + enemy.spawnY.ToString());
-                sw.WriteLine("Enemy" + i + "_CanSpawn:" + enemy.CanSpawn.ToString());
+                sw.WriteLine("Enemy" + i + "_CanSpawn:" + boolToText(enemy.CanSpawn));
                 sw.WriteLine("Enemy" + i + "_spawnTime:" + enemy.spawnTime.ToString());
 
-                sw.WriteLine("Enemy" + i + "_isWaiting:" + enemy.isWaiting.ToString());
+                sw.WriteLine("Enemy" + i + "_isWaiting:" + boolToText(enemy.isWaiting));
                 sw.WriteLine("Enemy" + i + "_waitTime:" + enemy.waitTime.ToString());
                 sw.WriteLine("Enemy" + i + "_waitingTimer:" + enemy.waitingTimer.ToString());
 
                 sw.WriteLine("Enemy" + i + "_spawnrange:" + enemy.spawnrange.ToString());
-                sw.WriteLine("Enemy" + i + "_spawn:" + enemy.spawn.ToString());
+                sw.WriteLine("Enemy" + i + "_spawn:" + boolToText(enemy.spawn));
 
                 sw.WriteLine("Enemy" + i + "_attackrange:" + enemy.attackrange.ToString());
                 sw.WriteLine("Enemy" + i + "_attackdis:" + enemy.attackdis.ToString());
-                sw.WriteLine("Enemy" + i + "_attackmode:" + enemy.attackmode.ToString());
+                sw.WriteLine("Enemy" + i + "_attackmode:" + boolToText(enemy.attackmode));
 
-                sw.WriteLine("Enemy" + i + "_idle:" + enemy.idle.ToString());
+                sw.WriteLine("Enemy" + i + "_idle:" + boolToText(enemy.idle));
 
                 sw.WriteLine("Enemy" + i + "_enemyName:" + enemy.enemyName);
 
@@ -201,6 +212,21 @@ namespace General
     public class Load
     {
         public int level;
+
+        bool changeBool(string val)
+        {
+            if (val == "True")
+            {
+                return true;
+            }
+
+            if (val == "False")
+            {
+                return false;
+            }
+
+            return false;
+        }
 
         public void loadLevel()
         {
@@ -318,14 +344,7 @@ namespace General
                         }
                         else if (variable == "isAbilityUnlocked")
                         {
-                            if (val == "True")
-                            {
-                                hero.isAbilityUnlocked = true;
-                            }
-                            else
-                            {
-                                hero.isAbilityUnlocked = false;
-                            }
+                            hero.isAbilityUnlocked = changeBool(val);
                         }
                         else if (variable == "Moving")
                         {
@@ -344,14 +363,7 @@ namespace General
                         }
                         else if (variable == "isTakingDamage")
                         {
-                            if (val == "True")
-                            {
-                                hero.isTakingDamage = true;
-                            }
-                            else
-                            {
-                                hero.isTakingDamage = false;
-                            }
+                            hero.isTakingDamage = changeBool(val);
                         }
                         else if (variable == "takingDamageTimer")
                         {
@@ -363,25 +375,11 @@ namespace General
                         }
                         else if (variable == "isAttacking")
                         {
-                            if (val == "True")
-                            {
-                                hero.isAttacking = true;
-                            }
-                            else
-                            {
-                                hero.isAttacking = false;
-                            }
+                            hero.isAttacking = changeBool(val);
                         }
                         else if (variable == "attackHasHit")
                         {
-                            if (val == "True")
-                            {
-                                hero.attackHasHit = true;
-                            }
-                            else
-                            {
-                                hero.attackHasHit = false;
-                            }
+                            hero.attackHasHit = changeBool(val);
                         }
                         else if (variable == "maxHP")
                         {
@@ -437,36 +435,15 @@ namespace General
                         }
                         else if (variable == "isSpellCasting")
                         {
-                            if (val == "True")
-                            {
-                                hero.isSpellCasting = true;
-                            }
-                            else
-                            {
-                                hero.isSpellCasting = false;
-                            }
+                            hero.isSpellCasting = changeBool(val);
                         }
                         else if (variable == "isShooting")
                         {
-                            if (val == "True")
-                            {
-                                hero.isShooting = true;
-                            }
-                            else
-                            {
-                                hero.isShooting = false;
-                            }
+                            hero.isShooting = changeBool(val);
                         }
                         else if (variable == "spellCastPaused")
                         {
-                            if (val == "True")
-                            {
-                                hero.spellCastPaused = true;
-                            }
-                            else
-                            {
-                                hero.spellCastPaused = false;
-                            }
+                            hero.spellCastPaused = changeBool(val);
                         }
                         else if (variable == "manaRegenRate")
                         {
@@ -474,25 +451,11 @@ namespace General
                         }
                         else if (variable == "isCastingAbility")
                         {
-                            if (val == "True")
-                            {
-                                hero.isCastingAbility = true;
-                            }
-                            else
-                            {
-                                hero.isCastingAbility = false;
-                            }
+                            hero.isCastingAbility = changeBool(val);
                         }
                         else if (variable == "abilityFireballSpawned")
                         {
-                            if (val == "True")
-                            {
-                                hero.abilityFireballSpawned = true;
-                            }
-                            else
-                            {
-                                hero.abilityFireballSpawned = false;
-                            }
+                            hero.abilityFireballSpawned = changeBool(val);
                         }
                         else if (variable == "abilityManaCost")
                         {
@@ -500,14 +463,7 @@ namespace General
                         }
                         else if (variable == "abilityKeyDown")
                         {
-                            if (val == "True")
-                            {
-                                hero.abilityKeyDown = true;
-                            }
-                            else
-                            {
-                                hero.abilityKeyDown = false;
-                            }
+                            hero.abilityKeyDown = changeBool(val);
                         }
                     }
                 }
@@ -591,14 +547,7 @@ namespace General
                                 }
                                 else if (property == "isRunning")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isRunning = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isRunning = false;
-                                    }
+                                    enemy.isRunning = changeBool(val);
                                 }
                                 else if (property == "velocityY")
                                 {
@@ -614,25 +563,11 @@ namespace General
                                 }
                                 else if (property == "isGrounded")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isGrounded = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isGrounded = false;
-                                    }
+                                    enemy.isGrounded = changeBool(val);
                                 }
                                 else if (property == "wasGrounded")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.wasGrounded = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.wasGrounded = false;
-                                    }
+                                    enemy.wasGrounded = changeBool(val);
                                 }
                                 else if (property == "prevBottom")
                                 {
@@ -640,36 +575,15 @@ namespace General
                                 }
                                 else if (property == "isDead")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isDead = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isDead = false;
-                                    }
+                                    enemy.isDead = changeBool(val);
                                 }
                                 else if (property == "isTakingDamage")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isTakingDamage = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isTakingDamage = false;
-                                    }
+                                    enemy.isTakingDamage = changeBool(val);
                                 }
                                 else if (property == "isAttacking")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isAttacking = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isAttacking = false;
-                                    }
+                                    enemy.isAttacking = changeBool(val);
                                 }
                                 else if (property == "damageTimer")
                                 {
@@ -693,14 +607,7 @@ namespace General
                                 }
                                 else if (property == "attackDamageDone")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.attackDamageDone = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.attackDamageDone = false;
-                                    }
+                                    enemy.attackDamageDone = changeBool(val);
                                 }
                                 else if (property == "startX")
                                 {
@@ -728,14 +635,7 @@ namespace General
                                 }
                                 else if (property == "CanSpawn")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.CanSpawn = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.CanSpawn = false;
-                                    }
+                                    enemy.CanSpawn = changeBool(val);
                                 }
                                 else if (property == "spawnTime")
                                 {
@@ -743,14 +643,7 @@ namespace General
                                 }
                                 else if (property == "isWaiting")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.isWaiting = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.isWaiting = false;
-                                    }
+                                    enemy.isWaiting = changeBool(val);
                                 }
                                 else if (property == "waitTime")
                                 {
@@ -766,14 +659,7 @@ namespace General
                                 }
                                 else if (property == "spawn")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.spawn = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.spawn = false;
-                                    }
+                                    enemy.spawn = changeBool(val);
                                 }
                                 else if (property == "attackrange")
                                 {
@@ -785,25 +671,11 @@ namespace General
                                 }
                                 else if (property == "attackmode")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.attackmode = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.attackmode = false;
-                                    }
+                                    enemy.attackmode = changeBool(val);
                                 }
                                 else if (property == "idle")
                                 {
-                                    if (val == "True")
-                                    {
-                                        enemy.idle = true;
-                                    }
-                                    else
-                                    {
-                                        enemy.idle = false;
-                                    }
+                                    enemy.idle = changeBool(val);
                                 }
                                 else if (property == "enemyName")
                                 {
@@ -3266,9 +3138,9 @@ namespace General
 
 
                 drawR.X = R.X ;
-                drawR.Y = R.Y;
-                drawR.Width = R.Width * 2f;
-                drawR.Height = R.Height * 2f;
+                drawR.Y = R.Y + 20;
+                drawR.Width = 100;
+                drawR.Height = 100;
 
                 enemyName = "bat";
                 enemyFolder = "Bat";
@@ -3306,6 +3178,11 @@ namespace General
             {
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y + (R.Height - drawR.Height);
+                if(this.enemyType == "bat")
+                {
+                    drawR.Y = R.Y - 20;
+
+                }
 
                 Bitmap frame;
 
@@ -4396,7 +4273,7 @@ namespace General
 
 
             int batW = 50;
-            int batH = 50;
+            int batH = 34;
             int batY = getAboveGroundLoc(batH + 300, height);
 
             en = new Enemy(1000, batY, batW, batH, "bat");
