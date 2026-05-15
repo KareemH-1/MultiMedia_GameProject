@@ -23,13 +23,14 @@ namespace General
 
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
-        public void save(Hero hero, List<Enemy> Enemies)
+        public void save(Hero hero, List<Enemy> Enemies , int level)
         {
+            saveLvl(level);
             saveHero(hero);
             saveEnemies(Enemies);
 
         }
-        public void autoSave(Hero hero, List<Enemy> Enemies , Graphics g , int clientHeight)
+        public void autoSave(Hero hero, List<Enemy> Enemies, int level, Graphics g , int clientHeight)
         {
             if(timer < 20)
             {
@@ -63,15 +64,22 @@ namespace General
             else
             {
                 idx = 0;
-                save(hero, Enemies);
+                save(hero, Enemies , level);
             }
+        }
+
+        void saveLvl(int level)
+        {
+           
+            StreamWriter sw = new StreamWriter("Saves/level.txt");
+            sw.WriteLine(level.ToString());
+            sw.Close();
         }
 
         void saveHero(Hero hero)
         {
 
             StreamWriter sw = new StreamWriter("Saves/hero.txt");
-
             sw.WriteLine("hero_color:" + hero.ColorIdx.ToString());
             sw.WriteLine("X,Y:" + hero.R.X.ToString() + "," + hero.R.Y.ToString());
             sw.WriteLine("Moving:" + hero.moving);
@@ -191,6 +199,14 @@ namespace General
 
     public class Load
     {
+        public int level;
+        public void loadLevel()
+        {
+            StreamReader sr = new StreamReader("Saves/level.txt");
+            string lvl = sr.ReadLine();
+            level = changeToInt(lvl);
+            sr.Close();
+        }
         public Hero load(Hero hero, List<Enemy> enemies , int clientHeight)
         {
             hero = loadHero(hero , clientHeight);
@@ -222,6 +238,11 @@ namespace General
                 
                 string variable = data[0];
                 string val = data[1];
+
+                if(variable == "level")
+                {
+                    level = changeToInt(val);
+                }
 
                 if (variable == "hero_color")
                 {
@@ -4051,6 +4072,303 @@ namespace General
 
         }
     }
+
+    public class level
+    {
+        public List<Ladder> ladders = new List<Ladder>();
+        public List<Enemy> enemies = new List<Enemy>();
+        public List<tile> tiles = new List<tile>();
+        public Bitmap background;
+        public int worldWidth = 0;
+        public int worldHeight = 0;
+
+        public float startHeroX;
+        public float startHeroY;
+
+        public level(Bitmap bk , int width , int height , float startHeroX , float startHeroY)
+        {
+            background = bk;
+            worldWidth = width;
+            worldHeight = height;
+            this.startHeroX = startHeroX;
+            this.startHeroY = startHeroY;
+        }
+
+        public void addEnemy(Enemy enemy)
+        {
+            enemies.Add(enemy);
+        }
+
+        public void addLadder(Ladder ladder)
+        {
+            ladders.Add(ladder);
+        }
+        public void addTiles(tile tile)
+        {
+            tiles.Add(tile);
+        }
+    }
+
+    public class levelController
+    {
+        public List<level> levels = new List<level>();
+        public int currentLevel = -1;
+
+        public levelController(int height , int width)
+        {
+            initLevelData(height, width);
+            initAll(height);
+        }
+
+        public void initLevelData(int height, int width)
+        {
+
+            //level 1 (idx 0)
+            Bitmap background = new Bitmap("Backgrounds/Forest.png");
+            int worldWidth = background.Width;
+            int worldHeight = height;
+
+            float startHeroX = 30;
+            float startHeroY = height - 150 - 30;
+
+            level lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
+            levels.Add(lvl);
+        }
+        public void initAll(int height)
+        {
+            removeAllFromLevels();
+            initTiles(height);
+            initLadders(height);
+            initEnemies(height);
+
+        }
+
+        void removeAllFromLevels()
+        {
+            for(int i =0 ; i< levels.Count ; i++){
+
+                while(levels[i].enemies.Count > 0){
+                    levels[i].enemies.RemoveAt(0);
+                }
+                while(levels[i].ladders.Count > 0){
+                    levels[i].ladders.RemoveAt(0);
+                }
+                while(levels[i].tiles.Count > 0){
+                    levels[i].tiles.RemoveAt(0);
+                }
+
+            }
+        }
+
+        void initLadders( int height)
+        {
+            Ladder ladder;
+
+            ladder = new Ladder(800 - 75, height - 250 - 400, 400, false);
+            levels[0].ladders.Add(ladder);
+
+        }
+
+        int getAboveGroundLoc(int enemyH , int Height)
+        {
+            return Height - 30 - enemyH;
+        }
+
+        void initEnemies(int height)
+        {
+            Enemy en;
+
+            // Mushroom size
+            int mushroomW = 90;
+            int mushroomH = 70;
+            int mushroomY = getAboveGroundLoc(mushroomH , height);
+
+            en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[0].enemies.Add(en);
+
+
+            int batW = 50;
+            int batH = 50;
+            int batY = getAboveGroundLoc(batH , height);
+
+            en = new Enemy(1000, batY, batW, batH, "bat");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[0].enemies.Add(en);
+
+
+        }
+
+        void initTiles(int height)
+        {
+            tile pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, height - 30, levels[0].worldWidth, 30);
+            levels[0].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.jumpThrough = true;
+            pnn.init(300, height - 150, 200, 20);
+            levels[0].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.jumpThrough = false;
+            pnn.clr = Color.DarkRed;
+            pnn.init(600, height - 250, 200, 30);
+            levels[0].tiles.Add(pnn);
+        }
+
+        public void loadLadders(List<Ladder>ladders)
+        {
+            while (ladders.Count > 0)
+            {
+                ladders.RemoveAt(0);
+            }
+
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return;
+            }
+
+            level curLvl = levels[currentLevel];
+
+            for (int i = 0; i < curLvl.ladders.Count; i++)
+            {
+                Ladder temp = curLvl.ladders[i];
+                ladders.Add(temp);
+            }
+
+        }
+
+        public void loadEnemies(List<Enemy>enemies)
+        {
+            while (enemies.Count > 0)
+            {
+                enemies.RemoveAt(0);
+            }
+
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return;
+            }
+
+            level curLvl = levels[currentLevel];
+
+            for (int i = 0; i < curLvl.enemies.Count; i++)
+            {
+                Enemy temp = curLvl.enemies[i];
+                enemies.Add(temp);
+            }
+        
+        }
+
+        public void loadTiles(List<tile>tiles)
+        {
+            
+            while (tiles.Count > 0)
+            {
+                tiles.RemoveAt(0);
+            }
+
+                if (currentLevel < 0 || currentLevel >= levels.Count)
+                {
+                    return;
+                }
+
+            level curLvl = levels[currentLevel];
+            for (int i = 0; i < curLvl.tiles.Count; i++)
+            {
+                tile temp = curLvl.tiles[i];
+                tiles.Add(temp);
+            }
+
+        }
+        public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles , List<DroppedCoin> coins)
+        {
+            while(coins.Count > 0)
+            {
+                coins.RemoveAt(0);
+            }
+
+            while(enemies.Count > 0)
+            {
+                enemies.RemoveAt(0);
+            }
+
+            while (ladders.Count > 0)
+            {
+                ladders.RemoveAt(0);
+            }
+
+            while (tiles.Count > 0)
+            {
+                tiles.RemoveAt(0);
+            }
+        }
+
+        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles)
+        {
+            level curLvl = levels[currentLevel];
+
+            while (enemies.Count > 0)
+            {
+                enemies.RemoveAt(0);
+            }
+            while (ladders.Count > 0)
+            {
+                ladders.RemoveAt(0);
+            }
+            while (tiles.Count > 0)
+            {
+                tiles.RemoveAt(0);
+            }
+
+            for(int i =0; i < curLvl.enemies.Count; i++)
+            {
+                Enemy temp = curLvl.enemies[i];
+                enemies.Add(temp);
+            }
+
+            for (int i = 0; i < curLvl.ladders.Count; i++)
+            {
+                Ladder temp = curLvl.ladders[i];
+                ladders.Add(temp);
+            }
+
+            for (int i = 0; i < curLvl.tiles.Count; i++)
+            {
+                tile temp = curLvl.tiles[i];
+                tiles.Add(temp);
+            }
+        }
+        public void nextLevel(List<Enemy> enemies , List<Ladder> ladders , List<tile> tiles , List<DroppedCoin> coins)
+        {
+            if (currentLevel < levels.Count - 1)
+            {
+                currentLevel++;
+                removeAll(enemies, ladders, tiles , coins);
+                assignAll(enemies, ladders, tiles);
+            }
+        }
+        public float getNewHeroX()
+        {
+            return levels[currentLevel].startHeroX;
+        }
+
+        public float getNewHeroY()
+        {
+            return levels[currentLevel].startHeroY;
+        }
+
+        public Bitmap getBackground()
+        {
+            return levels[currentLevel].background;
+        }
+    }
     public partial class Form1 : Form
     {
         Save save = new Save();
@@ -4079,14 +4397,12 @@ namespace General
         bool showRanges = false;
         Bitmap off; 
         Random RR = new Random();
-        Bitmap background;
 
         float camX = 0;
         float camY = 0;
 
-        int worldWidth = 2000;
-        int worldHeight = 0;
 
+        levelController levels;
 
         Hero hero;
         List<Enemy> enemies = new List<Enemy>();
@@ -4154,7 +4470,7 @@ namespace General
                     if (lastMenuScreen == 0)
                     {
                         startNewGame();
-                        save.save(hero, enemies);
+                        save.save(hero, enemies , levels.currentLevel);
                     }
 
                     startGame();
@@ -4393,7 +4709,7 @@ namespace General
                         if (lastMenuScreen == 0)
                         {
                             startNewGame();
-                            save.save(hero, enemies);
+                            save.save(hero, enemies , levels.currentLevel);
 
                         }
 
@@ -4549,7 +4865,7 @@ namespace General
                         camX = 0;
                     }
 
-                    float maxCamX = background.Width - this.ClientSize.Width;
+                    float maxCamX = levels.getBackground().Width - this.ClientSize.Width;
 
                     if (maxCamX < 0)
                     {
@@ -4612,22 +4928,18 @@ namespace General
         private void Form1_Load(object sender, EventArgs e)
         {
             off = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
-            background = new Bitmap("Backgrounds/Forest.png");
+            initButtons();
+            initMenu();
 
-            worldWidth = background.Width;
-            worldHeight = this.ClientSize.Height;
+            levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
+            
 
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
-            initTiles();
-            initLadders();
-
-            initEnemies();
-            initButtons();
+                
 
             loadData();
 
-            initMenu();
             drawDubb(this.CreateGraphics());
 
         }
@@ -4660,13 +4972,13 @@ namespace General
                 }
                 else
                 {
-                    save.autoSave(hero, enemies, g, this.ClientSize.Height);
+                    save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
 
                     Rectangle rcDst = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
 
-                    Rectangle rcSrc = new Rectangle((int)camX, 0, this.ClientSize.Width, background.Height);
+                    Rectangle rcSrc = new Rectangle((int)camX, 0, this.ClientSize.Width, levels.getBackground().Height);
 
-                    g.DrawImage(background, rcDst, rcSrc, GraphicsUnit.Pixel);
+                    g.DrawImage(levels.getBackground(), rcDst, rcSrc, GraphicsUnit.Pixel);
 
 
                     for (int i = 0; i < tiles.Count; i++)
@@ -4777,9 +5089,11 @@ namespace General
 
             G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
             G.DrawImage(heroColors[hero.ColorIdx].frames[0], x + width - 120 - 20, currentY - 20, 120, 120);
-
+            G.DrawString("Level : " + (levels.currentLevel +1).ToString(), normalFont, white, x + width - 120 - 20, currentY + 120);
+            
             currentY += 40;
 
+            
             G.DrawString("Coins : " + hero.coins, normalFont, white, textX, currentY);
 
             currentY += 35;
@@ -4985,7 +5299,7 @@ namespace General
             }
             else if (currPauseBtn == 1 && PauseBtns.Count == 3)
             {
-                save.save(hero, enemies);
+                save.save(hero, enemies , levels.currentLevel);
                 PauseBtns.RemoveAt(1);
                 drawDubb(this.CreateGraphics());
 
@@ -5133,68 +5447,7 @@ namespace General
 
             return false;
         }
-       
-        void initLadders()
-        {
-            Ladder ladder;
 
-            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400, 400, false);
-            ladders.Add(ladder);
-
-        }
-        
-        int getAboveGroundLoc(int enemyH)
-        {
-            return this.ClientSize.Height - 30 - enemyH;
-        }
-        
-        void initEnemies()
-        {
-            Enemy en;
-
-            // Mushroom size
-            int mushroomW = 90;
-            int mushroomH = 70;
-            int mushroomY = getAboveGroundLoc(mushroomH);
-
-            en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
-            en.CanSpawn = true;
-            en.spawn = true;
-            enemies.Add(en);
-
-
-            int batW = 50;
-            int batH = 50;
-            int batY = getAboveGroundLoc(batH);
-
-            en = new Enemy(1000, batY, batW, batH, "bat");
-            en.CanSpawn = true;
-            en.spawn = true;
-            enemies.Add(en);
-
-
-        }
-        
-        void initTiles()
-        {
-            tile pnn = new tile();
-            pnn.interact = true;
-            pnn.init(0, this.ClientSize.Height - 30, worldWidth, 30);
-            tiles.Add(pnn);
-
-            pnn = new tile();
-            pnn.interact = true;
-            pnn.jumpThrough = true;
-            pnn.init(300, this.ClientSize.Height - 150, 200, 20);
-            tiles.Add(pnn);
-
-            pnn = new tile();
-            pnn.interact = true;
-            pnn.jumpThrough = false;
-            pnn.clr = Color.DarkRed;
-            pnn.init(600, this.ClientSize.Height - 250, 200, 30);
-            tiles.Add(pnn);
-        }
 
         void UpdateCamera()
         {
@@ -5205,7 +5458,7 @@ namespace General
                 camX = 0;
             }
 
-            float maxCamX = background.Width - this.ClientSize.Width;
+            float maxCamX = levels.getBackground().Width - this.ClientSize.Width;
 
             if (maxCamX < 0)
             {
@@ -5436,19 +5689,33 @@ namespace General
 
         void loadData()
         {
-            hero = load.load(hero, enemies , this.ClientSize.Height);
-          
-        }
+
+            load.loadLevel();
+            levels.currentLevel = load.level;
+
+            levels.initAll(this.ClientSize.Height);
+
+            levels.loadLadders(ladders);
+            levels.loadTiles(tiles);
+            levels.loadEnemies(enemies);
+            hero = load.load(hero, enemies, this.ClientSize.Height);
+        }    
 
         void startNewGame()
         {
-            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150 , ChoiceIdx);
-            while(enemies.Count > 0)
-            {
-                enemies.RemoveAt(0);
-            }
+            hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150, ChoiceIdx);
 
-            initEnemies();
+            levels.initAll(this.ClientSize.Height);
+
+            levels.currentLevel = 0;
+            levels.loadLadders(ladders);
+            levels.loadTiles(tiles);
+            levels.loadEnemies(enemies);
+
+            hero.R.X = levels.getNewHeroX();
+            hero.R.Y = levels.getNewHeroY();
+
+
         }
 
         void handleEnemyMovement()
