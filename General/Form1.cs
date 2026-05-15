@@ -4161,6 +4161,7 @@ namespace General
         public List<Ladder> ladders = new List<Ladder>();
         public List<Enemy> enemies = new List<Enemy>();
         public List<tile> tiles = new List<tile>();
+        public Teleporter teleporter;
         public Bitmap background;
         public int worldWidth = 0;
         public int worldHeight = 0;
@@ -4216,6 +4217,18 @@ namespace General
 
             level lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
             levels.Add(lvl);
+
+            initTeleporters();
+        }
+
+        public void initTeleporters()
+        {
+            for(int i =0; i<levels.Count; i++)
+            {
+                level lvl = levels[i];
+
+                lvl.teleporter = new Teleporter(i, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 200);
+            }
         }
         public void initAll(int height)
         {
@@ -4450,6 +4463,168 @@ namespace General
         public Bitmap getBackground()
         {
             return levels[currentLevel].background;
+        }
+    }
+
+    public class Teleporter
+    {
+        public int level;
+        public rect rect = new rect();
+        public Animation Animation = new Animation();
+        public int currF = 0;
+        public int requiredCoins = 200;
+        public bool isUnlocked = false;
+
+        public bool loopIt = false;
+        public int range = 300;
+        public bool isHeroInRange = false;
+        
+        public Teleporter(int level , int x , int y , int w , int h , int coins , int range)
+        {
+            this.level = level;
+            rect.X = x;
+            rect.Y = y;
+            rect.Width = w;
+            rect.Height = h;
+
+            requiredCoins = coins;
+            this.range = range;
+
+            initAnim(level);
+        }
+
+        void initAnim(int level)
+        {
+            if (level == 0)
+            {
+                for (int i = 1; i <= 8; i++) {
+                    Bitmap frame = new Bitmap("Teleporters/Green/" + i.ToString() + ".png");
+                    Animation.addFrame(frame, false, false);
+                }
+                loopIt = true;
+            }
+
+            else if (level == 1)
+            {
+                for (int i = 0; i <= 40; i++)
+                {
+                    string numbers = "";
+                    if(i < 10)
+                    {
+                        numbers += "0";
+                    }
+                    numbers += i.ToString();
+                    Bitmap frame = new Bitmap("Teleporters/Key/sprite_" + numbers + ".png");
+                    Animation.addFrame(frame, false, false);
+                }
+                loopIt = false;
+            }
+            else if(level == 2){
+
+                for (int i = 0; i <= 21; i++)
+                {
+                    string numbers = "";
+                    if (i < 10)
+                    {
+                        numbers += "0";
+                    }
+                    numbers += i.ToString();
+                    Bitmap frame = new Bitmap("Teleporters/Purple/Sequence" + numbers + ".png");
+                    Animation.addFrame(frame, false, false);
+                }
+
+                loopIt = false;
+            }
+        }
+
+        public Bitmap getFrame()
+        {
+            if(this.loopIt == true)
+            {
+                Bitmap frame = Animation.frames[currF];
+                if (currF < Animation.frames.Count - 1)
+                {
+                    currF++;
+                }
+                else currF = 0;
+                return frame;
+            }
+            else
+            {
+                if(isUnlocked == false)
+                {
+                    return Animation.frames[0];
+                }
+                else
+                {
+                    if(currF < Animation.frames.Count - 1)
+                    {
+                        currF++;
+                        return Animation.frames[currF];
+                    }
+                    else
+                    {
+                        return Animation.frames[Animation.frames.Count - 1];
+                    }
+                }
+            }
+        }
+
+        public void checkHero(Hero hero)
+        {
+            int startX = rect.X - range;
+            int endX = rect.X + rect.Width + range;
+
+            int startY = rect.Y - range;
+            int endY = rect.Y + rect.Height + range;
+
+            if (hero.R.X < startX + endX && hero.R.X + hero.R.Width >= startX &&
+                hero.R.Y < startY + endY && hero.R.Y + hero.R.Height >= startY)
+            {
+                isHeroInRange = true;
+            }
+            else isHeroInRange = false;
+            
+        }
+        public void draw(Graphics g, Hero hero, bool showRange , float camX)
+        {
+            checkHero(hero);
+            g.DrawImage(getFrame(), rect.X - camX, rect.Y, rect.Width, rect.Height);
+
+            if (showRange == true)
+            {
+                Pen red = new Pen(Color.Red);
+                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range, range + rect.Width, range + rect.Height);
+            }
+
+            int h = 40;
+            int w = 165;
+            float positionButtonX = rect.X + rect.Width / 2 - w / 2 - camX;
+            float positionButtonY = rect.Y - h - 20;
+
+            if (isHeroInRange == true)
+            {
+                SolidBrush greyBrush = new SolidBrush(Color.Gray);
+                g.FillRectangle(greyBrush, positionButtonX, positionButtonY, w, h);
+
+                Pen blackPen = new Pen(Color.Black, 3);
+                g.DrawRectangle(blackPen, positionButtonX, positionButtonY, w, h);
+
+                Font font = new Font("Arial", 12, FontStyle.Bold);
+                SolidBrush textBrush = new SolidBrush(Color.Black);
+
+                string text = "Press Q to unlock!";
+                if(hero.coins < this.requiredCoins)
+                {
+                    text = "You need " + (requiredCoins - hero.coins).ToString() + " Coins!";
+                }
+                if(isUnlocked == true)
+                {
+                    text = "Unlocked! Press Q";
+                }
+                g.DrawString(text, font, textBrush, positionButtonX, positionButtonY + 10);
+            }
+
         }
     }
     public partial class Form1 : Form
@@ -4942,6 +5117,24 @@ namespace General
 
                         }
                     }
+                    if(levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
+                    {
+                        if(e.KeyCode == Keys.Q)
+                        {
+                            if (levels.levels[levels.currentLevel].teleporter.isUnlocked == false)
+                            {
+                                if (hero.coins >= levels.levels[levels.currentLevel].teleporter.requiredCoins)
+                                {
+                                    levels.levels[levels.currentLevel].teleporter.isUnlocked = true;
+                                    hero.coins -= levels.levels[levels.currentLevel].teleporter.requiredCoins;
+                                }
+                            }
+                            else
+                            {
+                                //add level logic later
+                            }
+                        }
+                    }
 
                     if (camX < 0)
                     {
@@ -4959,6 +5152,7 @@ namespace General
                     {
                         camX = maxCamX;
                     }
+
                 }
             }
         }
@@ -5062,6 +5256,9 @@ namespace General
 
                     g.DrawImage(levels.getBackground(), rcDst, rcSrc, GraphicsUnit.Pixel);
 
+
+                    
+                    levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX);
 
                     for (int i = 0; i < tiles.Count; i++)
                     {
