@@ -1797,7 +1797,7 @@ namespace General
             rect.Height = height;
         }
 
-        public void draw(Graphics g, bool showRange)
+        public void draw(Graphics g, bool showRange , float camX)
         {
             int countLadders = rect.Height / tileHeight;
 
@@ -1808,14 +1808,14 @@ namespace General
 
             for (int i = 0; i < countLadders; i++)
             {
-                g.DrawImage(ladderImg, rect.X, y, rect.Width, tileHeight);
+                g.DrawImage(ladderImg, rect.X - camX, y, rect.Width, tileHeight);
 
                 y += tileHeight - 1;
             }
 
             if (remainingHeight > 0)
             {
-                Rectangle rcDst = new Rectangle(rect.X, y, rect.Width, remainingHeight);
+                Rectangle rcDst = new Rectangle((int)(rect.X - camX), y, rect.Width, remainingHeight);
 
                 Rectangle rcSource = new Rectangle(0, 0, ladderImg.Width, remainingHeight);
 
@@ -1824,7 +1824,7 @@ namespace General
 
             if (showRange == true)
             {
-                g.DrawRectangle(Pens.Orange, rect.X, rect.Y, rect.Width, rect.Height);
+                g.DrawRectangle(Pens.Orange, rect.X - camX, rect.Y, rect.Width, rect.Height);
             }
         }
     }
@@ -2085,7 +2085,7 @@ namespace General
 
             vfxes.Add(fx);
         }
-        public void Draw(Graphics g, bool showRanges)
+        public void Draw(Graphics g, bool showRanges , float camX)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
@@ -2128,19 +2128,19 @@ namespace General
 
             if (frame != null)
             {
-                g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                g.DrawImage(frame, drawR.X - camX, drawR.Y, drawR.Width, drawR.Height);
             }
             if (showRanges)
             {
 
                 Pen p = new Pen(Color.Lime, 2);
-                g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
+                g.DrawRectangle(p, R.X - camX, R.Y, R.Width, R.Height);
 
                 if (isAttacking == true)
                 {
                     rectF atk = getAttackHitBox();
                     Pen atkPen = new Pen(Color.Orange, 2);
-                    g.DrawRectangle(atkPen, atk.X, atk.Y, atk.Width, atk.Height);
+                    g.DrawRectangle(atkPen, atk.X - camX, atk.Y, atk.Width, atk.Height);
                 }
             }
 
@@ -3212,7 +3212,7 @@ namespace General
             }
         }
 
-        public void draw(Graphics g, bool showRanges)
+        public void draw(Graphics g, bool showRanges , float camX)
         {
             if (spawn)
             {
@@ -3246,18 +3246,25 @@ namespace General
 
                 if (frame != null)
                 {
-                    g.DrawImage(frame, drawR.X, drawR.Y, drawR.Width, drawR.Height);
+                    g.DrawImage(frame, drawR.X - camX, drawR.Y, drawR.Width, drawR.Height);
                 }
 
                 if (showRanges)
                 {
                     Pen p = new Pen(Color.Red, 2);
-                    g.DrawRectangle(p, R.X, R.Y, R.Width, R.Height);
+                    g.DrawRectangle(p, R.X - camX, R.Y, R.Width, R.Height);
                 }
 
                 if (isDead == false)
                 {
-                    UI.positionAbove(R, 8);
+                    rectF screenR = new rectF();
+                    screenR.X = R.X - camX;
+                    screenR.Y = R.Y;
+                    screenR.Width = R.Width;
+                    screenR.Height = R.Height;
+
+
+                    UI.positionAbove(screenR, 8);
                     UI.draw(g, HP, null, 0);
                 }
             }
@@ -3968,10 +3975,10 @@ namespace General
         public bool interact = false;
         public bool jumpThrough = false;
 
-        public void draw(Graphics g)
+        public void draw(Graphics g , float camX)
         {
             SolidBrush bsh = new SolidBrush(clr);
-            g.FillRectangle(bsh, R.X, R.Y, R.Width, R.Height);
+            g.FillRectangle(bsh, R.X - camX, R.Y, R.Width, R.Height);
         }
 
         public void init(int x, int y, int width, int height)
@@ -4053,6 +4060,14 @@ namespace General
         bool showRanges = false;
         Bitmap off; 
         Random RR = new Random();
+        Bitmap background;
+
+        float camX = 0;
+        float camY = 0;
+
+        int worldWidth = 2000;
+        int worldHeight = 0;
+
 
         Hero hero;
         List<Enemy> enemies = new List<Enemy>();
@@ -4087,6 +4102,7 @@ namespace General
             this.MouseUp += Form1_MouseUp;
         }
 
+        //Form Functions
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
             if (!hasStarted || isGamePaused == true) return;
@@ -4097,31 +4113,7 @@ namespace General
                     hero.stopFireball();
             }
         }
-
-        bool CheckIfWeaponUIClicked(int eX, int eY)
-        {
-            float spacing = 20f;
-            float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
-            float y = hero.UI.rect.Y + 10;
-
-            float wh = 70f;
-
-
-            for (int i = 0; i < hero.Weapons.Count; i++)
-            {
-
-                if (eX > x && eX < x + wh &&
-                    eY > y && eY < y + wh)
-                {
-                    hero.currentWeapon = i;
-                    hero.ManageWeapon();
-                    return true;
-
-                }
-                x += wh + spacing;
-            }
-            return false;
-        }
+        
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
             if (hasStarted == false)
@@ -4163,7 +4155,7 @@ namespace General
                     }
                 }
             }
-            else if(isGamePaused == false && hero.isDead == false)
+            else if (isGamePaused == false && hero.isDead == false)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -4191,13 +4183,7 @@ namespace General
                 }
             }
         }
-        bool IsLeftMenu(int i)
-        {
-            if (i >= 0 && i <= 3) return true;
-
-            return false;
-        }
-
+        
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
             if (hasStarted == false)
@@ -4221,7 +4207,7 @@ namespace General
                         }
                         else
                         {
-                            if(currentButton == 0 || currentButton == 1)
+                            if (currentButton == 0 || currentButton == 1)
                             {
                                 if (IsLeftMenu(currentButton) == true)
                                 {
@@ -4236,14 +4222,14 @@ namespace General
                     }
                 }
 
-                
+
             }
-            else if(isGamePaused == false)
+            else if (isGamePaused == false)
             {
                 hero.mouseX = e.X;
                 hero.mouseY = e.Y;
             }
-            else if(isGamePaused == true)
+            else if (isGamePaused == true)
             {
                 for (int i = 0; i < PauseBtns.Count; i++)
                 {
@@ -4260,84 +4246,11 @@ namespace General
             }
         }
 
-        void startGame()
+        private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            hasStarted = true;
-
-            while (btns.Count > 0)
-            {
-                btns.RemoveAt(0);
-            }
-
-            while (menuImgs.Count > 0)
-            {
-                menuImgs.RemoveAt(0);
-            }
-
-            while(heroColors.Count > 0)
-            {
-                heroColors.RemoveAt(0);
-            }
-        }
-
-        void pauseGame()
-        {
-            timer.Stop();
-            pauseBtns();
             drawDubb(this.CreateGraphics());
         }
 
-        void resumeGame()
-        {
-            while(PauseBtns.Count > 0)
-            {
-                PauseBtns.RemoveAt(0);
-            }
-
-            timer.Start();
-        }
-
-        void startGameOverScreen()
-        {
-            gameOverScreenDelay = 0;
-        }
-
-        void manageGameOver()
-        {
-            hero.isDead = false;
-            isGameOverScreenShown = false;
-            hasStarted = false;
-            while (GameOverBtns.Count > 0)
-            {
-                GameOverBtns.RemoveAt(0);
-            }
-            currGameOverBtn = 0;
-            gameOverScreenDelay = 0;
-            currentButton = 0;
-            lastMenuScreen = 0;
-            
-            while (btns.Count > 0)
-            {
-                btns.RemoveAt(0);
-            }
-            while (menuImgs.Count > 0)
-            {
-                menuImgs.RemoveAt(0);
-            }
-            while (heroColors.Count > 0)
-            {
-                heroColors.RemoveAt(0);
-            }
-            while (clrBtns.Count > 0)
-            {
-                clrBtns.RemoveAt(0);
-            }
-            
-            initMenu();
-            initButtons();
-            timer.Start();
-            drawDubb(this.CreateGraphics());
-        }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             if (hasStarted == false || isGamePaused == true) return;
@@ -4486,7 +4399,7 @@ namespace General
                         resumeGame();
                     }
 
-                    if(e.KeyCode == Keys.Enter)
+                    if (e.KeyCode == Keys.Enter)
                     {
                         managePause();
                     }
@@ -4522,7 +4435,7 @@ namespace General
                 }
                 else
                 {
-                    if(e.KeyCode == Keys.Escape)
+                    if (e.KeyCode == Keys.Escape)
                     {
                         isGamePaused = true;
                         pauseGame();
@@ -4539,7 +4452,7 @@ namespace General
                     }
                     if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
                     {
-                        hero.checkUnder(tiles , ladders);
+                        hero.checkUnder(tiles, ladders);
                     }
                     if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                     {
@@ -4611,35 +4524,27 @@ namespace General
 
                         }
                     }
+
+                    if (camX < 0)
+                    {
+                        camX = 0;
+                    }
+
+                    float maxCamX = background.Width - this.ClientSize.Width;
+
+                    if (maxCamX < 0)
+                    {
+                        maxCamX = 0;
+                    }
+
+                    if (camX > maxCamX)
+                    {
+                        camX = maxCamX;
+                    }
                 }
             }
         }
-
-        void managePause()
-        {
-            if(currPauseBtn == 0)
-            {
-                isGamePaused = false;
-                resumeGame();
-            }
-            else if(currPauseBtn == 1 && PauseBtns.Count == 3) {
-                save.save(hero, enemies);
-                PauseBtns.RemoveAt(1);
-                drawDubb(this.CreateGraphics());
-
-            }
-            else if( currPauseBtn == 2 || (currPauseBtn == 1 && PauseBtns.Count == 2))
-            {
-                hasStarted = false;
-                isGamePaused = false;
-
-                
-                initButtons();
-                initMenu();
-                timer.Start();
-            }
-        }
-
+        
         private void Timer_Tick(object sender, EventArgs e)
         {
             if (hasStarted == true)
@@ -4650,7 +4555,7 @@ namespace General
                     {
                         startGameOverScreen();
                     }
-                    
+
                     gameOverScreenDelay++;
                     if (gameOverScreenDelay >= gameOverScreenDelayMax)
                     {
@@ -4666,7 +4571,7 @@ namespace General
                     {
                         hero.climb(ladders);
                     }
-                    hero.move(tiles , ladders);
+                    hero.move(tiles, ladders);
                     hero.collectDroppedCoins(droppedCoins);
                     if (hero.currentWeapon == 0)
                     {
@@ -4677,6 +4582,7 @@ namespace General
 
                     hero.mana.tick();
                     handleEnemyMovement();
+                    UpdateCamera();
                 }
             }
 
@@ -4687,6 +4593,10 @@ namespace General
         private void Form1_Load(object sender, EventArgs e)
         {
             off = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
+            background = new Bitmap("Backgrounds/Forest.png");
+
+            worldWidth = background.Width;
+            worldHeight = this.ClientSize.Height;
 
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
@@ -4703,71 +4613,7 @@ namespace General
 
         }
 
-        void initLadders()
-        {
-            Ladder ladder;
-
-            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400, 400, false);
-            ladders.Add(ladder);
-
-        }
-        int getAboveGroundLoc(int enemyH)
-        {
-            return this.ClientSize.Height - 30 - enemyH;
-        }
-        void initEnemies()
-        {
-            Enemy en;
-
-            // Mushroom size
-            int mushroomW = 90;
-            int mushroomH = 70;
-            int mushroomY = getAboveGroundLoc(mushroomH);
-
-            en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
-            en.CanSpawn = true;
-            en.spawn = true;
-            enemies.Add(en);
-
-
-            int batW = 50;
-            int batH = 50;
-            int batY = getAboveGroundLoc(batH);
-
-            en = new Enemy(1000, batY, batW, batH, "bat");
-            en.CanSpawn = true;
-            en.spawn = true;
-            enemies.Add(en);
-
-
-        }
-        void initTiles()
-        {
-            tile pnn = new tile();
-            pnn.interact = true;
-            pnn.init(0, this.ClientSize.Height - 30, this.ClientSize.Width, 30);
-            tiles.Add(pnn);
-
-            pnn = new tile();
-            pnn.interact = true;
-            pnn.jumpThrough = true;
-            pnn.init(300, this.ClientSize.Height - 150, 200, 20);
-            tiles.Add(pnn);
-
-            pnn = new tile();
-            pnn.interact = true;
-            pnn.jumpThrough = false;
-            pnn.clr = Color.DarkRed;
-            pnn.init(600, this.ClientSize.Height - 250, 200, 30);
-            tiles.Add(pnn);
-        }
-
-        private void Form1_Paint(object sender, PaintEventArgs e)
-        {
-            drawDubb(this.CreateGraphics());
-        }
-
-
+        //draw
         void drawDubb(Graphics G)
         {
             Graphics g2 = Graphics.FromImage(off);
@@ -4797,30 +4643,343 @@ namespace General
                 {
                     save.autoSave(hero, enemies, g, this.ClientSize.Height);
 
+                    Rectangle rcDst = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+                    Rectangle rcSrc = new Rectangle((int)camX, 0, this.ClientSize.Width, background.Height);
+
+                    g.DrawImage(background, rcDst, rcSrc, GraphicsUnit.Pixel);
+
+
                     for (int i = 0; i < tiles.Count; i++)
                     {
-                        tiles[i].draw(g);
+                        tiles[i].draw(g,camX);
                     }
                     for (int i = 0; i < ladders.Count; i++)
                     {
-                        ladders[i].draw(g, showRanges);
+                        ladders[i].draw(g, showRanges, camX);
                     }
                     for (int i = 0; i < enemies.Count; i++)
                     {
-                        enemies[i].draw(g, showRanges);
+                        enemies[i].draw(g, showRanges , camX);
                     }
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
                         droppedCoins[i].draw(g);
                     }
 
-                    hero.Draw(g, showRanges);
+                    hero.Draw(g, showRanges, camX);
                 }
 
             }
             else
             {
                 displayMenu(g);
+            }
+        }
+
+        void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frame, Bitmap SelectedFrame)
+        {
+            G.DrawString("Begin Your Journey", titleFont, gold, x + 20, y + 10);
+
+            x = x + 20;
+            y = y + 60;
+            G.DrawString("Choose a color for your hero", normalFont, white, x, y);
+
+            y += 30;
+
+            int widthF = 80; //56
+            int heightF = 80;
+
+            int currX = x;
+            for (int i = 0; i < heroColors.Count; i++)
+            {
+                if (i == ChoiceIdx)
+                {
+                    G.DrawImage(SelectedFrame, currX, y, widthF, heightF);
+                }
+                else
+                {
+                    G.DrawImage(frame, currX, y, widthF, heightF);
+
+                }
+
+                Bitmap curr = heroColors[i].frames[animIdx];
+                G.DrawImage(curr, currX, y - 20, 80, 80);
+
+                clrBtns[i] = new rectF(currX, y - 20, 80, 80);
+
+                currX += widthF + 10;
+            }
+
+            if (animIdx < heroColors[0].frames.Count - 1)
+            {
+                animIdx++;
+            }
+            else animIdx = 0;
+
+            int statsX = x;
+            int statsY = y + 120;
+
+            G.DrawString("Base Stats", titleFont, gold, statsX, statsY);
+
+            statsY += 40;
+
+            G.DrawString("HP: 100", normalFont, white, statsX, statsY);
+
+            statsY += 30;
+
+            G.DrawString("Mana: 100", normalFont, white, statsX, statsY);
+
+            statsY += 30;
+
+            G.DrawString("Speed: 6", normalFont, white, statsX, statsY);
+        }
+
+        void drawLoadGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frameSelectA, Bitmap slot)
+        {
+            if (IsSaveAvailable() == false)
+            {
+                G.DrawString("No Saves Available", titleFont, Brushes.Red, x + 40, y + 120);
+                return;
+            }
+
+            drawBar(G, "Health", hero.HP.HP, hero.HP.maxHP, x + 170, y - 80, Brushes.DarkRed, Brushes.Red, smallFont);
+
+
+            drawBar(G, "Mana", hero.mana.mana, hero.mana.maxMana, x + 170, y - 40, Brushes.DarkBlue, Brushes.DeepSkyBlue, smallFont);
+
+
+            rectF saveRect = new rectF(x + 15, y + 10, width - 30, 420);
+
+            int textX = (int)saveRect.X + 20;
+            int currentY = (int)saveRect.Y;
+
+            G.DrawString("Last Save", titleFont, gold, textX, currentY);
+
+            G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
+            G.DrawImage(heroColors[hero.ColorIdx].frames[0], x + width - 120 - 20, currentY - 20, 120, 120);
+
+            currentY += 40;
+
+            G.DrawString("Coins : " + hero.coins, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            string weapon = "Sword";
+
+            if (hero.currentWeapon == 1) weapon = "Fireball";
+
+            G.DrawString("Current Weapon : " + weapon, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+
+            G.DrawString("Sword Damage : " + hero.Weapons[0].damage, normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            if (hero.Weapons.Count > 1)
+            {
+                G.DrawString("Fireball Damage : " + hero.Weapons[1].damage, normalFont, white, textX, currentY);
+                currentY += 35;
+            }
+
+            if (hero.isAbilityUnlocked == true)
+                G.DrawString("Ability : Fire Blast", normalFont, white, textX, currentY);
+
+            currentY += 35;
+
+            G.DrawString("Ability Mana Cost : " + hero.abilityManaCost, normalFont, white, textX, currentY);
+
+            currentY += 50;
+
+            G.DrawString("Status : Alive", normalFont, Brushes.LightGreen, textX, currentY);
+
+            int slotY = currentY + 50;
+            int slotW = 70;
+            int slotSpacing = 18;
+
+            for (int i = 0; i < hero.Weapons.Count; i++)
+            {
+                int sx = x + 25 + (slotW + slotSpacing) * i;
+
+                G.DrawImage(slot, sx, slotY, slotW, slotW);
+
+                G.DrawImage(hero.Weapons[i].UIImage, sx + slotW / 2 - (slotW - 20) / 2, slotY + slotW / 2 - (slotW - 20) / 2, (slotW - 20), (slotW - 20));
+            }
+
+        }
+
+        void drawControlsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold)
+        {
+            G.DrawString("Controls", titleFont, gold, x + 20, y + 10);
+
+
+            int textY = y + 100;
+            G.DrawString("Display Enemy Ranges : P", smallFont, white, x + 70, textY);
+            textY += 35;
+
+
+            G.DrawString("AD / Arrows -> Move", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("LShift -> Run", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("Space/ W -> Jump", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("Left Click -> Attack", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("1 / 2  -> Weapons", smallFont, white, x + 70, textY);
+
+            textY += 35;
+
+            G.DrawString("E -> Ability", smallFont, white, x + 70, textY);
+        }
+
+        void drawCreditsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, SolidBrush white, SolidBrush gold)
+        {
+            G.DrawString("Credits", titleFont, gold, x + 20, y + 10);
+
+
+            G.DrawString("Arcane", new Font("Comic Sans MS", 28, FontStyle.Bold), gold, x + 50, y + 110);
+
+            G.DrawString("Developed By:", normalFont, white, x + 50, y + 190);
+
+            G.DrawString("Kareem Ahmed Taha - 254914", normalFont, gold, x + 70, y + 250);
+
+            G.DrawString("Mostafa Mohamed Saeed - 254595", normalFont, gold, x + 70, y + 300);
+
+            Font smallFont = new Font("Comic Sans MS", 9, FontStyle.Italic);
+            G.DrawString("Developed as part of the multimedia project at MSA University", smallFont, white, x + 70, y + 340);
+        }
+
+        void drawBar(Graphics G, string title, float value, float max, int x, int y, Brush backBrush, Brush fillBrush, Font smallFont)
+        {
+            G.DrawString(title, smallFont, Brushes.White, x, y);
+
+            rectF back = new rectF(x + 80, y + 4, 220, 18);
+
+            G.FillRectangle(backBrush, back.X, back.Y, back.Width, back.Height);
+
+            float fillW = (220f * value / max);
+
+            G.FillRectangle(fillBrush, back.X, back.Y, fillW, back.Height);
+
+            G.DrawRectangle(Pens.Black, back.X, back.Y, back.Width, back.Height);
+
+            G.DrawString(value.ToString() + " / " + max.ToString(), smallFont, Brushes.White, back.X + 70, back.Y - 2);
+        }
+
+        //Game setup
+        void startGame()
+        {
+            hasStarted = true;
+
+            while (btns.Count > 0)
+            {
+                btns.RemoveAt(0);
+            }
+
+            while (menuImgs.Count > 0)
+            {
+                menuImgs.RemoveAt(0);
+            }
+
+            while (heroColors.Count > 0)
+            {
+                heroColors.RemoveAt(0);
+            }
+        }
+
+        void pauseGame()
+        {
+            timer.Stop();
+            pauseBtns();
+            drawDubb(this.CreateGraphics());
+        }
+
+        void resumeGame()
+        {
+            while (PauseBtns.Count > 0)
+            {
+                PauseBtns.RemoveAt(0);
+            }
+
+            timer.Start();
+        }
+
+        void startGameOverScreen()
+        {
+            gameOverScreenDelay = 0;
+        }
+
+        void manageGameOver()
+        {
+            hero.isDead = false;
+            isGameOverScreenShown = false;
+            hasStarted = false;
+            while (GameOverBtns.Count > 0)
+            {
+                GameOverBtns.RemoveAt(0);
+            }
+            currGameOverBtn = 0;
+            gameOverScreenDelay = 0;
+            currentButton = 0;
+            lastMenuScreen = 0;
+
+            while (btns.Count > 0)
+            {
+                btns.RemoveAt(0);
+            }
+            while (menuImgs.Count > 0)
+            {
+                menuImgs.RemoveAt(0);
+            }
+            while (heroColors.Count > 0)
+            {
+                heroColors.RemoveAt(0);
+            }
+            while (clrBtns.Count > 0)
+            {
+                clrBtns.RemoveAt(0);
+            }
+
+            initMenu();
+            initButtons();
+            timer.Start();
+            drawDubb(this.CreateGraphics());
+        }
+
+        void managePause()
+        {
+            if (currPauseBtn == 0)
+            {
+                isGamePaused = false;
+                resumeGame();
+            }
+            else if (currPauseBtn == 1 && PauseBtns.Count == 3)
+            {
+                save.save(hero, enemies);
+                PauseBtns.RemoveAt(1);
+                drawDubb(this.CreateGraphics());
+
+            }
+            else if (currPauseBtn == 2 || (currPauseBtn == 1 && PauseBtns.Count == 2))
+            {
+                hasStarted = false;
+                isGamePaused = false;
+
+
+                initButtons();
+                initMenu();
+                timer.Start();
             }
         }
 
@@ -4843,11 +5002,11 @@ namespace General
                 if (i == currPauseBtn) isIt = true;
 
                 Button btn = PauseBtns[i];
-                
+
                 btn.draw(button, g, normalFont, white, isIt);
-                
+
             }
-            if(PauseBtns.Count == 2)
+            if (PauseBtns.Count == 2)
             {
                 int w = 300, h = 60;
 
@@ -4865,11 +5024,11 @@ namespace General
 
         void pauseBtns()
         {
-           
+
             int w = 300, h = 60;
 
             int ButtonsY = 70 + 200;
-            int ButtonsX = (this.ClientSize.Width / 2)- w / 2;
+            int ButtonsX = (this.ClientSize.Width / 2) - w / 2;
 
             Button btn = new Button(ButtonsX, ButtonsY, w, h, "Resume");
             PauseBtns.Add(btn);
@@ -4881,7 +5040,7 @@ namespace General
             ButtonsY += (h + 20);
             btn = new Button(ButtonsX, ButtonsY, w, h, "Main Menu");
             PauseBtns.Add(btn);
-            
+
         }
 
         void gameOverBtns()
@@ -4920,6 +5079,123 @@ namespace General
                 Button btn = GameOverBtns[i];
 
                 btn.draw(button, g, normalFont, white, isIt);
+            }
+        }
+
+        //Other functions 
+        bool CheckIfWeaponUIClicked(int eX, int eY)
+        {
+            float spacing = 20f;
+            float x = hero.UI.rect.X + hero.UI.rect.Width + 120;
+            float y = hero.UI.rect.Y + 10;
+
+            float wh = 70f;
+
+
+            for (int i = 0; i < hero.Weapons.Count; i++)
+            {
+
+                if (eX > x && eX < x + wh &&
+                    eY > y && eY < y + wh)
+                {
+                    hero.currentWeapon = i;
+                    hero.ManageWeapon();
+                    return true;
+
+                }
+                x += wh + spacing;
+            }
+            return false;
+        }
+        
+        bool IsLeftMenu(int i)
+        {
+            if (i >= 0 && i <= 3) return true;
+
+            return false;
+        }
+       
+        void initLadders()
+        {
+            Ladder ladder;
+
+            ladder = new Ladder(800 - 75, this.ClientSize.Height - 250 - 400, 400, false);
+            ladders.Add(ladder);
+
+        }
+        
+        int getAboveGroundLoc(int enemyH)
+        {
+            return this.ClientSize.Height - 30 - enemyH;
+        }
+        
+        void initEnemies()
+        {
+            Enemy en;
+
+            // Mushroom size
+            int mushroomW = 90;
+            int mushroomH = 70;
+            int mushroomY = getAboveGroundLoc(mushroomH);
+
+            en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
+            en.CanSpawn = true;
+            en.spawn = true;
+            enemies.Add(en);
+
+
+            int batW = 50;
+            int batH = 50;
+            int batY = getAboveGroundLoc(batH);
+
+            en = new Enemy(1000, batY, batW, batH, "bat");
+            en.CanSpawn = true;
+            en.spawn = true;
+            enemies.Add(en);
+
+
+        }
+        
+        void initTiles()
+        {
+            tile pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, this.ClientSize.Height - 30, worldWidth, 30);
+            tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.jumpThrough = true;
+            pnn.init(300, this.ClientSize.Height - 150, 200, 20);
+            tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.jumpThrough = false;
+            pnn.clr = Color.DarkRed;
+            pnn.init(600, this.ClientSize.Height - 250, 200, 30);
+            tiles.Add(pnn);
+        }
+
+        void UpdateCamera()
+        {
+            camX = hero.R.X + hero.R.Width / 2 - this.ClientSize.Width / 2;
+
+            if (camX < 0)
+            {
+                camX = 0;
+            }
+
+            float maxCamX = background.Width - this.ClientSize.Width;
+
+            if (maxCamX < 0)
+            {
+                maxCamX = 0;
+            }
+
+            if (camX > maxCamX)
+            {
+                camX = maxCamX;
             }
         }
 
@@ -4991,6 +5267,7 @@ namespace General
             }
             heroColors.Add(heroRed);
         }
+        
         void initButtons()
         {
             int w = 300, h = 60;
@@ -5021,6 +5298,7 @@ namespace General
             btns.Add(btn);
 
         }
+        
         void displayMenu(Graphics G)
         {
             G.DrawImage(menuImgs[0], 0, 0, this.ClientSize.Width, this.ClientSize.Height);
@@ -5126,206 +5404,7 @@ namespace General
                 drawCreditsScreen(G, x, y, width, height, titleFont, normalFont, white, gold);
             }
         }
-        void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold , Bitmap frame , Bitmap SelectedFrame)
-        {
-            G.DrawString("Begin Your Journey", titleFont, gold, x + 20, y + 10);
-
-            x = x + 20;
-            y = y + 60;
-            G.DrawString("Choose a color for your hero", normalFont, white, x, y);
-
-            y += 30;
-
-            int widthF = 80; //56
-            int heightF = 80;
-
-            int currX = x;
-            for (int i = 0; i < heroColors.Count; i++)
-            {
-                if(i == ChoiceIdx)
-                {
-                    G.DrawImage(SelectedFrame, currX, y, widthF, heightF);   
-                }
-                else
-                {
-                    G.DrawImage(frame, currX, y, widthF, heightF);
-
-                }
-
-                Bitmap curr = heroColors[i].frames[animIdx];
-                G.DrawImage(curr, currX, y - 20 , 80, 80);
-
-                clrBtns[i] = new rectF(currX, y - 20, 80, 80);
-
-                currX += widthF + 10;
-            }
-
-            if (animIdx < heroColors[0].frames.Count - 1)
-            {
-                animIdx++;
-            }
-            else animIdx = 0;
-
-            int statsX = x;
-            int statsY = y + 120;
-
-            G.DrawString("Base Stats", titleFont, gold, statsX, statsY);
-
-            statsY += 40;
-
-            G.DrawString("HP: 100", normalFont, white, statsX, statsY);
-
-            statsY += 30;
-
-            G.DrawString("Mana: 100", normalFont, white, statsX, statsY);
-
-            statsY += 30;
-
-            G.DrawString("Speed: 6", normalFont, white, statsX, statsY);
-        }
-
-        void drawLoadGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frameSelectA, Bitmap slot)
-        {
-            if (IsSaveAvailable() == false)
-            {
-                G.DrawString("No Saves Available", titleFont, Brushes.Red, x + 40, y + 120);
-                return;
-            }
-
-            drawBar(G, "Health", hero.HP.HP, hero.HP.maxHP, x + 170, y - 80, Brushes.DarkRed, Brushes.Red, smallFont);
-
-
-            drawBar(G, "Mana", hero.mana.mana, hero.mana.maxMana, x + 170, y - 40, Brushes.DarkBlue, Brushes.DeepSkyBlue, smallFont);
-
-
-            rectF saveRect = new rectF(x + 15, y + 10, width - 30, 420);
-
-            int textX = (int)saveRect.X + 20;
-            int currentY = (int)saveRect.Y;
-
-            G.DrawString("Last Save", titleFont, gold, textX, currentY);
-
-            G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
-            G.DrawImage(heroColors[hero.ColorIdx].frames[0] , x + width - 120 - 20, currentY - 20, 120, 120);
-
-            currentY += 40;
-
-            G.DrawString("Coins : " + hero.coins, normalFont, white, textX, currentY);
-
-            currentY += 35;
-
-            string weapon = "Sword";
-
-            if (hero.currentWeapon == 1) weapon = "Fireball";
-
-            G.DrawString("Current Weapon : " + weapon, normalFont, white, textX, currentY);
-
-            currentY += 35;
-
-
-            G.DrawString("Sword Damage : " + hero.Weapons[0].damage, normalFont, white, textX, currentY);
-
-            currentY += 35;
-
-            if (hero.Weapons.Count > 1)
-            {
-                G.DrawString("Fireball Damage : " + hero.Weapons[1].damage, normalFont, white, textX, currentY);
-                currentY += 35;
-            }
-
-            if(hero.isAbilityUnlocked == true)
-                G.DrawString("Ability : Fire Blast", normalFont, white, textX, currentY);
-
-            currentY += 35;
-
-            G.DrawString("Ability Mana Cost : " + hero.abilityManaCost, normalFont, white, textX, currentY);
-
-            currentY += 50;
-
-            G.DrawString("Status : Alive", normalFont, Brushes.LightGreen, textX, currentY);
-
-            int slotY = currentY + 50;
-            int slotW = 70;
-            int slotSpacing = 18;
-
-            for (int i = 0; i < hero.Weapons.Count; i++)
-            {
-                int sx = x + 25 + (slotW + slotSpacing) * i;
-                
-                G.DrawImage(slot, sx, slotY, slotW, slotW);
-
-                G.DrawImage(hero.Weapons[i].UIImage, sx + slotW/2 - (slotW- 20)/2, slotY + slotW / 2 - (slotW - 20) / 2 , (slotW - 20) , (slotW - 20)); 
-            }
-
-        }
-
-        void drawControlsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold)
-        {
-            G.DrawString("Controls", titleFont, gold, x + 20, y + 10);
-
-
-            int textY = y + 100;
-            G.DrawString("Display Enemy Ranges : P", smallFont, white, x + 70, textY);
-            textY += 35;
-
-
-            G.DrawString("AD / Arrows -> Move", smallFont, white, x + 70, textY);
-
-            textY += 35;
-
-            G.DrawString("LShift -> Run", smallFont, white, x + 70, textY);
-
-            textY += 35;
-
-            G.DrawString("Space/ W -> Jump", smallFont, white, x + 70, textY);
-
-            textY += 35;
-
-            G.DrawString("Left Click -> Attack", smallFont, white, x + 70, textY);
-
-            textY += 35;
-
-            G.DrawString("1 / 2  -> Weapons", smallFont, white, x + 70, textY);
-
-            textY += 35;
-
-            G.DrawString("E -> Ability", smallFont, white, x + 70, textY);
-        }
-
-        void drawCreditsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, SolidBrush white, SolidBrush gold)
-        {
-            G.DrawString("Credits", titleFont, gold, x + 20, y + 10);
-
-
-            G.DrawString("Arcane", new Font("Comic Sans MS", 28, FontStyle.Bold), gold, x + 50, y + 110);
-
-            G.DrawString("Developed By:", normalFont, white, x + 50, y + 190);
-
-            G.DrawString("Kareem Ahmed Taha - 254914", normalFont, gold, x + 70, y + 250);
-
-            G.DrawString("Mostafa Mohamed Saeed - 254595", normalFont, gold, x + 70, y + 300);
-
-            Font smallFont = new Font("Comic Sans MS", 9, FontStyle.Italic);
-            G.DrawString("Developed as part of the multimedia project at MSA University" ,smallFont , white , x +70 , y + 340 );
-        }
-
-        void drawBar(Graphics G, string title, float value, float max, int x, int y, Brush backBrush, Brush fillBrush, Font smallFont)
-        {
-            G.DrawString(title, smallFont, Brushes.White, x, y);
-
-            rectF back = new rectF(x + 80, y + 4, 220, 18);
-
-            G.FillRectangle(backBrush, back.X, back.Y, back.Width, back.Height);
-
-            float fillW = (220f * value / max);
-
-            G.FillRectangle(fillBrush, back.X, back.Y, fillW, back.Height);
-
-            G.DrawRectangle(Pens.Black, back.X, back.Y, back.Width, back.Height);
-
-            G.DrawString(value.ToString() + " / " + max.ToString(), smallFont, Brushes.White, back.X + 70, back.Y - 2);
-        }
-
+        
         bool IsSaveAvailable()
         {
             if(hero == null || hero.isDead == true)
