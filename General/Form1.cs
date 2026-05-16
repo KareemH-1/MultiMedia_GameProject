@@ -127,7 +127,7 @@ namespace General
             sw.WriteLine("isShooting:" + boolToText(hero.isShooting));
             sw.WriteLine("spellCastPaused:" + boolToText(hero.spellCastPaused));
 
-            sw.WriteLine("manaRegenRate:" + hero.manaRegenRate.ToString());
+            sw.WriteLine("manaRegenRate:" + hero.mana.regenRate.ToString());
 
             sw.WriteLine("isCastingAbility:" + boolToText(hero.isCastingAbility));
             sw.WriteLine("abilityFireballSpawned:" + boolToText(hero.abilityFireballSpawned));
@@ -447,7 +447,7 @@ namespace General
                         }
                         else if (variable == "manaRegenRate")
                         {
-                            hero.manaRegenRate = changeToInt(val);
+                            hero.mana.regenRate = changeToInt(val);
                         }
                         else if (variable == "isCastingAbility")
                         {
@@ -467,6 +467,11 @@ namespace General
                         }
                     }
                 }
+            }
+
+            if (hero != null && hero.mana.regenRate == 0f)
+            {
+                hero.mana.regenRate = 0.5f;
             }
 
             sr.Close();
@@ -696,6 +701,15 @@ namespace General
             }
 
             checkEnemies(enemies);
+
+            for (int i = enemies.Count - 1; i >= 0; i--)
+            {
+                if (enemies[i].isDead)
+                {
+                    enemies.RemoveAt(i);
+                }
+            }
+
             sr.Close();
         }
 
@@ -1441,7 +1455,7 @@ namespace General
         public int maxTimer = 20;
 
         public bool repeat = false;
-        public void draw(Graphics g, rectF ownerR , float camX)
+        public void draw(Graphics g, rectF ownerR , float camX, float camY)
         {
             if (followPlayer)
             {
@@ -1453,7 +1467,7 @@ namespace General
 
             if (frame != null)
             {
-                g.DrawImage(frame, rect.X - camX, rect.Y, rect.Width, rect.Height);
+                g.DrawImage(frame, rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
             }
             if (repeat == false)
             {
@@ -1685,7 +1699,7 @@ namespace General
             }
         }
 
-        public void draw(Graphics g , float camX)
+        public void draw(Graphics g , float camX, float camY)
         {
             Bitmap frame = anim.playFrame(false, false);
             
@@ -1693,12 +1707,12 @@ namespace General
 
             if (isItSingle == false)
             {
-                g.DrawImage(frame, rect.X - camX, rect.Y, rect.Width, rect.Height);
+                g.DrawImage(frame, rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
             }
             else
             {
 
-                g.DrawImage(frame, SingleDrawRect.X - camX, SingleDrawRect.Y, SingleDrawRect.Width, SingleDrawRect.Height);
+                g.DrawImage(frame, SingleDrawRect.X - camX, SingleDrawRect.Y - camY, SingleDrawRect.Width, SingleDrawRect.Height);
 
             }
         }
@@ -1737,7 +1751,7 @@ namespace General
             rect.Height = height;
         }
 
-        public void draw(Graphics g, bool showRange , float camX)
+        public void draw(Graphics g, bool showRange , float camX, float camY)
         {
             int countLadders = rect.Height / tileHeight;
 
@@ -1748,14 +1762,14 @@ namespace General
 
             for (int i = 0; i < countLadders; i++)
             {
-                g.DrawImage(ladderImg, rect.X - camX, y, rect.Width, tileHeight);
+                g.DrawImage(ladderImg, rect.X - camX, y - camY, rect.Width, tileHeight);
 
                 y += tileHeight - 1;
             }
 
             if (remainingHeight > 0)
             {
-                Rectangle rcDst = new Rectangle((int)(rect.X - camX), y, rect.Width, remainingHeight);
+                Rectangle rcDst = new Rectangle((int)(rect.X - camX), (int)(y - camY), rect.Width, remainingHeight);
 
                 Rectangle rcSource = new Rectangle(0, 0, ladderImg.Width, remainingHeight);
 
@@ -1764,7 +1778,7 @@ namespace General
 
             if (showRange == true)
             {
-                g.DrawRectangle(Pens.Orange, rect.X - camX, rect.Y, rect.Width, rect.Height);
+                g.DrawRectangle(Pens.Orange, rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
             }
         }
     }
@@ -1846,7 +1860,6 @@ namespace General
         public bool spellCastPaused = false;
 
         public float fireballManaCost = 10f;
-        public float manaRegenRate = 0.5f;
 
         public int fireballSpawnDelay = 5;
         public int fireballSpawnTimer = 5;
@@ -1904,7 +1917,7 @@ namespace General
             addFireballWeapon();
         }
 
-        public void Draw(Graphics g, bool showRanges, float camX)
+        public void Draw(Graphics g, bool showRanges, float camX, float camY)
         {
             drawR.X = R.X + (R.Width - drawR.Width) / 2f;
             drawR.Y = R.Y + (R.Height - drawR.Height);
@@ -1912,12 +1925,12 @@ namespace General
 
             for (int i = 0; i < fireballs.Count; i++)
             {
-                fireballs[i].draw(g , camX);
+                fireballs[i].draw(g , camX, camY);
 
                 if (showRanges)
                 {
                     Pen fbPen = new Pen(Color.Red, 1);
-                    g.DrawRectangle(fbPen, fireballs[i].rect.X, fireballs[i].rect.Y, fireballs[i].rect.Width, fireballs[i].rect.Height);
+                    g.DrawRectangle(fbPen, fireballs[i].rect.X - camX, fireballs[i].rect.Y - camY, fireballs[i].rect.Width, fireballs[i].rect.Height);
                 }
             }
 
@@ -1947,25 +1960,25 @@ namespace General
 
             if (frame != null)
             {
-                g.DrawImage(frame, drawR.X - camX, drawR.Y, drawR.Width, drawR.Height);
+                g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
             }
             if (showRanges)
             {
 
                 Pen p = new Pen(Color.Lime, 2);
-                g.DrawRectangle(p, R.X - camX, R.Y, R.Width, R.Height);
+                g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
 
                 if (isAttacking == true)
                 {
                     rectF atk = getAttackHitBox();
                     Pen atkPen = new Pen(Color.Orange, 2);
-                    g.DrawRectangle(atkPen, atk.X - camX, atk.Y, atk.Width, atk.Height);
+                    g.DrawRectangle(atkPen, atk.X - camX, atk.Y - camY, atk.Width, atk.Height);
                 }
             }
 
             for (int i = vfxes.Count - 1; i >= 0; i--)
             {
-                vfxes[i].draw(g, R , camX);
+                vfxes[i].draw(g, R , camX, camY);
 
                 if (vfxes[i].finished)
                 {
@@ -2534,7 +2547,7 @@ namespace General
         }
        
         //movement
-        public void move(List<tile> tiles , List<Ladder> ladders)
+        public void move(List<tile> tiles , List<Ladder> ladders, int width)
         {
             if (isDead == true)
             {
@@ -2584,7 +2597,17 @@ namespace General
                 xMove = moveSpeed;
             }
 
-            R.X += xMove;
+            
+            if(R.X + xMove < 0)
+            {
+                R.X = 0;
+            }
+            if(R.X+ R.Width + xMove > width)
+            {
+                R.X = width - R.Width;
+            }
+            else
+                R.X += xMove;
 
             if (isClimbing && xMove != 0f)
             {
@@ -2718,20 +2741,64 @@ namespace General
                         }
 
                         climbDir = ' ';
-                        R.Y += ySpeed;
 
-                        if (R.Y + R.Height <= trav.rect.Y)
+                        float prevY = R.Y + ySpeed;
+
+                        bool tileCollisionFound = false;
+
+                        for (int tileIndex = 0; tileIndex < tiles.Count; tileIndex++)
                         {
-                            R.Y = trav.rect.Y - R.Height;
-                            ySpeed = 0;
-                            isGrounded = true;
-                            isClimbing = false;
-                            jumpsUsed = 0;
+                            tile tileToCheck = tiles[tileIndex];
+                            if (tileToCheck.interact == true)
+                            {
+                                if (R.X + R.Width > tileToCheck.R.X && R.X < tileToCheck.R.X + tileToCheck.R.Width)
+                                {
+                                    float prevTop = prevY;
+                                    float prevBottom = prevY + R.Height;
+
+                                    if (prevBottom > tileToCheck.R.Y && prevTop < tileToCheck.R.Y + tileToCheck.R.Height)
+                                    {
+                                        if (ySpeed < 0)
+                                        {
+                                            R.Y = tileToCheck.R.Y + tileToCheck.R.Height;
+                                            ySpeed = 0;
+                                            isClimbingMoving = false;
+                                            tileCollisionFound = true;
+                                            break;
+                                        }
+                                        else if (ySpeed > 0)
+                                        {
+                                            R.Y = tileToCheck.R.Y - R.Height;
+                                            ySpeed = 0;
+                                            isGrounded = true;
+                                            isClimbing = false;
+                                            isClimbingMoving = false;
+                                            jumpsUsed = 0;
+                                            tileCollisionFound = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        else if (R.Y + R.Height >= trav.rect.Y + trav.rect.Height)
+
+                        if (tileCollisionFound == false)
                         {
-                            isClimbing = false;
-                            ySpeed = 0;
+                            R.Y = prevY;
+
+                            if (R.Y + R.Height <= trav.rect.Y)
+                            {
+                                R.Y = trav.rect.Y - R.Height;
+                                ySpeed = 0;
+                                isGrounded = true;
+                                isClimbing = false;
+                                jumpsUsed = 0;
+                            }
+                            else if (R.Y + R.Height >= trav.rect.Y + trav.rect.Height)
+                            {
+                                isClimbing = false;
+                                ySpeed = 0;
+                            }
                         }
                     }
                     else
@@ -2836,7 +2903,7 @@ namespace General
             }
         }
 
-        public void climb(List<Ladder> ladders)
+        public void climb(List<tile> tiles, List<Ladder> ladders)
         {
             if (isClimbing)
             {
@@ -2967,14 +3034,14 @@ namespace General
             }
         }
 
-        public void draw(Graphics g , float camX)
+        public void draw(Graphics g , float camX, float camY)
         {
             if (frames.Count == 0)
             {
                 return;
             }
 
-            g.DrawImage(frames[currFrame], R.X - camX, R.Y, R.Width, R.Height);
+            g.DrawImage(frames[currFrame], R.X - camX, R.Y - camY, R.Width, R.Height);
 
             updateAnimation();
         }
@@ -3172,7 +3239,7 @@ namespace General
             }
         }
 
-        public void draw(Graphics g, bool showRanges , float camX)
+        public void draw(Graphics g, bool showRanges , float camX, float camY)
         {
             if (spawn)
             {
@@ -3211,20 +3278,20 @@ namespace General
 
                 if (frame != null)
                 {
-                    g.DrawImage(frame, drawR.X - camX, drawR.Y, drawR.Width, drawR.Height);
+                    g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
                 }
 
                 if (showRanges)
                 {
                     Pen p = new Pen(Color.Red, 2);
-                    g.DrawRectangle(p, R.X - camX, R.Y, R.Width, R.Height);
+                    g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
                 }
 
                 if (isDead == false)
                 {
                     rectF screenR = new rectF();
                     screenR.X = R.X - camX;
-                    screenR.Y = R.Y;
+                    screenR.Y = R.Y - camY;
                     screenR.Width = R.Width;
                     screenR.Height = R.Height;
 
@@ -4095,22 +4162,61 @@ namespace General
     public class tile
     {
         public rectF R = new rectF();
-        public Color clr = Color.Black;
+        public Bitmap img = null;
+        public bool showColor = true;
+        public Color clr;
         public bool interact = false;
         public bool jumpThrough = false;
 
-        public void draw(Graphics g , float camX)
+        public void draw(Graphics g , float camX, float camY , bool ShowRanges)
         {
-            SolidBrush bsh = new SolidBrush(clr);
-            g.FillRectangle(bsh, R.X - camX, R.Y, R.Width, R.Height);
+            if (showColor == false && img != null)
+            {
+                int tileWidth = img.Width;
+                int countTiles = (int)(R.Width / tileWidth);
+                int remainingWidth = (int)(R.Width - countTiles * tileWidth + (countTiles - 1));
+
+                int x = (int)R.X;
+                for (int i = 0; i < countTiles; i++)
+                {
+                    g.DrawImage(img, x - camX, R.Y - camY, tileWidth, R.Height);
+                    x += tileWidth - 1;
+                }
+
+                if (remainingWidth > 0)
+                {
+                    Rectangle rcDst = new Rectangle((int)(x - camX), (int)(R.Y - camY), remainingWidth, (int)R.Height);
+                    Rectangle rcSource = new Rectangle(0, 0, remainingWidth, img.Height);
+                    g.DrawImage(img, rcDst, rcSource, GraphicsUnit.Pixel);
+                }
+            }
+            else if (showColor == true) {
+                SolidBrush bsh = new SolidBrush(clr);
+                g.FillRectangle(bsh, R.X - camX, R.Y - camY, R.Width, R.Height);
+            }
+
+            if(ShowRanges == true)
+            {
+                Pen green = new Pen(Color.Brown , 3);
+                g.DrawRectangle(green, R.X - camX, R.Y - camY, R.Width, R.Height);
+            }
+        }
+        public void AddImg(Bitmap img)
+        {
+            this.img = img;
+        }
+        public void changeColor(Color clr)
+        {
+            this.clr = clr;
         }
 
-        public void init(int x, int y, int width, int height)
+        public void init(int x, int y, int width, int height , bool showColor)
         {
             R.X = x;
             R.Y = y;
             R.Height = height;
             R.Width = width;
+            this.showColor = showColor;
         }
     }
 
@@ -4218,17 +4324,31 @@ namespace General
             level lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
             levels.Add(lvl);
 
+            background = new Bitmap("Backgrounds/Dungeon.png");
+            worldWidth = background.Width * 2;
+            worldHeight = background.Height * 2;
+            
+
+            startHeroX = 10;
+            startHeroY = worldHeight - 115;
+
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
+            levels.Add(lvl);
+
             initTeleporters();
         }
 
         public void initTeleporters()
         {
-            for(int i =0; i<levels.Count; i++)
-            {
-                level lvl = levels[i];
+            level lvl = levels[0];
 
-                lvl.teleporter = new Teleporter(i, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 200);
-            }
+            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 200);
+
+            lvl = levels[1];
+            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 200);
+
+
+
         }
         public void initAll(int height)
         {
@@ -4257,6 +4377,25 @@ namespace General
         }
 
         void initLadders( int height)
+        {
+            initLadders0(height);
+            initLadders1();
+
+
+        }
+        void initLadders1()
+        {
+            Ladder ladder;
+
+            ladder = new Ladder(1916 ,645 , 330, true);
+
+            levels[1].ladders.Add(ladder);
+
+            ladder = new Ladder(1420, 320, 325, false);
+
+            levels[1].ladders.Add(ladder);
+        }
+        void initLadders0(int height)
         {
             Ladder ladder;
 
@@ -4299,22 +4438,129 @@ namespace General
 
         void initTiles(int height)
         {
+            initTilesLevel0(height);
+            initTilesLevel1();
+        }
+
+        void initTilesLevel1()
+        {
+            int height = levels[1].worldHeight;
+
+            tile pnn = new tile();
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, height - 112, levels[1].worldWidth, 30 , false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(1235, 917, 127 , 54, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(1275, 860, 58, 60, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(2236, 917, 127, 54, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(2273, 855, 60, 54, false);
+            levels[1].tiles.Add(pnn);
+
+            //2nd floor
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, 720, 70, 105, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(135, 647, 1775, 83, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(1992, 647, 1775, 83, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(3765, 405, 133, 320, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(3825, 730, 70, 250, false);
+            levels[1].tiles.Add(pnn);
+
+
+            //3rd
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, 320, 1405, 80, false);
+            levels[1].tiles.Add(pnn);
+
+            //0 400 130 325
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, 400, 130, 325, false);
+            levels[1].tiles.Add(pnn);
+
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(135, 0, 3700, 120, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, 0, 135, 150, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(2732, 320, 1171, 86, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(1499, 321, 903, 86, false);
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(3770, 120, 130, 35, false);
+            levels[1].tiles.Add(pnn);
+        }
+        void initTilesLevel0(int height)
+        {
             tile pnn = new tile();
             pnn.interact = true;
-            pnn.init(0, height - 30, levels[0].worldWidth, 30);
+            pnn.init(0, height - 30, levels[0].worldWidth, 30 , true);
+            pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.jumpThrough = true;
-            pnn.init(300, height - 150, 200, 20);
+            pnn.init(300, height - 150, 200, 20 , true);
+            pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.jumpThrough = false;
             pnn.clr = Color.DarkRed;
-            pnn.init(600, height - 250, 200, 30);
+            pnn.init(600, height - 250, 200, 30 , true);
+            pnn.changeColor(Color.Red);
+
             levels[0].tiles.Add(pnn);
         }
 
@@ -4572,6 +4818,11 @@ namespace General
 
         public void checkHero(Hero hero)
         {
+            if(loopIt == false && isUnlocked == true && currF < Animation.frames.Count - 1)
+            {
+                isHeroInRange = false;
+                return;
+            }
             int startX = rect.X - range;
             int endX = rect.X + rect.Width + range;
 
@@ -4586,21 +4837,21 @@ namespace General
             else isHeroInRange = false;
             
         }
-        public void draw(Graphics g, Hero hero, bool showRange , float camX)
+        public void draw(Graphics g, Hero hero, bool showRange , float camX, float camY)
         {
             checkHero(hero);
-            g.DrawImage(getFrame(), rect.X - camX, rect.Y, rect.Width, rect.Height);
+            g.DrawImage(getFrame(), rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
 
             if (showRange == true)
             {
                 Pen red = new Pen(Color.Red);
-                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range, range + rect.Width, range + rect.Height);
+                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range - camY, range + rect.Width, range + rect.Height);
             }
 
             int h = 40;
             int w = 165;
             float positionButtonX = rect.X + rect.Width / 2 - w / 2 - camX;
-            float positionButtonY = rect.Y - h - 20;
+            float positionButtonY = rect.Y - h - 20 - camY;
 
             if (isHeroInRange == true)
             {
@@ -4676,6 +4927,9 @@ namespace General
 
         int animIdx = 0;
         int ChoiceIdx = 0;
+
+
+        float[] lastPos = { 0, 0 };
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -4709,6 +4963,9 @@ namespace General
         
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
+            lastPos[0] = e.X + camX;
+            lastPos[1] = e.Y + camY;
+
             if (hasStarted == false)
             {
                 for (int i = 0; i < clrBtns.Count; i++)
@@ -4756,8 +5013,8 @@ namespace General
 
                     if (isClicked == false)
                     {
-                        hero.mouseX = e.X;
-                        hero.mouseY = e.Y;
+                        hero.mouseX = e.X + camX;
+                        hero.mouseY = e.Y + camY;
                         hero.startAttack();
                     }
                 }
@@ -4779,6 +5036,8 @@ namespace General
         
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
+
+            this.Text = "X,Y: " + (e.X+camX).ToString() + " , "+ (e.Y+camY).ToString() + " | difference: "+ ((e.X + camX) - lastPos[0]).ToString() + " , " + ((e.Y + camY) - lastPos[1]).ToString();
             if (hasStarted == false)
             {
                 for (int i = 0; i < btns.Count; i++)
@@ -4819,8 +5078,8 @@ namespace General
             }
             else if (isGamePaused == false)
             {
-                hero.mouseX = e.X;
-                hero.mouseY = e.Y;
+                hero.mouseX = e.X + camX;
+                hero.mouseY = e.Y + camY;
             }
             else if (isGamePaused == true)
             {
@@ -5035,13 +5294,19 @@ namespace General
                     }
                     if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
                     {
-                        hero.moving = 'r';
-                        hero.facing = 'r';
+                        if (hero.R.X + hero.R.Width < levels.levels[levels.currentLevel].worldWidth)
+                        {
+                            hero.moving = 'r';
+                            hero.facing = 'r';
+                        }
                     }
                     if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
                     {
-                        hero.moving = 'l';
-                        hero.facing = 'l';
+                        if (hero.R.X > 0)
+                        {
+                            hero.moving = 'l';
+                            hero.facing = 'l';
+                        }
                     }
                     if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
                     {
@@ -5052,7 +5317,7 @@ namespace General
                         if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
                             upHeld = true;
-                            hero.climb(ladders);
+                            hero.climb(tiles, ladders);
 
                             if (hero.isClimbing == false)
                             {
@@ -5100,6 +5365,7 @@ namespace General
                     {
                         if (e.KeyCode == Keys.D1)
                         {
+                            hero.coins += 20;
                             hero.currentWeapon = 0;
                             hero.ManageWeapon();
                         }
@@ -5131,7 +5397,9 @@ namespace General
                             }
                             else
                             {
-                                //add level logic later
+                                levels.nextLevel(enemies, ladders, tiles, droppedCoins);
+                                hero.R.X = levels.getNewHeroX();
+                                hero.R.Y = levels.getNewHeroY();
                             }
                         }
                     }
@@ -5181,9 +5449,9 @@ namespace General
                 {
                     if (upHeld == true)
                     {
-                        hero.climb(ladders);
+                        hero.climb(tiles, ladders);
                     }
-                    hero.move(tiles, ladders);
+                    hero.move(tiles, ladders , levels.levels[levels.currentLevel].worldWidth);
                     hero.collectDroppedCoins(droppedCoins);
                     if (hero.currentWeapon == 0)
                     {
@@ -5195,6 +5463,7 @@ namespace General
                     hero.mana.tick();
                     handleEnemyMovement();
                     UpdateCamera();
+
                 }
             }
 
@@ -5250,34 +5519,43 @@ namespace General
                 else
                 {
 
+                    Bitmap bg = levels.getBackground();
+                    float worldW = levels.levels[levels.currentLevel].worldWidth;
+                    float worldH = levels.levels[levels.currentLevel].worldHeight;
+
+
+                    // if teh bg width is lesser than the worldW we divide the camX by the ratio to move it correctly
+                   
+                    float divideX = bg.Width / worldW;
+                    float divideY = bg.Height / worldH;
+
+                    Rectangle rcSrc = new Rectangle((int)(camX * divideX), (int)(camY * divideY), (int)(this.ClientSize.Width * divideX), (int)(this.ClientSize.Height * divideY));
                     Rectangle rcDst = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
 
-                    Rectangle rcSrc = new Rectangle((int)camX, 0, this.ClientSize.Width, levels.getBackground().Height);
-
-                    g.DrawImage(levels.getBackground(), rcDst, rcSrc, GraphicsUnit.Pixel);
+                    g.DrawImage(bg, rcDst, rcSrc, GraphicsUnit.Pixel);
 
 
-                    
-                    levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX);
+
+                    levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX, camY);
 
                     for (int i = 0; i < tiles.Count; i++)
                     {
-                        tiles[i].draw(g,camX);
+                        tiles[i].draw(g,camX, camY , showRanges);
                     }
                     for (int i = 0; i < ladders.Count; i++)
                     {
-                        ladders[i].draw(g, showRanges, camX);
+                        ladders[i].draw(g, showRanges, camX, camY);
                     }
                     for (int i = 0; i < enemies.Count; i++)
                     {
-                        enemies[i].draw(g, showRanges , camX);
+                        enemies[i].draw(g, showRanges , camX, camY);
                     }
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
-                        droppedCoins[i].draw(g , camX);
+                        droppedCoins[i].draw(g , camX, camY);
                     }
 
-                    hero.Draw(g, showRanges, camX);
+                    hero.Draw(g, showRanges, camX, camY);
                     save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
                 }
 
@@ -5732,22 +6010,43 @@ namespace General
         void UpdateCamera()
         {
             camX = hero.R.X + hero.R.Width / 2 - this.ClientSize.Width / 2;
+            float yOffset = this.ClientSize.Height * 0.20f;
+            camY = hero.R.Y + hero.R.Height / 2f - this.ClientSize.Height / 2f + yOffset;
 
             if (camX < 0)
             {
                 camX = 0;
             }
 
-            float maxCamX = levels.getBackground().Width - this.ClientSize.Width;
+            if (camY < 0)
+            {
+                camY = 0;
+            }
+
+            float worldW = levels.levels[levels.currentLevel].worldWidth;
+            float worldH = levels.levels[levels.currentLevel].worldHeight;
+
+            float maxCamX = worldW - this.ClientSize.Width;
+            float maxCamY = worldH - this.ClientSize.Height;
 
             if (maxCamX < 0)
             {
                 maxCamX = 0;
             }
 
+            if (maxCamY < 0)
+            {
+                maxCamY = 0;
+            }
+
             if (camX > maxCamX)
             {
                 camX = maxCamX;
+            }
+
+            if (camY > maxCamY)
+            {
+                camY = maxCamY;
             }
         }
 
