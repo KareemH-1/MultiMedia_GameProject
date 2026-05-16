@@ -1818,6 +1818,9 @@ namespace General
 
         public float prevBottom = 0f;
 
+        public float lastValidX = 0f;
+        public float lastValidY = 0f;
+
         public bool isTakingDamage = false;
         public int takingDamageTimer = 0;
 
@@ -1896,6 +1899,9 @@ namespace General
             R.Height = h * 0.65f;
             R.X = startX + (w - R.Width) / 2f;
             R.Y = startY + (h - R.Height);
+
+            lastValidX = R.X;
+            lastValidY = R.Y;
 
             createAnim();
             initVFX();
@@ -2258,6 +2264,23 @@ namespace General
                     takingDamageTimer = dmgAnim.frames.Count * dmgAnim.frameDelay;
                 }
             }
+        }
+
+        public void updateLastValidPosition()
+        {
+            if (isGrounded && !isDead)
+            {
+                lastValidX = R.X;
+                lastValidY = R.Y;
+            }
+        }
+
+        public void handleFallDamage()
+        {
+            R.X = lastValidX;
+            R.Y = lastValidY;
+            
+            takeDamage(25);
         }
 
         // Attack
@@ -4240,6 +4263,42 @@ namespace General
         public bool interact = false;
         public bool jumpThrough = false;
 
+        public bool couldDamage = false;
+        public int dmg = 10;
+        public int cooldown = 21;
+        public int cooldownTimer = 0;
+
+        public void makeItDamage(int dmg , int cooldown)
+        {
+            couldDamage = true;
+            this.dmg = dmg;
+            this.cooldown = cooldown;
+        }
+        public void checkHero(Hero hero)
+        {
+            if (couldDamage == true)
+            {
+                if (cooldownTimer != 0)
+                {
+                    if (cooldownTimer < cooldown)
+                    {
+                        cooldownTimer++;
+                    }
+                    else cooldownTimer = 0;
+                }
+                else
+                {
+
+                    if (hero.R.X <= R.X + R.Width && hero.R.X + hero.R.Width >= R.X &&
+                        hero.R.Y <= R.Y + R.Height && hero.R.Y + hero.R.Height >= R.Y)
+                    {
+                        hero.takeDamage(dmg);
+                        cooldownTimer = 1;
+                    }
+
+                }
+            }
+        }
         public void draw(Graphics g , float camX, float camY , bool ShowRanges)
         {
             if (showColor == false && img != null)
@@ -4334,6 +4393,7 @@ namespace General
         }
     }
 
+    
     public class level
     {
         public List<Ladder> ladders = new List<Ladder>();
@@ -4506,6 +4566,8 @@ namespace General
             levels[0].enemies.Add(en);
 
 
+
+            
         }
 
         void initTiles(int height)
@@ -4522,8 +4584,22 @@ namespace General
 
             pnn = new tile();
             pnn.interact = true;
-            pnn.init(0, height - 112, levels[1].worldWidth, 30 , false);
+            pnn.init(0, height - 112, 2067, 30 , false);
             levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(1366, height - 112 - 37, 164, 36, false);
+            pnn.AddImg(new Bitmap("Characters/Enemies/Spikes/spikes.png"));
+            pnn.makeItDamage(10, 21);
+
+            levels[1].tiles.Add(pnn);
+
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(2216, height - 112, 1700, 30, false);
+            levels[1].tiles.Add(pnn);
+
 
             pnn = new tile();
             pnn.interact = true;
@@ -5556,6 +5632,17 @@ namespace General
                         hero.climb(tiles, ladders);
                     }
                     hero.move(tiles, ladders , levels.levels[levels.currentLevel].worldWidth);
+                    hero.updateLastValidPosition();
+
+                    if (hero.R.Y > levels.levels[levels.currentLevel].worldHeight)
+                    {
+                        hero.handleFallDamage();
+                    }
+                    for(int i =0; i< tiles.Count; i++)
+                    {
+                        tiles[i].checkHero(hero);
+                    }
+
                     hero.collectDroppedCoins(droppedCoins);
                     if (hero.currentWeapon == 0)
                     {
