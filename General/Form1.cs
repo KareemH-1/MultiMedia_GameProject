@@ -2989,6 +2989,11 @@ namespace General
     {
         public rectF R = new rectF();
 
+        public float velocityY = 0f;
+        public float gravity = 1.2f;
+        public float maxFallSpeed = 20f;
+        public float prevBottom = 0f;
+
         public List<Bitmap> frames = new List<Bitmap>();
         public int currFrame = 0;
         public int frameDelay = 3;
@@ -3030,6 +3035,73 @@ namespace General
                 if (currFrame >= frames.Count)
                 {
                     currFrame = 0;
+                }
+            }
+        }
+
+        public void applyGravity(List<tile> tiles)
+        {
+            prevBottom = R.Y + R.Height;
+
+            velocityY += gravity;
+            if (velocityY > maxFallSpeed)
+            {
+                velocityY = maxFallSpeed;
+            }
+
+            R.Y += velocityY;
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+
+                if (t.interact == true)
+                {
+                    bool overlappingX = false;
+
+                    if (R.X + R.Width > t.R.X &&
+                        R.X < t.R.X + t.R.Width)
+                    {
+                        overlappingX = true;
+                    }
+
+                    if (overlappingX == true)
+                    {
+                        if (t.jumpThrough == true)
+                        {
+                            if (velocityY >= 0 &&
+                                prevBottom <= t.R.Y &&
+                                R.Y + R.Height >= t.R.Y)
+                            {
+                                R.Y = t.R.Y - R.Height;
+                                velocityY = 0;
+                            }
+                        }
+                        else
+                        {
+                            bool overlappingY = false;
+
+                            if (R.Y + R.Height > t.R.Y &&
+                                R.Y < t.R.Y + t.R.Height)
+                            {
+                                overlappingY = true;
+                            }
+
+                            if (overlappingY)
+                            {
+                                if (velocityY > 0)
+                                {
+                                    R.Y = t.R.Y - R.Height;
+                                    velocityY = 0;
+                                }
+                                else if (velocityY < 0)
+                                {
+                                    R.Y = t.R.Y + t.R.Height;
+                                    velocityY = 0;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -4907,6 +4979,11 @@ namespace General
         Bitmap off; 
         Random RR = new Random();
 
+        bool isLevelIntroVisible = false;
+        int levelIntroTimer = 0;
+        int levelIntroTimerMax = 10;
+        int levelIntroNumber = 1;
+
         float camX = 0;
         float camY = 0;
 
@@ -4952,7 +5029,7 @@ namespace General
         //Form Functions
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (!hasStarted || isGamePaused == true) return;
+            if (!hasStarted || isGamePaused == true || isLevelIntroVisible) return;
 
             if (e.Button == MouseButtons.Left)
             {
@@ -5005,7 +5082,7 @@ namespace General
                     }
                 }
             }
-            else if (isGamePaused == false && hero.isDead == false)
+            else if (isGamePaused == false && hero.isDead == false && isLevelIntroVisible == false)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -5078,8 +5155,11 @@ namespace General
             }
             else if (isGamePaused == false)
             {
-                hero.mouseX = e.X + camX;
-                hero.mouseY = e.Y + camY;
+                if (!isLevelIntroVisible)
+                {
+                    hero.mouseX = e.X + camX;
+                    hero.mouseY = e.Y + camY;
+                }
             }
             else if (isGamePaused == true)
             {
@@ -5105,7 +5185,7 @@ namespace General
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
-            if (hasStarted == false || isGamePaused == true) return;
+            if (hasStarted == false || isGamePaused == true || isLevelIntroVisible) return;
 
 
             if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.moving == 'r')
@@ -5236,6 +5316,11 @@ namespace General
             }
             else
             {
+                if (isLevelIntroVisible)
+                {
+                    return;
+                }
+
                 if (isGameOverScreenShown == true)
                 {
                     if (e.KeyCode == Keys.Enter)
@@ -5397,9 +5482,15 @@ namespace General
                             }
                             else
                             {
+                                int oldLevel = levels.currentLevel;
                                 levels.nextLevel(enemies, ladders, tiles, droppedCoins);
-                                hero.R.X = levels.getNewHeroX();
-                                hero.R.Y = levels.getNewHeroY();
+
+                                if (levels.currentLevel != oldLevel)
+                                {
+                                    hero.R.X = levels.getNewHeroX();
+                                    hero.R.Y = levels.getNewHeroY();
+                                    startLevelIntro();
+                                }
                             }
                         }
                     }
@@ -5429,6 +5520,14 @@ namespace General
         {
             if (hasStarted == true)
             {
+                updateLevelIntroState();
+
+                if (isLevelIntroVisible)
+                {
+                    drawDubb(this.CreateGraphics());
+                    return;
+                }
+
                 if (hero.isDead && !isGameOverScreenShown)
                 {
                     if (gameOverScreenDelay == 0)
@@ -5447,6 +5546,11 @@ namespace General
                 }
                 else if (!hero.isDead)
                 {
+                    for (int i = 0; i < droppedCoins.Count; i++)
+                    {
+                        droppedCoins[i].applyGravity(tiles);
+                    }
+
                     if (upHeld == true)
                     {
                         hero.climb(tiles, ladders);
@@ -5559,11 +5663,65 @@ namespace General
                     save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
                 }
 
+                if (isLevelIntroVisible == true)
+                {
+                    drawLevelIntro(g);
+                }
+
             }
             else
             {
                 displayMenu(g);
             }
+        }
+
+        void startLevelIntro()
+        {
+            isLevelIntroVisible = true;
+            levelIntroTimer = 0;
+            levelIntroNumber = levels.currentLevel + 1;
+
+            upHeld = false;
+
+            if (hero != null)
+            {
+                hero.moving = ' ';
+                hero.isRunning = false;
+                hero.stopFireball();
+            }
+        }
+
+        void updateLevelIntroState()
+        {
+            if (isLevelIntroVisible == false)
+            {
+                return;
+            }
+
+            levelIntroTimer++;
+
+            if (levelIntroTimer >= levelIntroTimerMax)
+            {
+                isLevelIntroVisible = false;
+            }
+        }
+
+        void drawLevelIntro(Graphics g)
+        {
+            SolidBrush overlay = new SolidBrush(Color.FromArgb(220, 0, 0, 0));
+            g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+            string text = "Level: " + levelIntroNumber.ToString();
+
+            Font levelFont = new Font("System", 48, FontStyle.Bold);
+            SolidBrush outline = new SolidBrush(Color.FromArgb(0, 0, 0));
+            SolidBrush textBrush = new SolidBrush(Color.White);
+
+            int x = this.ClientSize.Width / 2 - 180;
+            int y = this.ClientSize.Height / 2 - 40;
+
+            g.DrawString(text, levelFont, outline, x + 3, y + 3);
+            g.DrawString(text, levelFont, textBrush, x, y);
         }
 
         void drawNewGameScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, Font smallFont, SolidBrush white, SolidBrush gold, Bitmap frame, Bitmap SelectedFrame)
