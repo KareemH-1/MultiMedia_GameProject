@@ -2570,7 +2570,7 @@ namespace General
         }
        
         //movement
-        public void move(List<tile> tiles , List<Ladder> ladders, int width)
+        public void move(List<tile> tiles , List<Ladder> ladders, int width , List<MovingPlatform> movingPlatforms)
         {
             if (isDead == true)
             {
@@ -2579,7 +2579,7 @@ namespace General
                 isShooting = false;
                 isCastingAbility = false;
 
-                Movement(tiles , ladders);
+                Movement(tiles , ladders, movingPlatforms);
                 updateAnimation();
                 return;
             }
@@ -2591,7 +2591,7 @@ namespace General
                 moving = ' ';
                 isGrounded = false;
 
-                Movement(tiles , ladders);
+                Movement(tiles , ladders , movingPlatforms);
                 updateAnimation();
                 return;
             }
@@ -2671,13 +2671,13 @@ namespace General
                 }
             }
 
-            Movement(tiles , ladders);
+            Movement(tiles , ladders , movingPlatforms);
 
             if (!isAttacking && !isAttacking)
                 updateAnimation();
         }
         
-        public void Movement(List<tile> tiles, List<Ladder> ladders)
+        public void Movement(List<tile> tiles, List<Ladder> ladders , List<MovingPlatform> movingPlatforms)
         {
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
@@ -2857,6 +2857,7 @@ namespace General
                 isClimbingMoving = false;
                 climbDir = ' ';
             }
+            checkMovingPlatformsCollision(movingPlatforms);
         }
 
         public int checkLadders(List<Ladder> ladders)
@@ -3005,7 +3006,38 @@ namespace General
                 }
             }
         }
-        
+
+        void checkMovingPlatformsCollision(List<MovingPlatform> movingPlatforms)
+        {
+            for (int i = 0; i < movingPlatforms.Count; i++)
+            {
+                MovingPlatform p = movingPlatforms[i];
+
+                bool overlappingX =
+                    R.X + R.Width > p.R.X &&
+                    R.X < p.R.X + p.R.Width;
+
+                bool fallingOntoPlatform =
+                    ySpeed >= 0 &&
+                    prevBottom <= p.R.Y &&
+                    R.Y + R.Height >= p.R.Y;
+
+                if (overlappingX && fallingOntoPlatform)
+                {
+                    R.Y = p.R.Y - R.Height;
+
+                    R.Y += p.dy;
+
+                    ySpeed = 0;
+                    isGrounded = true;
+                    wasGrounded = true;
+                    jumpsUsed = 0;
+                    isLanding = false;
+                }
+            }
+        }
+
+
     }
 
     public class DroppedCoin
@@ -4351,6 +4383,67 @@ namespace General
         }
     }
 
+    public class MovingPlatform
+    {
+        public rectF R = new rectF();
+
+        public float startY;
+        public float minY;
+        public float maxY;
+
+        public float speed = 3f;
+        public int dir = -1; 
+
+        public float lastY;
+        public float dy;
+
+        public Brush platformBrush = Brushes.SaddleBrown;
+        public Pen platformPen = Pens.Black;
+
+        public MovingPlatform(float x, float y, float w, float h, float range, float speed)
+        {
+            R.X = x;
+            R.Y = y;
+            R.Width = w;
+            R.Height = h;
+
+            startY = y;
+
+            minY = y - range; 
+            maxY = y;         
+
+            this.speed = speed;
+
+            lastY = y;
+            dy = 0;
+        }
+
+        public void move()
+        {
+            lastY = R.Y;
+
+            R.Y += speed * dir;
+
+            if (R.Y <= minY)
+            {
+                R.Y = minY;
+                dir = 1; 
+            }
+            else if (R.Y >= maxY)
+            {
+                R.Y = maxY;
+                dir = -1; 
+            }
+
+            dy = R.Y - lastY;
+        }
+
+        public void draw(Graphics g, float camX)
+        {
+            g.FillRectangle(platformBrush, R.X - camX, R.Y, R.Width, R.Height);
+            g.DrawRectangle(platformPen, R.X - camX, R.Y, R.Width, R.Height);
+        }
+    }
     public class Button
     {
         public rectF rect = new rectF();
@@ -5071,6 +5164,7 @@ namespace General
         List<tile> tiles = new List<tile>();
         List<Ladder> ladders = new List<Ladder>();
         List<DroppedCoin> droppedCoins = new List<DroppedCoin>();
+        List<MovingPlatform> movingPlatforms = new List<MovingPlatform>();
         Timer timer = new Timer();
 
 
@@ -5631,7 +5725,6 @@ namespace General
                     {
                         hero.climb(tiles, ladders);
                     }
-                    hero.move(tiles, ladders , levels.levels[levels.currentLevel].worldWidth);
                     hero.updateLastValidPosition();
 
                     if (hero.R.Y > levels.levels[levels.currentLevel].worldHeight)
@@ -5643,11 +5736,19 @@ namespace General
                         tiles[i].checkHero(hero);
                     }
 
-                    hero.collectDroppedCoins(droppedCoins);
                     if (hero.currentWeapon == 0)
                     {
                         hero.updateAttack(enemies);
                     }
+
+                    for (int i = 0; i < movingPlatforms.Count; i++)
+                    {
+                        movingPlatforms[i].move();
+                    }
+
+                    hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
+                    hero.collectDroppedCoins(droppedCoins);
+
                     hero.updateFireballCast(enemies, tiles);
                     hero.updateSingleFireballAbility(enemies, tiles);
 
@@ -5669,11 +5770,12 @@ namespace General
             initMenu();
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
-            
+            movingPlatforms.Add(new MovingPlatform(600, 500, 150, 30, 200, 3));
+
 
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
-                
+
 
             loadData();
 
@@ -5744,6 +5846,10 @@ namespace General
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
                         droppedCoins[i].draw(g , camX, camY);
+                    }
+                    for (int i = 0; i < movingPlatforms.Count; i++)
+                    {
+                        movingPlatforms[i].draw(g, camX);
                     }
 
                     hero.Draw(g, showRanges, camX, camY);
