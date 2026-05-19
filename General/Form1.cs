@@ -5046,6 +5046,14 @@ namespace General
                 {
                     if(currF < Animation.frames.Count - 1)
                     {
+                        if(currF == Animation.frames.Count/4)
+                        {
+
+                            if (level == 1)
+                            {
+                                rect.Y -= 23;
+                            }
+                        }
                         currF++;
                         return Animation.frames[currF];
                     }
