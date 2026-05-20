@@ -1487,15 +1487,12 @@ namespace General
         public rectF rect;
         public rectF SingleDrawRect;
         public float traveledDist = 0f;
-        public float maxDist = 1000;
+        public float maxDist = 2000;
         public Animation animation = new Animation();
         public AnimationController anim = new AnimationController();
         public bool strong = false;
 
-        public float weakDivide = 7f;
-        public float strongDivide = 5f;
-        public float divide;
-
+        public float speed = 30;
         public float dirX = 1f;
         public float dirY = 0f;
 
@@ -1504,6 +1501,8 @@ namespace General
         public int damage = 15;
         public int strongDamage = 30;
         public bool finished = false;
+
+        public float targetX, targetY;
 
         public Fireball(Random rr, float startX, float startY, float targetX, float targetY, bool isItSingle)
         {
@@ -1523,23 +1522,33 @@ namespace General
                 if (normOrStrong != 0)
                 {
                     rect = new rectF(startX, startY, 30, 30);
-                    divide = weakDivide;
+                   
                 }
                 else
                 {
                     strong = true;
                     maxDist = maxDist * 1.5f;
                     rect = new rectF(startX, startY, 40, 40);
-                    divide = strongDivide;
-
+                    speed = 45;
                     damage = 50;
                 }
 
-                float dx = targetX - startX;
-                float dy = targetY - startY;
+                dirX = 1f;
+                if (targetX < startX)
+                {
+                    dirX = -1f;
+                }
 
-                dirX = dx / divide;
-                dirY = dy / divide;
+                int dist = 100;
+                if (targetY > startY + dist)
+                {
+                    dirY = 1;
+                }
+                else if (targetY < startY - dist)
+                {
+                    dirY = -1;
+                }
+                else dirY = 0;
             }
             else
             {
@@ -1576,7 +1585,7 @@ namespace General
                 maxDist = 5000f;
                 rect = new rectF(startX, startY, 74, 52);
                 SingleDrawRect = new rectF(startX, startY, 74, 52);
-                divide = 45;
+                
                 damage = strongDamage;
             }
 
@@ -1588,53 +1597,64 @@ namespace General
         public void moveFireball(List<tile> tiles, List<Enemy> enemies)
         {
 
-                rect.X += dirX;
-                rect.Y += dirY;
-                traveledDist += 45;
+            if (dirX > 0)
+            {
+                this.rect.X += speed;
+            }
+            else this.rect.X -= speed;
 
-                if (traveledDist >= maxDist)
-                {
-                    finished = true;
-                    return;
-                }
+            if (dirY > 0)
+            {
+                this.rect.Y += speed;
+            }
+            else if(dirY < 0) this.rect.Y -= speed;
 
-                for (int t = 0; t < tiles.Count; t++)
+
+            traveledDist += 45;
+
+            if (traveledDist >= maxDist)
+            {
+                finished = true;
+                return;
+            }
+
+            for (int t = 0; t < tiles.Count; t++)
+            {
+                tile tl = tiles[t];
+                if (tl.interact == true && tl.jumpThrough == false)
                 {
-                    tile tl = tiles[t];
-                    if (tl.interact == true && tl.jumpThrough == false)
+
+                    if (rect.X < tl.R.X + tl.R.Width &&
+                        rect.X + rect.Width > tl.R.X &&
+                        rect.Y < tl.R.Y + tl.R.Height &&
+                        rect.Y + rect.Height > tl.R.Y)
                     {
+                        finished = true;
+                        return;
+                    }
+                }
+            }
 
-                        if (rect.X < tl.R.X + tl.R.Width &&
-                            rect.X + rect.Width > tl.R.X &&
-                            rect.Y < tl.R.Y + tl.R.Height &&
-                            rect.Y + rect.Height > tl.R.Y)
+            for (int j = 0; j < enemies.Count; j++)
+            {
+                Enemy en = enemies[j];
+                if (!en.isDead)
+                {
+                    if (rect.X < en.R.X + en.R.Width &&
+                        rect.X + rect.Width > en.R.X &&
+                        rect.Y < en.R.Y + en.R.Height &&
+                        rect.Y + rect.Height > en.R.Y)
+                    {
+                        en.takeHit(damage);
+                        if (isItSingle == false)
                         {
                             finished = true;
                             return;
                         }
                     }
                 }
-
-                for (int j = 0; j < enemies.Count; j++)
-                {
-                    Enemy en = enemies[j];
-                    if (!en.isDead)
-                    {
-                        if (rect.X < en.R.X + en.R.Width &&
-                            rect.X + rect.Width > en.R.X &&
-                            rect.Y < en.R.Y + en.R.Height &&
-                            rect.Y + rect.Height > en.R.Y)
-                        {
-                            en.takeHit(damage);
-                            if (isItSingle == false)
-                            {
-                                finished = true;
-                                return;
-                            }
-                        }
-                    }
-               
-                }
+            
+            }
         }
 
         public void moveSingleFireball(List<tile> tiles, List<Enemy> enemies)
@@ -2453,7 +2473,7 @@ namespace General
             if (mana.mana < fireballManaCost) return;
 
             float spawnX = R.X + R.Width / 2f;
-            float spawnY = R.Y;
+            float spawnY = R.Y + 30;
 
             Fireball fb = new Fireball(rnd, spawnX, spawnY, mouseX, mouseY, false);
             fireballs.Add(fb);
@@ -4490,10 +4510,13 @@ namespace General
         public List<Ladder> ladders = new List<Ladder>();
         public List<Enemy> enemies = new List<Enemy>();
         public List<tile> tiles = new List<tile>();
+        public List<MovingPlatform> movingPlatforms = new List<MovingPlatform>();
         public Teleporter teleporter;
         public Bitmap background;
         public int worldWidth = 0;
         public int worldHeight = 0;
+        public bool isVoidLevel = false;
+        public string displayName = "";
 
         public float startHeroX;
         public float startHeroY;
@@ -4505,6 +4528,19 @@ namespace General
             worldHeight = height;
             this.startHeroX = startHeroX;
             this.startHeroY = startHeroY;
+            isVoidLevel = false;
+            displayName = "";
+        }
+
+        public level(Bitmap bk, int width, int height, float startHeroX, float startHeroY, bool isVoidLevel, string displayName)
+        {
+            background = bk;
+            worldWidth = width;
+            worldHeight = height;
+            this.startHeroX = startHeroX;
+            this.startHeroY = startHeroY;
+            this.isVoidLevel = isVoidLevel;
+            this.displayName = displayName;
         }
 
         public void addEnemy(Enemy enemy)
@@ -4519,6 +4555,11 @@ namespace General
         public void addTiles(tile tile)
         {
             tiles.Add(tile);
+        }
+
+        public void addMovingPlatform(MovingPlatform movingPlatform)
+        {
+            movingPlatforms.Add(movingPlatform);
         }
     }
 
@@ -4544,18 +4585,38 @@ namespace General
             float startHeroX = 30;
             float startHeroY = height - 150 - 30;
 
-            level lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
+            level lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, false, "Forest");
+            levels.Add(lvl);
+
+            background = new Bitmap("Backgrounds/shop.png");
+            worldWidth = width;
+            worldHeight = height;
+
+            startHeroX = 100;
+            startHeroY = worldHeight- 120;
+
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "The Void");
             levels.Add(lvl);
 
             background = new Bitmap("Backgrounds/Dungeon.png");
             worldWidth = background.Width * 2;
             worldHeight = background.Height * 2;
-            
+
 
             startHeroX = 10;
             startHeroY = worldHeight - 115;
 
-            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY);
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, false, "Dungeon");
+            levels.Add(lvl);
+
+            background = new Bitmap("Backgrounds/shop.png");
+            worldWidth = width;
+            worldHeight = height;
+
+            startHeroX = 100;
+            startHeroY = worldHeight - 120;
+
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "The Void");
             levels.Add(lvl);
 
             initTeleporters();
@@ -4565,10 +4626,20 @@ namespace General
         {
             level lvl = levels[0];
 
-            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 200);
+            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 100);
 
             lvl = levels[1];
-            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 200);
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth- 250, lvl.worldHeight - 200, 175, 175, 0, 100);
+            lvl.teleporter.isUnlocked = true;
+            lvl.teleporter.requiredCoins = 0;
+
+            lvl = levels[2];
+            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 100);
+
+            lvl = levels[3];
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100);
+            lvl.teleporter.isUnlocked = true;
+            lvl.teleporter.requiredCoins = 0;
 
 
 
@@ -4579,6 +4650,7 @@ namespace General
             initTiles(height);
             initLadders(height);
             initEnemies(height);
+            initPlatforms();
 
         }
 
@@ -4595,6 +4667,10 @@ namespace General
                 while(levels[i].tiles.Count > 0){
                     levels[i].tiles.RemoveAt(0);
                 }
+                while (levels[i].movingPlatforms.Count > 0)
+                {
+                    levels[i].movingPlatforms.RemoveAt(0);
+                }
 
             }
         }
@@ -4602,21 +4678,21 @@ namespace General
         void initLadders( int height)
         {
             initLadders0(height);
-            initLadders1();
+            initLadders2();
 
 
         }
-        void initLadders1()
+        void initLadders2()
         {
             Ladder ladder;
 
             ladder = new Ladder(1916 ,645 , 330, true);
 
-            levels[1].ladders.Add(ladder);
+            levels[2].ladders.Add(ladder);
 
             ladder = new Ladder(1420, 320, 325, false);
 
-            levels[1].ladders.Add(ladder);
+            levels[2].ladders.Add(ladder);
         }
         void initLadders0(int height)
         {
@@ -4661,22 +4737,38 @@ namespace General
             
         }
 
+        void initPlatforms()
+        {
+            levels[0].addMovingPlatform(new MovingPlatform(600, 500, 150, 30, 200, 3));
+        }
+
         void initTiles(int height)
         {
             initTilesLevel0(height);
-            initTilesLevel1();
+            initTilesLevel1(height);
+            initTilesLevel2();
+            initTilesLevel3(height);
         }
 
-        void initTilesLevel1()
+        void initTilesLevel1(int height)
         {
-            int height = levels[1].worldHeight;
+            tile pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, height - 30, levels[1].worldWidth, 30, true);
+            pnn.changeColor(Color.Black);
+            levels[1].tiles.Add(pnn);
+        }
+
+        void initTilesLevel2()
+        {
+            int height = levels[2].worldHeight;
 
             tile pnn = new tile();
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(0, height - 112, 2067, 30 , false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
@@ -4684,99 +4776,108 @@ namespace General
             pnn.AddImg(new Bitmap("Characters/Enemies/Spikes/spikes.png"));
             pnn.makeItDamage(10, 21);
 
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(2216, height - 112, 1700, 30, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(1235, 917, 127 , 54, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(1275, 860, 58, 60, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(2236, 917, 127, 54, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(2273, 855, 60, 54, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             //2nd floor
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(0, 720, 70, 105, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(135, 647, 1775, 83, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(1992, 647, 1775, 83, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(3765, 405, 133, 320, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(3825, 730, 70, 250, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
 
             //3rd
             pnn = new tile();
             pnn.interact = true;
             pnn.init(0, 320, 1405, 80, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             //0 400 130 325
             pnn = new tile();
             pnn.interact = true;
             pnn.init(0, 400, 130, 325, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(135, 0, 3700, 120, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(0, 0, 135, 150, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(2732, 320, 1171, 86, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(1499, 321, 903, 86, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.init(3770, 120, 130, 35, false);
-            levels[1].tiles.Add(pnn);
+            levels[2].tiles.Add(pnn);
+        }
+
+        void initTilesLevel3(int height)
+        {
+            tile pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, height - 30, levels[3].worldWidth, 30, true);
+            pnn.changeColor(Color.Black);
+            levels[3].tiles.Add(pnn);
         }
         void initTilesLevel0(int height)
         {
@@ -4868,6 +4969,26 @@ namespace General
             }
 
         }
+        public void loadPlatforms(List<MovingPlatform> movingPlatforms)
+        {
+            while (movingPlatforms.Count > 0)
+            {
+                movingPlatforms.RemoveAt(0);
+            }
+
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return;
+            }
+
+            level curLvl = levels[currentLevel];
+
+            for (int i = 0; i < curLvl.movingPlatforms.Count; i++)
+            {
+                MovingPlatform temp = curLvl.movingPlatforms[i];
+                movingPlatforms.Add(temp);
+            }
+        }
         public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles , List<DroppedCoin> coins)
         {
             while(coins.Count > 0)
@@ -4926,14 +5047,39 @@ namespace General
                 tiles.Add(temp);
             }
         }
-        public void nextLevel(List<Enemy> enemies , List<Ladder> ladders , List<tile> tiles , List<DroppedCoin> coins)
+        public void nextLevel(List<Enemy> enemies , List<Ladder> ladders , List<tile> tiles , List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
         {
             if (currentLevel < levels.Count - 1)
             {
                 currentLevel++;
                 removeAll(enemies, ladders, tiles , coins);
                 assignAll(enemies, ladders, tiles);
+                loadPlatforms(movingPlatforms);
             }
+        }
+        public bool isVoidLevel()
+        {
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return false;
+            }
+
+            return levels[currentLevel].isVoidLevel;
+        }
+
+        public string getCurrentLevelTitle()
+        {
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return "";
+            }
+
+            if (levels[currentLevel].displayName != "")
+            {
+                return levels[currentLevel].displayName;
+            }
+
+            return "Level: " + (currentLevel + 1).ToString();
         }
         public float getNewHeroX()
         {
@@ -4961,7 +5107,7 @@ namespace General
         public bool isUnlocked = false;
 
         public bool loopIt = false;
-        public int range = 300;
+        public int range = 100;
         public bool isHeroInRange = false;
         
         public Teleporter(int level , int x , int y , int w , int h , int coins , int range)
@@ -5092,7 +5238,7 @@ namespace General
             if (showRange == true)
             {
                 Pen red = new Pen(Color.Red);
-                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range - camY, range + rect.Width, range + rect.Height);
+                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range - camY, range*2 + rect.Width, range + rect.Height);
             }
 
             int h = 40;
@@ -5206,6 +5352,7 @@ namespace General
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
             if (!hasStarted || isGamePaused == true || isLevelIntroVisible) return;
+            if (levels != null && levels.isVoidLevel() == true) return;
 
             if (e.Button == MouseButtons.Left)
             {
@@ -5260,6 +5407,11 @@ namespace General
             }
             else if (isGamePaused == false && hero.isDead == false && isLevelIntroVisible == false)
             {
+                if (levels != null && levels.isVoidLevel() == true)
+                {
+                    return;
+                }
+
                 if (e.Button == MouseButtons.Left)
                 {
                     bool isClicked = CheckIfWeaponUIClicked(e.X, e.Y);
@@ -5331,6 +5483,11 @@ namespace General
             }
             else if (isGamePaused == false)
             {
+                if (levels != null && levels.isVoidLevel() == true)
+                {
+                    return;
+                }
+
                 if (!isLevelIntroVisible)
                 {
                     hero.mouseX = e.X + camX;
@@ -5548,6 +5705,51 @@ namespace General
                 }
                 else
                 {
+                    bool voidLevel = levels.isVoidLevel();
+
+                    if (voidLevel == true)
+                    {
+                        if (e.KeyCode == Keys.Escape)
+                        {
+                            isGamePaused = true;
+                            pauseGame();
+                            return;
+                        }
+
+                        if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
+                        {
+                            if (e.KeyCode == Keys.Q)
+                            {
+                                int oldLevel = levels.currentLevel;
+                                levels.nextLevel(enemies, ladders, tiles, droppedCoins, movingPlatforms);
+
+                                if (levels.currentLevel != oldLevel)
+                                {
+                                    hero.R.X = levels.getNewHeroX();
+                                    hero.R.Y = levels.getNewHeroY();
+                                    startLevelIntro();
+                                }
+                            }
+                        }
+
+                        if (camX < 0)
+                        {
+                            camX = 0;
+                        }
+
+                        float maxcamX = levels.getBackground().Width - this.ClientSize.Width;
+
+                        if (maxcamX < 0)
+                        {
+                            maxcamX = 0;
+                        }
+
+                        if (camX > maxcamX)
+                        {
+                            camX = maxcamX;
+                        }
+                    }
+
                     if (e.KeyCode == Keys.Escape)
                     {
                         isGamePaused = true;
@@ -5659,7 +5861,7 @@ namespace General
                             else
                             {
                                 int oldLevel = levels.currentLevel;
-                                levels.nextLevel(enemies, ladders, tiles, droppedCoins);
+                                levels.nextLevel(enemies, ladders, tiles, droppedCoins, movingPlatforms);
 
                                 if (levels.currentLevel != oldLevel)
                                 {
@@ -5776,7 +5978,6 @@ namespace General
             initMenu();
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
-            movingPlatforms.Add(new MovingPlatform(600, 500, 150, 30, 200, 3));
 
 
 
@@ -5859,7 +6060,10 @@ namespace General
                     }
 
                     hero.Draw(g, showRanges, camX, camY);
+
+                    
                     save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
+                    
                 }
 
                 if (isLevelIntroVisible == true)
@@ -5879,6 +6083,8 @@ namespace General
             isLevelIntroVisible = true;
             levelIntroTimer = 0;
             levelIntroNumber = levels.currentLevel + 1;
+            camX = 0;
+            camY = 0;
 
             upHeld = false;
 
@@ -5910,7 +6116,7 @@ namespace General
             SolidBrush overlay = new SolidBrush(Color.FromArgb(220, 0, 0, 0));
             g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
 
-            string text = "Level: " + levelIntroNumber.ToString();
+            string text = levels.getCurrentLevelTitle();
 
             Font levelFont = new Font("System", 48, FontStyle.Bold);
             SolidBrush outline = new SolidBrush(Color.FromArgb(0, 0, 0));
@@ -6004,7 +6210,7 @@ namespace General
 
             G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
             G.DrawImage(heroColors[hero.ColorIdx].frames[0], x + width - 120 - 20, currentY - 20, 120, 120);
-            G.DrawString("Level : " + (levels.currentLevel +1).ToString(), normalFont, white, x + width - 120 - 20, currentY + 120);
+            G.DrawString(levels.getCurrentLevelTitle()+ " (lvl:" + (levels.currentLevel+1).ToString() + ")", normalFont, white, x + width - 120 - 20, currentY + 120);
             
             currentY += 40;
 
@@ -6634,6 +6840,7 @@ namespace General
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
             levels.loadEnemies(enemies);
+            levels.loadPlatforms(movingPlatforms);
             hero = load.load(hero, enemies, this.ClientSize.Height);
         }    
 
@@ -6647,6 +6854,7 @@ namespace General
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
             levels.loadEnemies(enemies);
+            levels.loadPlatforms(movingPlatforms);
 
             hero.R.X = levels.getNewHeroX();
             hero.R.Y = levels.getNewHeroY();
