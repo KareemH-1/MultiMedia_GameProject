@@ -3019,14 +3019,12 @@ namespace General
 
                 bool fallingOntoPlatform =
                     ySpeed >= 0 &&
-                    prevBottom <= p.R.Y &&
+                    prevBottom <= p.lastY &&
                     R.Y + R.Height >= p.R.Y;
 
                 if (overlappingX && fallingOntoPlatform)
                 {
                     R.Y = p.R.Y - R.Height;
-
-                    R.Y += p.dy;
 
                     ySpeed = 0;
                     isGrounded = true;
