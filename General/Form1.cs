@@ -3384,69 +3384,6 @@ namespace General
             }
         }
 
-        public void draw(Graphics g, bool showRanges , float camX, float camY)
-        {
-            if (spawn)
-            {
-                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
-                drawR.Y = R.Y + (R.Height - drawR.Height);
-                if(this.enemyType == "bat")
-                {
-                    drawR.Y = R.Y - 20;
-
-                }
-
-                Bitmap frame;
-
-                if (isDead || isTakingDamage || isAttacking || isWakingUp)
-                {
-                    if (facing == 'l')
-                    {
-                        frame = anim.playFrameOnce(true, true);
-                    }
-                    else
-                    {
-                        frame = anim.playFrameOnce(false, true);
-                    }
-                }
-                else
-                {
-                    if (facing == 'l')
-                    {
-                        frame = anim.playFrame(true, true);
-                    }
-                    else
-                    {
-                        frame = anim.playFrame(false, true);
-                    }
-                }
-
-                if (frame != null)
-                {
-                    g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
-                }
-
-                if (showRanges)
-                {
-                    Pen p = new Pen(Color.Red, 2);
-                    g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
-                }
-
-                if (isDead == false)
-                {
-                    rectF screenR = new rectF();
-                    screenR.X = R.X - camX;
-                    screenR.Y = R.Y - camY;
-                    screenR.Width = R.Width;
-                    screenR.Height = R.Height;
-
-
-                    UI.positionAbove(screenR, 8);
-                    UI.draw(g, HP, null, 0);
-                }
-            }
-        }
-
         void createAnim()
         {
             for (int i = 0; i < animFolders.Length; i++)
@@ -3509,529 +3446,6 @@ namespace General
 
                 anim.addAnim(a);
             }
-        }
-
-        public void takeHit(int amount)
-        {
-            if (isDead == true)
-            {
-                return;
-            }
-
-            HP.damage(amount);
-
-            isAttacking = false;
-            attackmode = false;
-            attackFrameTimer = 0;
-            attackDamageDone = false;
-
-            if (HP.getHP() <= 0)
-            {
-                isDead = true;
-                isTakingDamage = false;
-
-                deathTimer = 0;
-
-                anim.changeAnimation("die", -1);
-                anim.restart();
-            }
-            else
-            {
-                if (amount > 0)
-                {
-                    isTakingDamage = true;
-
-                    damageTimer = 15;
-
-                    anim.changeAnimation("hit", -1);
-                    anim.restart();
-                }
-            }
-        }
-
-        float getDistanceFromHero(Hero hero)
-        {
-            float distanceX = 0;
-            float distanceY = 0;
-
-            if (R.X > hero.R.X)
-            {
-                distanceX = R.X - hero.R.X;
-            }
-            else
-            {
-                distanceX = hero.R.X - R.X;
-            }
-
-            if (R.Y > hero.R.Y)
-            {
-                distanceY = R.Y - hero.R.Y;
-            }
-            else
-            {
-                distanceY = hero.R.Y - R.Y;
-            }
-
-            return distanceX + distanceY;
-        }
-
-        public void move(List<tile> tiles, Hero hero)
-        {
-            if (!spawn)
-            {
-                return;
-            }
-
-            if (enemyName == "bat")
-            {
-                if (isSleeping)
-                {
-                    anim.changeAnimation("sleep", -1);
-
-                    float distanceFromHero = getDistanceFromHero(hero);
-
-                    if (distanceFromHero <= wakeupDistance)
-                    {
-                        isSleeping = false;
-                        isWakingUp = true;
-                        canMoveAfterWakeup = false;
-
-                        anim.changeAnimation("wakeup", -1);
-                        anim.restart();
-                    }
-
-                    return;
-                }
-                if (isWakingUp)
-                {
-                    anim.changeAnimation("wakeup", -1);
-
-                    Animation currWake = anim.getCurrentAnimation();
-                    if (currWake != null)
-                    {
-                        bool dirFacingL = false;
-                        if (facing == 'l') dirFacingL = true;
-                        List<Bitmap> wakeFrames = currWake.getFrames(dirFacingL);
-                        if (wakeFrames.Count > 0 && anim.currIdx >= wakeFrames.Count - 1)
-                        {
-                            isWakingUp = false;
-                            canMoveAfterWakeup = true;
-
-                            anim.changeAnimation("idle", -1);
-                            anim.restart();
-                        }
-                    }
-
-                    return;
-                }
-
-                if (!canMoveAfterWakeup)
-                {
-                    return;
-                }
-            }
-
-            if (hero.isDead)
-            {
-                attackmode = false;
-                isAttacking = false;
-                attackFrameTimer = 0;
-                attackDamageDone = false;
-            }
-
-            if (attackCooldown > 0)
-            {
-                attackCooldown--;
-            }
-
-            if (isDead || isTakingDamage)
-            {
-                applyPhysics(tiles);
-                updateAnimation();
-                return;
-            }
-
-            if (isAttacking)
-            {
-                if (hero.isDead == true)
-                {
-                    attackmode = false;
-                    isAttacking = false;
-                    attackFrameTimer = 0;
-                    attackDamageDone = false;
-                }
-                else
-                {
-                    if (anim.currIdx >= 4 && attackDamageDone == false)
-                    {
-                        hero.takeDamage(10);
-                        attackDamageDone = true;
-                    }
-                }
-
-
-
-                applyPhysics(tiles);
-                updateAnimation();
-                return;
-            }
-
-
-
-            if (isWaiting)
-            {
-                updateAnimation();
-                return;
-            }
-
-            float dx = 0f;
-
-            if (isRunning && !attackmode)
-            {
-                if (moving == 'l')
-                {
-                    dx = -speed;
-                }
-                else if (moving == 'r')
-                {
-                    dx = speed;
-                }
-
-                R.X += dx;
-
-                if (R.X <= leftLimit)
-                {
-                    R.X = leftLimit;
-                    moving = 'l';
-                    facing = 'l';
-                    isRunning = false;
-                    isWaiting = true;
-                }
-                else if (R.X >= rightLimit)
-                {
-                    R.X = rightLimit;
-                    moving = 'r';
-                    facing = 'r';
-                    isRunning = false;
-                    isWaiting = true;
-                }
-            }
-
-            float distanceX = 0;
-            float distanceY = 0;
-            char dir = moving;
-
-            if (R.X > hero.R.X)
-            {
-                distanceX = R.X - hero.R.X;
-                dir = 'l';
-            }
-            else if (R.X < hero.R.X)
-            {
-                distanceX = hero.R.X - R.X;
-                dir = 'r';
-            }
-
-            if (R.Y > hero.R.Y)
-            {
-                distanceY = R.Y - hero.R.Y;
-            }
-            else if (hero.R.Y > R.Y)
-            {
-                distanceY = hero.R.Y - R.Y;
-            }
-
-            bool sameY = false;
-
-            if (distanceY < 50)
-            {
-                sameY = true;
-            }
-            bool wasInAttackMode = attackmode;
-            if (enemyName == "bat")
-            {
-                if (distanceX <= 500 && distanceY <= 300 && !hero.isDead)
-                {
-                    attackmode = true;
-                }
-                else
-                {
-                    attackmode = false;
-                }
-            }
-            else
-            {
-                if (distanceX <= attackdis && sameY == true && !hero.isDead)
-                {
-                    attackmode = true;
-                }
-                else
-                {
-                    attackmode = false;
-
-                    if (wasInAttackMode == true)
-                    {
-                        isAttacking = false;
-                        attackDamageDone = false;
-
-                        isWaiting = false;
-                        isRunning = true;
-
-                        if (R.X <= leftLimit)
-                        {
-                            R.X = leftLimit;
-                            moving = 'r';
-                            facing = 'r';
-                        }
-                        else if (R.X >= rightLimit)
-                        {
-                            R.X = rightLimit;
-                            moving = 'l';
-                            facing = 'l';
-                        }
-                        else
-                        {
-                            float distToLeft = R.X - leftLimit;
-                            float distToRight = rightLimit - R.X;
-
-                            if (distToLeft < distToRight)
-                            {
-                                moving = 'r';
-                                facing = 'r';
-                            }
-                            else
-                            {
-                                moving = 'l';
-                                facing = 'l';
-                            }
-                        }
-
-                        anim.changeAnimation("run", -1);
-                        anim.restart();
-                    }
-                }
-            }
-
-            if (attackmode)
-            {
-                moving = dir;
-                facing = dir;
-
-                if (enemyName == "bat")
-                {
-                    float moveX = 0f;
-                    float moveY = 0f;
-
-                    if (distanceX > attackrange)
-                    {
-                        isWaiting = false;
-                        isRunning = true;
-
-                        if (R.X > hero.R.X)
-                        {
-                            R.X -= speed;
-                            dx = -speed;
-                            moving = 'l';
-                            facing = 'l';
-                        }
-                        else if (R.X < hero.R.X)
-                        {
-                            R.X += speed;
-                            dx = speed;
-                            moving = 'r';
-                            facing = 'r';
-                        }
-
-                        anim.changeAnimation("run", -1);
-                    }
-
-                    if (distanceY > attackrange)
-                    {
-                        if (R.Y > hero.R.Y)
-                        {
-                            moveY = -speed;
-                        }
-                        else if (R.Y < hero.R.Y)
-                        {
-                            moveY = speed;
-                        }
-                    }
-
-                    R.X += moveX;
-                    R.Y += moveY;
-                    dx = moveX;
-
-                    if (moveX != 0 || moveY != 0)
-                    {
-                        anim.changeAnimation("run", -1);
-                    }
-
-                    distanceX = 0;
-                    distanceY = 0;
-
-                    if (R.X > hero.R.X)
-                    {
-                        distanceX = R.X - hero.R.X;
-                    }
-                    else
-                    {
-                        distanceX = hero.R.X - R.X;
-                    }
-
-                    if (R.Y > hero.R.Y)
-                    {
-                        distanceY = R.Y - hero.R.Y;
-                    }
-                    else
-                    {
-                        distanceY = hero.R.Y - R.Y;
-                    }
-
-                    if (distanceX <= attackrange && distanceY <= attackrange && attackCooldown > 0)
-                    {
-                        moving = ' ';
-                        isRunning = false;
-                        anim.changeAnimation("idle", -1);
-
-                        applyPhysics(tiles);
-                        return;
-                    }
-
-                    if (distanceX <= attackrange && distanceY <= attackrange && attackCooldown <= 0 && !hero.isDead)
-                    {
-                        isAttacking = true;
-                        attackFrameTimer = 20;
-                        attackDamageDone = false;
-
-                        int randomattaack = rr.Next(0, 2);
-
-                        if (randomattaack == 0)
-                        {
-                            attackanimname = "attack1";
-                        }
-                        else
-                        {
-                            attackanimname = "attack2";
-                        }
-
-                        anim.changeAnimation(attackanimname, -1);
-                        anim.restart();
-
-                        applyPhysics(tiles);
-                        return;
-                    }
-                }
-                else
-                {
-                    if (distanceX <= attackrange)
-                    {
-                        if (attackCooldown > 0)
-                        {
-                            moving = ' ';
-                            isRunning = false;
-                            anim.changeAnimation("idle", -1);
-
-                            applyPhysics(tiles);
-                            return;
-                        }
-
-                        if (attackCooldown <= 0 && !hero.isDead)
-                        {
-                            isAttacking = true;
-                            attackFrameTimer = 20;
-                            attackDamageDone = false;
-                            attackanimname = "attack";
-
-                            anim.changeAnimation(attackanimname, -1);
-                            anim.restart();
-
-                            applyPhysics(tiles);
-                            return;
-                        }
-                    }
-
-                    if (distanceX > attackrange)
-                    {
-                        if (R.X > hero.R.X)
-                        {
-                            R.X -= speed;
-                            dx = -speed;
-                            moving = 'l';
-                            facing = 'l';
-                        }
-                        else if (R.X < hero.R.X)
-                        {
-                            R.X += speed;
-                            dx = speed;
-                            moving = 'r';
-                            facing = 'r';
-                        }
-
-                        anim.changeAnimation("run", -1);
-                    }
-                }
-            }
-            for (int i = 0; i < tiles.Count; i++)
-            {
-                tile t = tiles[i];
-
-                if (t.interact == true && t.jumpThrough == false)
-                {
-                    bool overlappingX = false;
-
-                    if (R.X + R.Width > t.R.X &&
-                        R.X < t.R.X + t.R.Width)
-                    {
-                        overlappingX = true;
-                    }
-
-                    bool overlappingY = false;
-
-                    if (R.Y + R.Height > t.R.Y &&
-                        R.Y < t.R.Y + t.R.Height)
-                    {
-                        overlappingY = true;
-                    }
-
-                    if (overlappingX && overlappingY)
-                    {
-                        float overlapTop = R.Y;
-
-                        if (t.R.Y > overlapTop)
-                        {
-                            overlapTop = t.R.Y;
-                        }
-
-                        float overlapBottom = R.Y + R.Height;
-
-                        if (t.R.Y + t.R.Height < R.Y + R.Height)
-                        {
-                            overlapBottom = t.R.Y + t.R.Height;
-                        }
-
-                        float overlapY = overlapBottom - overlapTop;
-
-                        if (overlapY > 3f)
-                        {
-                            if (dx > 0)
-                            {
-                                R.X = t.R.X - R.Width;
-                                moving = 'l';
-                                facing = 'l';
-                            }
-                            else if (dx < 0)
-                            {
-                                R.X = t.R.X + t.R.Width;
-                                moving = 'r';
-                                facing = 'r';
-                            }
-                        }
-                    }
-                }
-            }
-
-            applyPhysics(tiles);
-            updateAnimation();
         }
 
         public void applyPhysics(List<tile> tiles)
@@ -4104,78 +3518,6 @@ namespace General
                         }
                     }
                 }
-            }
-        }
-
-        int calculateHowValue()
-        {
-            int multiplier = rr.Next(1, 5);
-            return (HP.maxHP / multiplier);
-        }
-
-        int[] calculateHowManyCoins()
-        {
-            int[] coins = { 0, 0, 0 }; //bronze , silver , gold
-            int val = calculateHowValue();
-
-            int remaining = val;
-
-            int NGold = remaining / 1000;
-            remaining = remaining - NGold * 1000;
-
-            int NSilver = remaining / 100;
-            remaining = remaining - NSilver * 100;
-
-            int NBronze = remaining;
-
-            coins[0] = NBronze;
-            coins[1] = NSilver;
-            coins[2] = NGold;
-
-            return coins;
-        }
-        public void dropCoin(List<DroppedCoin> droppedCoins)
-        {
-            if (coindropped == true)
-            {
-                return;
-            }
-
-            if (enemyName == "mushroom")
-            {
-                float x = R.X + (R.Width / 2);
-                float y = R.Y + (R.Height / 2);
-
-                int[] howMany = calculateHowManyCoins();
-                for (int i = 0; i < 3; i++)
-                {
-                    string type;
-                    if (i == 0) type = "copper";
-                    else if (i == 1) type = "silver";
-                    else type = "gold";
-                    DroppedCoin coin = new DroppedCoin(x, y, type , howMany[i]);
-                    
-                    droppedCoins.Add(coin);
-                }
-                coindropped = true;
-            }
-            else if (enemyName == "bat")
-            {
-                float x = R.X + (R.Width / 2);
-                float y = R.Y + (R.Height / 2);
-
-                int[] howMany = calculateHowManyCoins();
-                for (int i = 0; i < 3; i++)
-                {
-                    string type;
-                    if (i == 0) type = "copper";
-                    else if (i == 1) type = "silver";
-                    else type = "gold";
-                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
-
-                    droppedCoins.Add(coin);
-                }
-                coindropped = true;
             }
         }
 
@@ -4258,6 +3600,205 @@ namespace General
             }
         }
 
+        public void takeHit(int amount)
+        {
+            if (isDead == true)
+            {
+                return;
+            }
+
+            HP.damage(amount);
+
+            isAttacking = false;
+            attackmode = false;
+            attackFrameTimer = 0;
+            attackDamageDone = false;
+
+            if (HP.getHP() <= 0)
+            {
+                isDead = true;
+                isTakingDamage = false;
+
+                deathTimer = 0;
+
+                anim.changeAnimation("die", -1);
+                anim.restart();
+            }
+            else
+            {
+                if (amount > 0)
+                {
+                    isTakingDamage = true;
+
+                    damageTimer = 15;
+
+                    anim.changeAnimation("hit", -1);
+                    anim.restart();
+                }
+            }
+        }
+
+        float getDistanceFromHero(Hero hero)
+        {
+            float distanceX = 0;
+            float distanceY = 0;
+
+            if (R.X > hero.R.X)
+            {
+                distanceX = R.X - hero.R.X;
+            }
+            else
+            {
+                distanceX = hero.R.X - R.X;
+            }
+
+            if (R.Y > hero.R.Y)
+            {
+                distanceY = R.Y - hero.R.Y;
+            }
+            else
+            {
+                distanceY = hero.R.Y - R.Y;
+            }
+
+            return distanceX + distanceY;
+        }
+
+        public void draw(Graphics g, bool showRanges , float camX, float camY)
+        {
+            if (spawn)
+            {
+                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+                drawR.Y = R.Y + (R.Height - drawR.Height);
+                if(this.enemyType == "bat")
+                {
+                    drawR.Y = R.Y - 20;
+
+                }
+
+                Bitmap frame;
+
+                if (isDead || isTakingDamage || isAttacking || isWakingUp)
+                {
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrameOnce(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrameOnce(false, true);
+                    }
+                }
+                else
+                {
+                    if (facing == 'l')
+                    {
+                        frame = anim.playFrame(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrame(false, true);
+                    }
+                }
+
+                if (frame != null)
+                {
+                    g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
+                }
+
+                if (showRanges)
+                {
+                    Pen p = new Pen(Color.Red, 2);
+                    g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
+                }
+
+                if (isDead == false)
+                {
+                    rectF screenR = new rectF();
+                    screenR.X = R.X - camX;
+                    screenR.Y = R.Y - camY;
+                    screenR.Width = R.Width;
+                    screenR.Height = R.Height;
+
+
+                    UI.positionAbove(screenR, 8);
+                    UI.draw(g, HP, null, 0);
+                }
+            }
+        }
+
+        int calculateHowValue()
+        {
+            int multiplier = rr.Next(1, 5);
+            return (HP.maxHP / multiplier);
+        }
+
+        int[] calculateHowManyCoins()
+        {
+            int[] coins = { 0, 0, 0 }; //bronze , silver , gold
+            int val = calculateHowValue();
+
+            int remaining = val;
+
+            int NGold = remaining / 1000;
+            remaining = remaining - NGold * 1000;
+
+            int NSilver = remaining / 100;
+            remaining = remaining - NSilver * 100;
+
+            int NBronze = remaining;
+
+            coins[0] = NBronze;
+            coins[1] = NSilver;
+            coins[2] = NGold;
+
+            return coins;
+        }
+        public void dropCoin(List<DroppedCoin> droppedCoins)
+        {
+            if (coindropped == true)
+            {
+                return;
+            }
+
+            if (enemyName == "mushroom")
+            {
+                float x = R.X + (R.Width / 2);
+                float y = R.Y + (R.Height / 2);
+
+                int[] howMany = calculateHowManyCoins();
+                for (int i = 0; i < 3; i++)
+                {
+                    string type;
+                    if (i == 0) type = "copper";
+                    else if (i == 1) type = "silver";
+                    else type = "gold";
+                    DroppedCoin coin = new DroppedCoin(x, y, type , howMany[i]);
+                    
+                    droppedCoins.Add(coin);
+                }
+                coindropped = true;
+            }
+            else if (enemyName == "bat")
+            {
+                float x = R.X + (R.Width / 2);
+                float y = R.Y + (R.Height / 2);
+
+                int[] howMany = calculateHowManyCoins();
+                for (int i = 0; i < 3; i++)
+                {
+                    string type;
+                    if (i == 0) type = "copper";
+                    else if (i == 1) type = "silver";
+                    else type = "gold";
+                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
+
+                    droppedCoins.Add(coin);
+                }
+                coindropped = true;
+            }
+        }
+
         public void respawn()
         {
             if (CanSpawn)
@@ -4304,6 +3845,478 @@ namespace General
         }
 
     }
+
+    public class EnemyController
+    {
+        public List<Enemy> enemies = new List<Enemy>();
+
+        public void Update(List<tile> tiles, Hero hero, List<DroppedCoin> droppedCoins)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                Enemy e = enemies[i];
+
+                float distance;
+                if (hero.R.X > e.R.X)
+                    distance = hero.R.X - e.R.X;
+                else
+                    distance = e.R.X - hero.R.X;
+
+                if (e.spawnrange >= distance)
+                    e.spawn = true;
+
+                if (e.isDead)
+                {
+                    e.dropCoin(droppedCoins);
+
+                    Animation currDead = e.anim.getCurrentAnimation();
+                    if (currDead != null)
+                    {
+                        bool dirFacingL = e.facing == 'l';
+                        List<Bitmap> deadFrames = currDead.getFrames(dirFacingL);
+                        if (deadFrames.Count > 0 && e.anim.currIdx >= deadFrames.Count - 1)
+                        {
+                            if (e.CanSpawn == false)
+                            {
+                                enemies.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                e.deathTimer++;
+                                if (e.deathTimer >= e.spawnTime)
+                                    e.respawn();
+                            }
+                        }
+                        else
+                        {
+                            e.deathTimer++;
+                            if (e.deathTimer >= e.spawnTime)
+                                e.respawn();
+                        }
+                    }
+                }
+                else
+                {
+                    if (e.spawn)
+                        moveEnemy(e, tiles, hero);
+                }
+            }
+        }
+
+        void moveEnemy(Enemy e, List<tile> tiles, Hero hero)
+        {
+            if (e.enemyName == "bat")
+                moveFly(e, tiles, hero);
+            else
+                moveGround(e, tiles, hero);
+        }
+
+        void moveFly(Enemy e, List<tile> tiles, Hero hero)
+        {
+            if (e.isSleeping)
+            {
+                e.anim.changeAnimation("sleep", -1);
+                float d = getDist(e, hero);
+                if (d <= e.wakeupDistance)
+                {
+                    e.isSleeping = false;
+                    e.isWakingUp = true;
+                    e.canMoveAfterWakeup = false;
+                    e.anim.changeAnimation("wakeup", -1);
+                    e.anim.restart();
+                }
+                return;
+            }
+            if (e.isWakingUp)
+            {
+                e.anim.changeAnimation("wakeup", -1);
+                Animation currWake = e.anim.getCurrentAnimation();
+                if (currWake != null)
+                {
+                    bool dirFacingL = e.facing == 'l';
+                    List<Bitmap> wakeFrames = currWake.getFrames(dirFacingL);
+                    if (wakeFrames.Count > 0 && e.anim.currIdx >= wakeFrames.Count - 1)
+                    {
+                        e.isWakingUp = false;
+                        e.canMoveAfterWakeup = true;
+                        e.anim.changeAnimation("idle", -1);
+                        e.anim.restart();
+                    }
+                }
+                return;
+            }
+            if (!e.canMoveAfterWakeup)
+                return;
+
+            if (hero.isDead)
+            {
+                e.attackmode = false;
+                e.isAttacking = false;
+                e.attackFrameTimer = 0;
+                e.attackDamageDone = false;
+            }
+
+            if (e.attackCooldown > 0)
+                e.attackCooldown--;
+
+            if (e.isDead || e.isTakingDamage)
+            {
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+            if (e.isAttacking)
+            {
+                if (hero.isDead)
+                {
+                    e.attackmode = false;
+                    e.isAttacking = false;
+                    e.attackFrameTimer = 0;
+                    e.attackDamageDone = false;
+                }
+                else
+                {
+                    if (e.anim.currIdx >= 4 && !e.attackDamageDone)
+                    {
+                        hero.takeDamage(10);
+                        e.attackDamageDone = true;
+                    }
+                }
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+            if (e.isWaiting)
+            {
+                e.updateAnimation();
+                return;
+            }
+
+            float dx = 0f;
+            float distanceX = 0;
+            float distanceY = 0;
+            char dir = e.moving;
+
+            if (e.R.X > hero.R.X) { distanceX = e.R.X - hero.R.X; dir = 'l'; }
+            else if (e.R.X < hero.R.X) { distanceX = hero.R.X - e.R.X; dir = 'r'; }
+
+            if (e.R.Y > hero.R.Y) distanceY = e.R.Y - hero.R.Y;
+            else if (hero.R.Y > e.R.Y) distanceY = hero.R.Y - e.R.Y;
+
+            if (distanceX <= 500 && distanceY <= 300 && !hero.isDead)
+                e.attackmode = true;
+            else
+                e.attackmode = false;
+
+            if (e.attackmode)
+            {
+                e.moving = dir;
+                if (dir == 'l')
+                    e.facing = 'r';
+                else
+                    e.facing = 'l';
+
+                float moveY = 0f;
+
+                if (distanceX > e.attackrange)
+                {
+                    e.isWaiting = false;
+                    e.isRunning = true;
+                    if (e.R.X > hero.R.X) { e.R.X -= e.speed; dx = -e.speed; }
+                    else if (e.R.X < hero.R.X) { e.R.X += e.speed; dx = e.speed; }
+                    e.anim.changeAnimation("run", -1);
+                }
+
+                if (distanceY > e.attackrange)
+                {
+                    if (e.R.Y > hero.R.Y) moveY = -e.speed;
+                    else if (e.R.Y < hero.R.Y) moveY = e.speed;
+                }
+
+                e.R.Y += moveY;
+
+                distanceX = 0;
+                distanceY = 0;
+                if (e.R.X > hero.R.X) distanceX = e.R.X - hero.R.X;
+                else distanceX = hero.R.X - e.R.X;
+                if (e.R.Y > hero.R.Y) distanceY = e.R.Y - hero.R.Y;
+                else distanceY = hero.R.Y - e.R.Y;
+
+                if (distanceX <= e.attackrange && distanceY <= e.attackrange && e.attackCooldown > 0)
+                {
+                    e.moving = ' ';
+                    e.isRunning = false;
+                    e.anim.changeAnimation("idle", -1);
+                    e.applyPhysics(tiles);
+                    return;
+                }
+
+                if (distanceX <= e.attackrange && distanceY <= e.attackrange && e.attackCooldown <= 0 && !hero.isDead)
+                {
+                    e.isAttacking = true;
+                    e.attackFrameTimer = 20;
+                    e.attackDamageDone = false;
+                    int r = e.rr.Next(0, 2);
+                    if (r == 0)
+                        e.attackanimname = "attack1";
+                    else
+                        e.attackanimname = "attack2";
+                    e.anim.changeAnimation(e.attackanimname, -1);
+                    e.anim.restart();
+                    e.applyPhysics(tiles);
+                    return;
+                }
+            }
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+                if (t.interact && !t.jumpThrough)
+                {
+                    bool overlappingX = e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width;
+                    bool overlappingY = e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height;
+                    if (overlappingX && overlappingY)
+                    {
+                        float overlapTop = e.R.Y;
+                        if (t.R.Y > overlapTop) overlapTop = t.R.Y;
+                        float overlapBottom = e.R.Y + e.R.Height;
+                        if (t.R.Y + t.R.Height < e.R.Y + e.R.Height) overlapBottom = t.R.Y + t.R.Height;
+                        float overlapY = overlapBottom - overlapTop;
+                        if (overlapY > 3f)
+                        {
+                            if (dx > 0)
+                            {
+                                e.R.X = t.R.X - e.R.Width;
+                                e.moving = 'l';
+                                e.facing = 'l';
+                            }
+                            else if (dx < 0)
+                            {
+                                e.R.X = t.R.X + t.R.Width;
+                                e.moving = 'r';
+                                e.facing = 'r';
+                            }
+                        }
+                    }
+                }
+            }
+
+            e.applyPhysics(tiles);
+            e.updateAnimation();
+        }
+
+        void moveGround(Enemy e, List<tile> tiles, Hero hero)
+        {
+            if (hero.isDead)
+            {
+                e.attackmode = false;
+                e.isAttacking = false;
+                e.attackFrameTimer = 0;
+                e.attackDamageDone = false;
+            }
+
+            if (e.attackCooldown > 0)
+                e.attackCooldown--;
+
+            if (e.isDead || e.isTakingDamage)
+            {
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+            if (e.isAttacking)
+            {
+                if (hero.isDead)
+                {
+                    e.attackmode = false;
+                    e.isAttacking = false;
+                    e.attackFrameTimer = 0;
+                    e.attackDamageDone = false;
+                }
+                else
+                {
+                    if (e.anim.currIdx >= 4 && !e.attackDamageDone)
+                    {
+                        hero.takeDamage(10);
+                        e.attackDamageDone = true;
+                    }
+                }
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+            if (e.isWaiting)
+            {
+                e.updateAnimation();
+                return;
+            }
+
+            float dx = 0f;
+
+            if (e.isRunning && !e.attackmode)
+            {
+                if (e.moving == 'l')
+                    dx = -e.speed;
+                else
+                    dx = e.speed;
+                e.R.X += dx;
+
+                if (e.R.X <= e.leftLimit)
+                {
+                    e.R.X = e.leftLimit;
+                    e.moving = 'l';
+                    e.facing = 'l';
+                    e.isRunning = false;
+                    e.isWaiting = true;
+                }
+                else if (e.R.X >= e.rightLimit)
+                {
+                    e.R.X = e.rightLimit;
+                    e.moving = 'r';
+                    e.facing = 'r';
+                    e.isRunning = false;
+                    e.isWaiting = true;
+                }
+            }
+
+            float distanceX = 0;
+            float distanceY = 0;
+            char dir = e.moving;
+
+            if (e.R.X > hero.R.X) { distanceX = e.R.X - hero.R.X; dir = 'l'; }
+            else if (e.R.X < hero.R.X) { distanceX = hero.R.X - e.R.X; dir = 'r'; }
+
+            if (e.R.Y > hero.R.Y) distanceY = e.R.Y - hero.R.Y;
+            else if (hero.R.Y > e.R.Y) distanceY = hero.R.Y - e.R.Y;
+
+            bool sameY = distanceY < 50;
+            bool wasInAttackMode = e.attackmode;
+
+            if (distanceX <= e.attackdis && sameY && !hero.isDead)
+            {
+                e.attackmode = true;
+            }
+            else
+            {
+                e.attackmode = false;
+                if (wasInAttackMode)
+                {
+                    e.isAttacking = false;
+                    e.attackDamageDone = false;
+                    e.isWaiting = false;
+                    e.isRunning = true;
+
+                    if (e.R.X <= e.leftLimit)
+                    {
+                        e.R.X = e.leftLimit;
+                        e.moving = 'r';
+                        e.facing = 'r';
+                    }
+                    else if (e.R.X >= e.rightLimit)
+                    {
+                        e.R.X = e.rightLimit;
+                        e.moving = 'l';
+                        e.facing = 'l';
+                    }
+                    else
+                    {
+                        float distToLeft = e.R.X - e.leftLimit;
+                        float distToRight = e.rightLimit - e.R.X;
+                        if (distToLeft < distToRight) { e.moving = 'r'; e.facing = 'r'; }
+                        else { e.moving = 'l'; e.facing = 'l'; }
+                    }
+
+                    e.anim.changeAnimation("run", -1);
+                    e.anim.restart();
+                }
+            }
+
+            if (e.attackmode)
+            {
+                e.moving = dir;
+                e.facing = dir;
+
+                if (distanceX <= e.attackrange)
+                {
+                    if (e.attackCooldown > 0)
+                    {
+                        e.moving = ' ';
+                        e.isRunning = false;
+                        e.anim.changeAnimation("idle", -1);
+                        e.applyPhysics(tiles);
+                        return;
+                    }
+
+                    if (e.attackCooldown <= 0 && !hero.isDead)
+                    {
+                        e.isAttacking = true;
+                        e.attackFrameTimer = 20;
+                        e.attackDamageDone = false;
+                        e.attackanimname = "attack";
+                        e.anim.changeAnimation(e.attackanimname, -1);
+                        e.anim.restart();
+                        e.applyPhysics(tiles);
+                        return;
+                    }
+                }
+
+                if (distanceX > e.attackrange)
+                {
+                    if (e.R.X > hero.R.X) { e.R.X -= e.speed; dx = -e.speed; e.moving = 'l'; e.facing = 'l'; }
+                    else if (e.R.X < hero.R.X) { e.R.X += e.speed; dx = e.speed; e.moving = 'r'; e.facing = 'r'; }
+                    e.anim.changeAnimation("run", -1);
+                }
+            }
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+                if (t.interact && !t.jumpThrough)
+                {
+                    bool overlappingX = e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width;
+                    bool overlappingY = e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height;
+                    if (overlappingX && overlappingY)
+                    {
+                        float overlapTop = e.R.Y;
+                        if (t.R.Y > overlapTop) overlapTop = t.R.Y;
+                        float overlapBottom = e.R.Y + e.R.Height;
+                        if (t.R.Y + t.R.Height < e.R.Y + e.R.Height) overlapBottom = t.R.Y + t.R.Height;
+                        float overlapY = overlapBottom - overlapTop;
+                        if (overlapY > 3f)
+                        {
+                            if (dx > 0) { e.R.X = t.R.X - e.R.Width; e.moving = 'l'; e.facing = 'l'; }
+                            else if (dx < 0) { e.R.X = t.R.X + t.R.Width; e.moving = 'r'; e.facing = 'r'; }
+                        }
+                    }
+                }
+            }
+
+            e.applyPhysics(tiles);
+            e.updateAnimation();
+        }
+
+        float getDist(Enemy e, Hero hero)
+        {
+            float dx = 0, dy = 0;
+            if (e.R.X > hero.R.X) dx = e.R.X - hero.R.X;
+            else dx = hero.R.X - e.R.X;
+            if (e.R.Y > hero.R.Y) dy = e.R.Y - hero.R.Y;
+            else dy = hero.R.Y - e.R.Y;
+            return dx + dy;
+        }
+
+        public void Draw(Graphics g, bool showRanges, float camX, float camY)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+                enemies[i].draw(g, showRanges, camX, camY);
+        }
+    }
+
     public class tile
     {
         public rectF R = new rectF();
@@ -5095,7 +5108,7 @@ namespace General
         {
             return levels[currentLevel].background;
         }
-    }
+    }   
 
     public class Teleporter
     {
@@ -5312,7 +5325,7 @@ namespace General
         levelController levels;
 
         Hero hero;
-        List<Enemy> enemies = new List<Enemy>();
+        EnemyController enemyController = new EnemyController();
         List<tile> tiles = new List<tile>();
         List<Ladder> ladders = new List<Ladder>();
         List<DroppedCoin> droppedCoins = new List<DroppedCoin>();
@@ -5385,7 +5398,7 @@ namespace General
                     if (lastMenuScreen == 0)
                     {
                         startNewGame();
-                        save.save(hero, enemies , levels.currentLevel);
+                        save.save(hero, enemyController.enemies , levels.currentLevel);
                     }
 
                     startGame();
@@ -5639,7 +5652,7 @@ namespace General
                         if (lastMenuScreen == 0)
                         {
                             startNewGame();
-                            save.save(hero, enemies , levels.currentLevel);
+                            save.save(hero, enemyController.enemies , levels.currentLevel);
 
                         }
 
@@ -5721,7 +5734,7 @@ namespace General
                             if (e.KeyCode == Keys.Q)
                             {
                                 int oldLevel = levels.currentLevel;
-                                levels.nextLevel(enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
 
                                 if (levels.currentLevel != oldLevel)
                                 {
@@ -5861,7 +5874,7 @@ namespace General
                             else
                             {
                                 int oldLevel = levels.currentLevel;
-                                levels.nextLevel(enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
 
                                 if (levels.currentLevel != oldLevel)
                                 {
@@ -5946,7 +5959,7 @@ namespace General
 
                     if (hero.currentWeapon == 0)
                     {
-                        hero.updateAttack(enemies);
+                        hero.updateAttack(enemyController.enemies);
                     }
 
                     for (int i = 0; i < movingPlatforms.Count; i++)
@@ -5957,11 +5970,11 @@ namespace General
                     hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
                     hero.collectDroppedCoins(droppedCoins);
 
-                    hero.updateFireballCast(enemies, tiles);
-                    hero.updateSingleFireballAbility(enemies, tiles);
+                    hero.updateFireballCast(enemyController.enemies, tiles);
+                    hero.updateSingleFireballAbility(enemyController.enemies, tiles);
 
                     hero.mana.tick();
-                    handleEnemyMovement();
+                    enemyController.Update(tiles, hero, droppedCoins);
                     UpdateCamera();
 
                 }
@@ -6046,10 +6059,7 @@ namespace General
                     {
                         ladders[i].draw(g, showRanges, camX, camY);
                     }
-                    for (int i = 0; i < enemies.Count; i++)
-                    {
-                        enemies[i].draw(g, showRanges , camX, camY);
-                    }
+                    enemyController.Draw(g, showRanges, camX, camY);
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
                         droppedCoins[i].draw(g , camX, camY);
@@ -6062,7 +6072,7 @@ namespace General
                     hero.Draw(g, showRanges, camX, camY);
 
                     
-                    save.autoSave(hero, enemies, levels.currentLevel, g, this.ClientSize.Height);
+                    save.autoSave(hero, enemyController.enemies, levels.currentLevel, g, this.ClientSize.Height);
                     
                 }
 
@@ -6420,7 +6430,7 @@ namespace General
             }
             else if (currPauseBtn == 1 && PauseBtns.Count == 3)
             {
-                save.save(hero, enemies , levels.currentLevel);
+                save.save(hero, enemyController.enemies , levels.currentLevel);
                 PauseBtns.RemoveAt(1);
                 drawDubb(this.CreateGraphics());
 
@@ -6839,9 +6849,9 @@ namespace General
 
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
-            levels.loadEnemies(enemies);
+            levels.loadEnemies(enemyController.enemies);
             levels.loadPlatforms(movingPlatforms);
-            hero = load.load(hero, enemies, this.ClientSize.Height);
+            hero = load.load(hero, enemyController.enemies, this.ClientSize.Height);
         }    
 
         void startNewGame()
@@ -6853,7 +6863,7 @@ namespace General
             levels.currentLevel = 0;
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
-            levels.loadEnemies(enemies);
+            levels.loadEnemies(enemyController.enemies);
             levels.loadPlatforms(movingPlatforms);
 
             hero.R.X = levels.getNewHeroX();
@@ -6862,67 +6872,6 @@ namespace General
 
         }
 
-        void handleEnemyMovement()
-        {
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                float distance;
-                if (hero.R.X > enemies[i].R.X)
-                {
-                    distance = hero.R.X - enemies[i].R.X;
-                }
-                else
-                {
-                    distance = enemies[i].R.X - hero.R.X;
-                }
-                if (enemies[i].spawnrange >= distance)
-                {
-                    enemies[i].spawn = true;
-                }
-                if (enemies[i].isDead)
-                {
-                    enemies[i].dropCoin(droppedCoins);
-
-                    Animation currDead = enemies[i].anim.getCurrentAnimation();
-                    if (currDead != null)
-                    {
-                        bool dirFacingL = false;
-                        if(enemies[i].facing == 'l') dirFacingL = true;
-                        List<Bitmap> deadFrames = currDead.getFrames(dirFacingL);
-                        if (deadFrames.Count > 0 && enemies[i].anim.currIdx >= deadFrames.Count - 1)
-                        {
-                            if (enemies[i].CanSpawn == false)
-                            {
-                                enemies.RemoveAt(i);
-                                i--;
-                            }
-                            else
-                            {
-                                enemies[i].deathTimer++;
-
-                                if (enemies[i].deathTimer >= enemies[i].spawnTime)
-                                {
-                                    enemies[i].respawn();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            enemies[i].deathTimer++;
-
-                            if (enemies[i].deathTimer >= enemies[i].spawnTime)
-                            {
-                                enemies[i].respawn();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    enemies[i].move(tiles, hero);
-                }
-            }
-        }
     }
 }
     
