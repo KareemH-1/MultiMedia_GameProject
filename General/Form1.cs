@@ -4608,7 +4608,7 @@ namespace General
             startHeroX = 100;
             startHeroY = worldHeight- 120;
 
-            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "The Void");
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "Rest");
             levels.Add(lvl);
 
             background = new Bitmap("Backgrounds/Dungeon.png");
@@ -4629,7 +4629,18 @@ namespace General
             startHeroX = 100;
             startHeroY = worldHeight - 120;
 
-            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "The Void");
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "Rest");
+            levels.Add(lvl);
+
+
+            background = new Bitmap("Backgrounds/BossRoom.png");
+            worldWidth = background.Width *2;
+            worldHeight = background.Height * 2;
+
+            startHeroX = 100;
+            startHeroY = 1065;
+
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "Boss Room");
             levels.Add(lvl);
 
             initTeleporters();
@@ -4639,18 +4650,18 @@ namespace General
         {
             level lvl = levels[0];
 
-            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 100);
+            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 100 , false);
 
             lvl = levels[1];
-            lvl.teleporter = new Teleporter(2, lvl.worldWidth- 250, lvl.worldHeight - 200, 175, 175, 0, 100);
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth- 250, lvl.worldHeight - 200, 175, 175, 0, 100 , false);
             lvl.teleporter.isUnlocked = true;
             lvl.teleporter.requiredCoins = 0;
 
             lvl = levels[2];
-            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 100);
+            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 100 , false);
 
             lvl = levels[3];
-            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100);
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100 , true);
             lvl.teleporter.isUnlocked = true;
             lvl.teleporter.requiredCoins = 0;
 
@@ -4761,8 +4772,16 @@ namespace General
             initTilesLevel1(height);
             initTilesLevel2();
             initTilesLevel3(height);
+            initTilesLevel4();
         }
 
+        void initTilesLevel4()
+        {
+            tile pnn = new tile();
+            pnn.interact = true;
+            pnn.init(0, 1065, levels[4].worldWidth, 30, false);
+            levels[4].tiles.Add(pnn);
+        }
         void initTilesLevel1(int height)
         {
             tile pnn = new tile();
@@ -5122,8 +5141,10 @@ namespace General
         public bool loopIt = false;
         public int range = 100;
         public bool isHeroInRange = false;
+        public bool isBoss = false;
+        public Bitmap bossIcon;
         
-        public Teleporter(int level , int x , int y , int w , int h , int coins , int range)
+        public Teleporter(int level , int x , int y , int w , int h , int coins , int range , bool bossRoom)
         {
             this.level = level;
             rect.X = x;
@@ -5134,6 +5155,11 @@ namespace General
             requiredCoins = coins;
             this.range = range;
 
+            this.isBoss = bossRoom;
+            if(isBoss == true)
+            {
+                bossIcon = new Bitmap("Teleporters/BossIcon.png");
+            }
             initAnim(level);
         }
 
@@ -5246,6 +5272,13 @@ namespace General
         public void draw(Graphics g, Hero hero, bool showRange , float camX, float camY)
         {
             checkHero(hero);
+            if(isBoss == true)
+            {
+                int width = 100;
+                int height = 80;
+                g.DrawImage(bossIcon, rect.X - camX+ rect.Width/2 - width/2, rect.Y - camY - height, width, height);
+
+            }
             g.DrawImage(getFrame(), rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
 
             if (showRange == true)
@@ -5728,23 +5761,24 @@ namespace General
                             pauseGame();
                             return;
                         }
-
-                        if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
+                        if (levels.currentLevel < levels.levels.Count - 1)
                         {
-                            if (e.KeyCode == Keys.Q)
+                            if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                             {
-                                int oldLevel = levels.currentLevel;
-                                levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
-
-                                if (levels.currentLevel != oldLevel)
+                                if (e.KeyCode == Keys.Q)
                                 {
-                                    hero.R.X = levels.getNewHeroX();
-                                    hero.R.Y = levels.getNewHeroY();
-                                    startLevelIntro();
+                                    int oldLevel = levels.currentLevel;
+                                    levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+
+                                    if (levels.currentLevel != oldLevel)
+                                    {
+                                        hero.R.X = levels.getNewHeroX();
+                                        hero.R.Y = levels.getNewHeroY();
+                                        startLevelIntro();
+                                    }
                                 }
                             }
                         }
-
                         if (camX < 0)
                         {
                             camX = 0;
@@ -5859,28 +5893,31 @@ namespace General
 
                         }
                     }
-                    if(levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
+                    if (levels.currentLevel < levels.levels.Count - 1)
                     {
-                        if(e.KeyCode == Keys.Q)
+                        if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                         {
-                            if (levels.levels[levels.currentLevel].teleporter.isUnlocked == false)
+                            if (e.KeyCode == Keys.Q)
                             {
-                                if (hero.coins >= levels.levels[levels.currentLevel].teleporter.requiredCoins)
+                                if (levels.levels[levels.currentLevel].teleporter.isUnlocked == false)
                                 {
-                                    levels.levels[levels.currentLevel].teleporter.isUnlocked = true;
-                                    hero.coins -= levels.levels[levels.currentLevel].teleporter.requiredCoins;
+                                    if (hero.coins >= levels.levels[levels.currentLevel].teleporter.requiredCoins)
+                                    {
+                                        levels.levels[levels.currentLevel].teleporter.isUnlocked = true;
+                                        hero.coins -= levels.levels[levels.currentLevel].teleporter.requiredCoins;
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                int oldLevel = levels.currentLevel;
-                                levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
-
-                                if (levels.currentLevel != oldLevel)
+                                else
                                 {
-                                    hero.R.X = levels.getNewHeroX();
-                                    hero.R.Y = levels.getNewHeroY();
-                                    startLevelIntro();
+                                    int oldLevel = levels.currentLevel;
+                                    levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+
+                                    if (levels.currentLevel != oldLevel)
+                                    {
+                                        hero.R.X = levels.getNewHeroX();
+                                        hero.R.Y = levels.getNewHeroY();
+                                        startLevelIntro();
+                                    }
                                 }
                             }
                         }
@@ -5976,7 +6013,6 @@ namespace General
                     hero.mana.tick();
                     enemyController.Update(tiles, hero, droppedCoins);
                     UpdateCamera();
-
                 }
             }
 
@@ -6048,8 +6084,10 @@ namespace General
                     g.DrawImage(bg, rcDst, rcSrc, GraphicsUnit.Pixel);
 
 
-
-                    levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX, camY);
+                    if (levels.currentLevel < levels.levels.Count - 1)
+                    {
+                        levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX, camY);
+                    }
 
                     for (int i = 0; i < tiles.Count; i++)
                     {
@@ -6103,6 +6141,11 @@ namespace General
                 hero.moving = ' ';
                 hero.isRunning = false;
                 hero.stopFireball();
+                while(hero.fireballs.Count > 0){
+                    hero.fireballs.RemoveAt(0);
+                }
+                hero.isCastingAbility = false;
+                hero.abilityFireballSpawned = false;
             }
         }
 
