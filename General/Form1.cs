@@ -34,31 +34,31 @@ namespace General
             return "False";
         }
 
-        public void save(Hero hero, List<Enemy> Enemies , int level)
+        public void save(Hero hero, List<Enemy> Enemies, int level)
         {
             saveLvl(level);
             saveHero(hero);
             saveEnemies(Enemies);
 
         }
-        public void autoSave(Hero hero, List<Enemy> Enemies, int level, Graphics g , int clientHeight)
+        public void autoSave(Hero hero, List<Enemy> Enemies, int level, Graphics g, int clientHeight)
         {
-            if(timer < 20)
+            if (timer < 20)
             {
                 string txt = "Saving";
-                if(idx % 4 == 1)
+                if (idx % 4 == 1)
                 {
                     txt += ".";
                 }
-                else if(idx %4 == 2)
+                else if (idx % 4 == 2)
                 {
                     txt += "..";
                 }
-                else if(idx % 4 == 3)
+                else if (idx % 4 == 3)
                 {
                     txt += "...";
                 }
-                g.DrawString(txt, f, bigoutline, 12, clientHeight- 50);
+                g.DrawString(txt, f, bigoutline, 12, clientHeight - 50);
                 g.DrawString(txt, f, textBrush, 10, clientHeight - 48);
 
                 idx++;
@@ -76,13 +76,13 @@ namespace General
             {
                 timer = 0;
                 idx = 0;
-                save(hero, Enemies , level);
+                save(hero, Enemies, level);
             }
         }
 
         void saveLvl(int level)
         {
-           
+
             StreamWriter sw = new StreamWriter("Saves/level.txt");
             sw.WriteLine(level.ToString());
             sw.Close();
@@ -247,7 +247,7 @@ namespace General
 
         public Hero load(Hero hero, List<Enemy> enemies, int clientHeight)
         {
-         
+
 
             hero = loadHero(hero, clientHeight);
 
@@ -486,7 +486,7 @@ namespace General
             {
                 string line = sr.ReadLine();
 
-                if(line != null)
+                if (line != null)
                 {
                     string[] data = splitLine(line);
                     string variable = data[0];
@@ -504,7 +504,7 @@ namespace General
                             }
                         }
 
-                        if(underscorePos != -1)
+                        if (underscorePos != -1)
                         {
                             string numStr = "";
                             for (int i = 5; i < underscorePos; i++)
@@ -911,7 +911,7 @@ namespace General
         public rectF()
         {
             X = 0;
-            Y = 0; 
+            Y = 0;
             Width = 0;
             Height = 0;
         }
@@ -935,7 +935,7 @@ namespace General
         public rect()
         {
             X = 0;
-            Y = 0; 
+            Y = 0;
             Width = 0;
             Height = 0;
         }
@@ -1329,7 +1329,7 @@ namespace General
 
             return frame;
         }
-        
+
 
         public Bitmap playFrameOnce(bool facingLeft, bool useFacing)
         {
@@ -1407,7 +1407,7 @@ namespace General
             return frames[currIdx];
         }
 
-        
+
 
         public Animation getCurrentAnimation()
         {
@@ -1455,7 +1455,7 @@ namespace General
         public int maxTimer = 20;
 
         public bool repeat = false;
-        public void draw(Graphics g, rectF ownerR , float camX, float camY)
+        public void draw(Graphics g, rectF ownerR, float camX, float camY)
         {
             if (followPlayer)
             {
@@ -1522,7 +1522,7 @@ namespace General
                 if (normOrStrong != 0)
                 {
                     rect = new rectF(startX, startY, 30, 30);
-                   
+
                 }
                 else
                 {
@@ -1558,7 +1558,7 @@ namespace General
                     dirX = -1f;
                 }
 
-                if(dirX == 1f)
+                if (dirX == 1f)
                 {
                     Bitmap img;
                     for (int i = 1; i <= 6; i++)
@@ -1580,12 +1580,12 @@ namespace General
                 }
                 dirY = 0f;
 
-              
+
                 strong = true;
                 maxDist = 5000f;
                 rect = new rectF(startX, startY, 74, 52);
                 SingleDrawRect = new rectF(startX, startY, 74, 52);
-                
+
                 damage = strongDamage;
             }
 
@@ -1607,7 +1607,7 @@ namespace General
             {
                 this.rect.Y += speed;
             }
-            else if(dirY < 0) this.rect.Y -= speed;
+            else if (dirY < 0) this.rect.Y -= speed;
 
 
             traveledDist += 45;
@@ -1653,7 +1653,7 @@ namespace General
                         }
                     }
                 }
-            
+
             }
         }
 
@@ -1719,10 +1719,10 @@ namespace General
             }
         }
 
-        public void draw(Graphics g , float camX, float camY)
+        public void draw(Graphics g, float camX, float camY)
         {
             Bitmap frame = anim.playFrame(false, false);
-            
+
 
 
             if (isItSingle == false)
@@ -1771,7 +1771,7 @@ namespace General
             rect.Height = height;
         }
 
-        public void draw(Graphics g, bool showRange , float camX, float camY)
+        public void draw(Graphics g, bool showRange, float camX, float camY)
         {
             int countLadders = rect.Height / tileHeight;
 
@@ -1951,7 +1951,7 @@ namespace General
 
             for (int i = 0; i < fireballs.Count; i++)
             {
-                fireballs[i].draw(g , camX, camY);
+                fireballs[i].draw(g, camX, camY);
 
                 if (showRanges)
                 {
@@ -2004,7 +2004,7 @@ namespace General
 
             for (int i = vfxes.Count - 1; i >= 0; i--)
             {
-                vfxes[i].draw(g, R , camX, camY);
+                vfxes[i].draw(g, R, camX, camY);
 
                 if (vfxes[i].finished)
                 {
@@ -2044,7 +2044,7 @@ namespace General
                 fireballAnimation.addFrame(frame, false, false);
             }
         }
-        
+
         public void collectDroppedCoins(List<DroppedCoin> droppedCoins)
         {
             for (int i = 0; i < droppedCoins.Count; i++)
@@ -2063,7 +2063,7 @@ namespace General
                 }
             }
         }
-        
+
         void createFireballVFX()
         {
             vfx fx = new vfx();
@@ -2154,7 +2154,7 @@ namespace General
 
             }
         }
-        
+
         void removeOtherWeaponVFX()
         {
             for (int i = 0; i < vfxes.Count; i++)
@@ -2299,7 +2299,7 @@ namespace General
         {
             R.X = lastValidX;
             R.Y = lastValidY;
-            
+
             takeDamage(25);
         }
 
@@ -2325,7 +2325,7 @@ namespace General
             anim.changeAnimation("spell_cast", -1);
             anim.restart();
         }
-        
+
         public void updateSingleFireballAbility(List<Enemy> enemies, List<tile> tiles)
         {
             if (isAbilityUnlocked == false) return;
@@ -2359,21 +2359,21 @@ namespace General
             if (spellAnim != null)
             {
                 bool dirFacingL = false;
-                if(facing == 'l') dirFacingL = true;
+                if (facing == 'l') dirFacingL = true;
                 List<Bitmap> spellFrames = spellAnim.getFrames(dirFacingL);
                 if (spellFrames.Count > 0 && anim.currIdx >= spellFrames.Count - 1)
-            {
-                isCastingAbility = false;
-                abilityFireballSpawned = false;
-                isLanding = false;
-                wasGrounded = isGrounded;
-                ySpeed = 0;
-                isGrounded = true;
-                updateAnimation();
-            }
+                {
+                    isCastingAbility = false;
+                    abilityFireballSpawned = false;
+                    isLanding = false;
+                    wasGrounded = isGrounded;
+                    ySpeed = 0;
+                    isGrounded = true;
+                    updateAnimation();
+                }
             }
         }
-        
+
         void createDoubleJumpVFX()
         {
             vfx fx = new vfx();
@@ -2481,7 +2481,7 @@ namespace General
             mana.mana -= fireballManaCost;
             if (mana.mana < 0) mana.mana = 0;
         }
-        
+
         void swordLogic()
         {
             if (isAttacking == true)
@@ -2490,7 +2490,7 @@ namespace General
                 if (attackAnim != null)
                 {
                     bool dirFacingL = false;
-                    if(facing == 'l') dirFacingL = true;
+                    if (facing == 'l') dirFacingL = true;
                     List<Bitmap> atkFrames = attackAnim.getFrames(dirFacingL);
                     int usableFrames = atkFrames.Count - attackComboExtraFrames;
                     if (usableFrames <= 0)
@@ -2511,7 +2511,7 @@ namespace General
             anim.changeAnimation("attack", -1);
             anim.restart();
         }
-        
+
         public rectF getAttackHitBox()
         {
             float h = R.Height * attackHeightScale;
@@ -2537,7 +2537,7 @@ namespace General
             if (attackAnim == null) return;
 
             bool dirFacingL = false;
-            if(facing == 'l') dirFacingL = true;
+            if (facing == 'l') dirFacingL = true;
             List<Bitmap> attackFrames = attackAnim.getFrames(dirFacingL);
 
             int usableFrames = attackFrames.Count - attackComboExtraFrames;
@@ -2588,9 +2588,9 @@ namespace General
                 attackHasHit = true;
             }
         }
-       
+
         //movement
-        public void move(List<tile> tiles , List<Ladder> ladders, int width , List<MovingPlatform> movingPlatforms)
+        public void move(List<tile> tiles, List<Ladder> ladders, int width, List<MovingPlatform> movingPlatforms)
         {
             if (isDead == true)
             {
@@ -2599,7 +2599,7 @@ namespace General
                 isShooting = false;
                 isCastingAbility = false;
 
-                Movement(tiles , ladders, movingPlatforms);
+                Movement(tiles, ladders, movingPlatforms);
                 updateAnimation();
                 return;
             }
@@ -2611,7 +2611,7 @@ namespace General
                 moving = ' ';
                 isGrounded = false;
 
-                Movement(tiles , ladders , movingPlatforms);
+                Movement(tiles, ladders, movingPlatforms);
                 updateAnimation();
                 return;
             }
@@ -2640,12 +2640,12 @@ namespace General
                 xMove = moveSpeed;
             }
 
-            
-            if(R.X + xMove < 0)
+
+            if (R.X + xMove < 0)
             {
                 R.X = 0;
             }
-            if(R.X+ R.Width + xMove > width)
+            if (R.X + R.Width + xMove > width)
             {
                 R.X = width - R.Width;
             }
@@ -2691,13 +2691,13 @@ namespace General
                 }
             }
 
-            Movement(tiles , ladders , movingPlatforms);
+            Movement(tiles, ladders, movingPlatforms);
 
             if (!isAttacking && !isAttacking)
                 updateAnimation();
         }
-        
-        public void Movement(List<tile> tiles, List<Ladder> ladders , List<MovingPlatform> movingPlatforms)
+
+        public void Movement(List<tile> tiles, List<Ladder> ladders, List<MovingPlatform> movingPlatforms)
         {
             wasGrounded = isGrounded;
             prevBottom = R.Y + R.Height;
@@ -2886,7 +2886,7 @@ namespace General
             {
                 Ladder trav = ladders[i];
                 if (R.X + R.Width > trav.rect.X + 20 &&
-                    R.X < trav.rect.X + trav.rect.Width -20 &&
+                    R.X < trav.rect.X + trav.rect.Width - 20 &&
                     R.Y + R.Height > trav.rect.Y + 5 &&
                     R.Y < trav.rect.Y + trav.rect.Height)
                 {
@@ -2895,7 +2895,7 @@ namespace General
             }
             return -1;
         }
-       
+
         public void checkUnder(List<tile> tiles, List<Ladder> ladders)
         {
             if (isClimbing)
@@ -2910,11 +2910,11 @@ namespace General
             {
                 Ladder trav = ladders[i];
                 if (R.X + R.Width > trav.rect.X + 20 &&
-                    R.X < trav.rect.X + trav.rect.Width -20 &&
+                    R.X < trav.rect.X + trav.rect.Width - 20 &&
                     R.Y + R.Height >= trav.rect.Y - 2 &&
                     R.Y + R.Height <= trav.rect.Y + 5)
                 {
-                    if(R.Y + R.Height >= trav.rect.Y)
+                    if (R.Y + R.Height >= trav.rect.Y)
                     {
                         R.Y += 5;
                     }
@@ -2971,7 +2971,7 @@ namespace General
         {
             climbDir = 'u';
         }
-        
+
         public void stopJump()
         {
             jumpHeld = false;
@@ -2980,7 +2980,7 @@ namespace General
             {
                 float minimumJumpVelocity = jumpPower * 0.65f;
                 float reducedVelocity = ySpeed * 0.35f;
-                
+
                 if (reducedVelocity < minimumJumpVelocity)
                 {
                     ySpeed = minimumJumpVelocity;
@@ -2991,7 +2991,7 @@ namespace General
                 }
             }
         }
-        
+
         public void jump()
         {
             isClimbing = false;
@@ -3075,7 +3075,7 @@ namespace General
         public int coinvalue = 20;
         public string cointype = "";
 
-        public DroppedCoin(float x, float y, string type ,int val)
+        public DroppedCoin(float x, float y, string type, int val)
         {
             cointype = type;
             coinvalue = val;
@@ -3179,7 +3179,7 @@ namespace General
             }
         }
 
-        public void draw(Graphics g , float camX, float camY)
+        public void draw(Graphics g, float camX, float camY)
         {
             if (frames.Count == 0)
             {
@@ -3349,7 +3349,7 @@ namespace General
             {
 
 
-                drawR.X = R.X ;
+                drawR.X = R.X;
                 drawR.Y = R.Y + 20;
                 drawR.Width = 100;
                 drawR.Height = 100;
@@ -3664,13 +3664,13 @@ namespace General
             return distanceX + distanceY;
         }
 
-        public void draw(Graphics g, bool showRanges , float camX, float camY)
+        public void draw(Graphics g, bool showRanges, float camX, float camY)
         {
             if (spawn)
             {
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y + (R.Height - drawR.Height);
-                if(this.enemyType == "bat")
+                if (this.enemyType == "bat")
                 {
                     drawR.Y = R.Y - 20;
 
@@ -3773,8 +3773,8 @@ namespace General
                     if (i == 0) type = "copper";
                     else if (i == 1) type = "silver";
                     else type = "gold";
-                    DroppedCoin coin = new DroppedCoin(x, y, type , howMany[i]);
-                    
+                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
+
                     droppedCoins.Add(coin);
                 }
                 coindropped = true;
@@ -4331,7 +4331,7 @@ namespace General
         public int cooldown = 21;
         public int cooldownTimer = 0;
 
-        public void makeItDamage(int dmg , int cooldown)
+        public void makeItDamage(int dmg, int cooldown)
         {
             couldDamage = true;
             this.dmg = dmg;
@@ -4362,7 +4362,7 @@ namespace General
                 }
             }
         }
-        public void draw(Graphics g , float camX, float camY , bool ShowRanges)
+        public void draw(Graphics g, float camX, float camY, bool ShowRanges)
         {
             if (showColor == false && img != null)
             {
@@ -4389,9 +4389,9 @@ namespace General
                 g.FillRectangle(bsh, R.X - camX, R.Y - camY, R.Width, R.Height);
             }
 
-            if(ShowRanges == true)
+            if (ShowRanges == true)
             {
-                Pen green = new Pen(Color.Brown , 3);
+                Pen green = new Pen(Color.Brown, 3);
                 g.DrawRectangle(green, R.X - camX, R.Y - camY, R.Width, R.Height);
             }
         }
@@ -4404,7 +4404,7 @@ namespace General
             this.clr = clr;
         }
 
-        public void init(int x, int y, int width, int height , bool showColor)
+        public void init(int x, int y, int width, int height, bool showColor)
         {
             R.X = x;
             R.Y = y;
@@ -4423,7 +4423,7 @@ namespace General
         public float maxY;
 
         public float speed = 3f;
-        public int dir = -1; 
+        public int dir = -1;
 
         public float lastY;
         public float dy;
@@ -4440,8 +4440,8 @@ namespace General
 
             startY = y;
 
-            minY = y - range; 
-            maxY = y;         
+            minY = y - range;
+            maxY = y;
 
             this.speed = speed;
 
@@ -4458,12 +4458,12 @@ namespace General
             if (R.Y <= minY)
             {
                 R.Y = minY;
-                dir = 1; 
+                dir = 1;
             }
             else if (R.Y >= maxY)
             {
                 R.Y = maxY;
-                dir = -1; 
+                dir = -1;
             }
 
             dy = R.Y - lastY;
@@ -4517,7 +4517,7 @@ namespace General
         }
     }
 
-    
+
     public class level
     {
         public List<Ladder> ladders = new List<Ladder>();
@@ -4534,7 +4534,7 @@ namespace General
         public float startHeroX;
         public float startHeroY;
 
-        public level(Bitmap bk , int width , int height , float startHeroX , float startHeroY)
+        public level(Bitmap bk, int width, int height, float startHeroX, float startHeroY)
         {
             background = bk;
             worldWidth = width;
@@ -4581,7 +4581,7 @@ namespace General
         public List<level> levels = new List<level>();
         public int currentLevel = -1;
 
-        public levelController(int height , int width)
+        public levelController(int height, int width)
         {
             initLevelData(height, width);
             initAll(height);
@@ -4606,7 +4606,7 @@ namespace General
             worldHeight = height;
 
             startHeroX = 100;
-            startHeroY = worldHeight- 120;
+            startHeroY = worldHeight - 120;
 
             lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "Rest");
             levels.Add(lvl);
@@ -4634,7 +4634,7 @@ namespace General
 
 
             background = new Bitmap("Backgrounds/BossRoom.png");
-            worldWidth = background.Width *2;
+            worldWidth = background.Width * 2;
             worldHeight = background.Height * 2;
 
             startHeroX = 100;
@@ -4650,18 +4650,18 @@ namespace General
         {
             level lvl = levels[0];
 
-            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300 , lvl.worldHeight - 180, 140 , 140 , 300, 100 , false);
+            lvl.teleporter = new Teleporter(0, lvl.worldWidth - 300, lvl.worldHeight - 180, 140, 140, 300, 100, false);
 
             lvl = levels[1];
-            lvl.teleporter = new Teleporter(2, lvl.worldWidth- 250, lvl.worldHeight - 200, 175, 175, 0, 100 , false);
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100, false);
             lvl.teleporter.isUnlocked = true;
             lvl.teleporter.requiredCoins = 0;
 
             lvl = levels[2];
-            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 100 , false);
+            lvl.teleporter = new Teleporter(1, lvl.worldWidth - 300, lvl.worldHeight - 90 - 175, 175, 175, 300, 100, false);
 
             lvl = levels[3];
-            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100 , true);
+            lvl.teleporter = new Teleporter(2, lvl.worldWidth - 250, lvl.worldHeight - 200, 175, 175, 0, 100, true);
             lvl.teleporter.isUnlocked = true;
             lvl.teleporter.requiredCoins = 0;
 
@@ -4680,15 +4680,15 @@ namespace General
 
         void removeAllFromLevels()
         {
-            for(int i =0 ; i< levels.Count ; i++){
+            for (int i = 0; i < levels.Count; i++) {
 
-                while(levels[i].enemies.Count > 0){
+                while (levels[i].enemies.Count > 0) {
                     levels[i].enemies.RemoveAt(0);
                 }
-                while(levels[i].ladders.Count > 0){
+                while (levels[i].ladders.Count > 0) {
                     levels[i].ladders.RemoveAt(0);
                 }
-                while(levels[i].tiles.Count > 0){
+                while (levels[i].tiles.Count > 0) {
                     levels[i].tiles.RemoveAt(0);
                 }
                 while (levels[i].movingPlatforms.Count > 0)
@@ -4699,7 +4699,7 @@ namespace General
             }
         }
 
-        void initLadders( int height)
+        void initLadders(int height)
         {
             initLadders0(height);
             initLadders2();
@@ -4710,7 +4710,7 @@ namespace General
         {
             Ladder ladder;
 
-            ladder = new Ladder(1916 ,645 , 330, true);
+            ladder = new Ladder(1916, 645, 330, true);
 
             levels[2].ladders.Add(ladder);
 
@@ -4727,7 +4727,7 @@ namespace General
 
         }
 
-        int getAboveGroundLoc(int enemyH , int Height)
+        int getAboveGroundLoc(int enemyH, int Height)
         {
             return Height - 30 - enemyH;
         }
@@ -4739,7 +4739,7 @@ namespace General
             // Mushroom size
             int mushroomW = 90;
             int mushroomH = 70;
-            int mushroomY = getAboveGroundLoc(mushroomH , height);
+            int mushroomY = getAboveGroundLoc(mushroomH, height);
 
             en = new Enemy(600, mushroomY, mushroomW, mushroomH, "mushroom");
             en.CanSpawn = true;
@@ -4758,7 +4758,7 @@ namespace General
 
 
 
-            
+
         }
 
         void initPlatforms()
@@ -4799,7 +4799,7 @@ namespace General
 
             pnn = new tile();
             pnn.interact = true;
-            pnn.init(0, height - 112, 2067, 30 , false);
+            pnn.init(0, height - 112, 2067, 30, false);
             levels[2].tiles.Add(pnn);
 
             pnn = new tile();
@@ -4818,7 +4818,7 @@ namespace General
 
             pnn = new tile();
             pnn.interact = true;
-            pnn.init(1235, 917, 127 , 54, false);
+            pnn.init(1235, 917, 127, 54, false);
             levels[2].tiles.Add(pnn);
 
             pnn = new tile();
@@ -4915,14 +4915,14 @@ namespace General
         {
             tile pnn = new tile();
             pnn.interact = true;
-            pnn.init(0, height - 30, levels[0].worldWidth, 30 , true);
+            pnn.init(0, height - 30, levels[0].worldWidth, 30, true);
             pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
             pnn.jumpThrough = true;
-            pnn.init(300, height - 150, 200, 20 , true);
+            pnn.init(300, height - 150, 200, 20, true);
             pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
@@ -4930,13 +4930,13 @@ namespace General
             pnn.interact = true;
             pnn.jumpThrough = false;
             pnn.clr = Color.DarkRed;
-            pnn.init(600, height - 250, 200, 30 , true);
+            pnn.init(600, height - 250, 200, 30, true);
             pnn.changeColor(Color.Red);
 
             levels[0].tiles.Add(pnn);
         }
 
-        public void loadLadders(List<Ladder>ladders)
+        public void loadLadders(List<Ladder> ladders)
         {
             while (ladders.Count > 0)
             {
@@ -4958,7 +4958,7 @@ namespace General
 
         }
 
-        public void loadEnemies(List<Enemy>enemies)
+        public void loadEnemies(List<Enemy> enemies)
         {
             while (enemies.Count > 0)
             {
@@ -4977,21 +4977,21 @@ namespace General
                 Enemy temp = curLvl.enemies[i];
                 enemies.Add(temp);
             }
-        
+
         }
 
-        public void loadTiles(List<tile>tiles)
+        public void loadTiles(List<tile> tiles)
         {
-            
+
             while (tiles.Count > 0)
             {
                 tiles.RemoveAt(0);
             }
 
-                if (currentLevel < 0 || currentLevel >= levels.Count)
-                {
-                    return;
-                }
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return;
+            }
 
             level curLvl = levels[currentLevel];
             for (int i = 0; i < curLvl.tiles.Count; i++)
@@ -5021,14 +5021,14 @@ namespace General
                 movingPlatforms.Add(temp);
             }
         }
-        public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles , List<DroppedCoin> coins)
+        public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins)
         {
-            while(coins.Count > 0)
+            while (coins.Count > 0)
             {
                 coins.RemoveAt(0);
             }
 
-            while(enemies.Count > 0)
+            while (enemies.Count > 0)
             {
                 enemies.RemoveAt(0);
             }
@@ -5061,7 +5061,7 @@ namespace General
                 tiles.RemoveAt(0);
             }
 
-            for(int i =0; i < curLvl.enemies.Count; i++)
+            for (int i = 0; i < curLvl.enemies.Count; i++)
             {
                 Enemy temp = curLvl.enemies[i];
                 enemies.Add(temp);
@@ -5079,12 +5079,12 @@ namespace General
                 tiles.Add(temp);
             }
         }
-        public void nextLevel(List<Enemy> enemies , List<Ladder> ladders , List<tile> tiles , List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
+        public void nextLevel(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
         {
             if (currentLevel < levels.Count - 1)
             {
                 currentLevel++;
-                removeAll(enemies, ladders, tiles , coins);
+                removeAll(enemies, ladders, tiles, coins);
                 assignAll(enemies, ladders, tiles);
                 loadPlatforms(movingPlatforms);
             }
@@ -5127,7 +5127,7 @@ namespace General
         {
             return levels[currentLevel].background;
         }
-    }   
+    }
 
     public class Teleporter
     {
@@ -5143,8 +5143,8 @@ namespace General
         public bool isHeroInRange = false;
         public bool isBoss = false;
         public Bitmap bossIcon;
-        
-        public Teleporter(int level , int x , int y , int w , int h , int coins , int range , bool bossRoom)
+
+        public Teleporter(int level, int x, int y, int w, int h, int coins, int range, bool bossRoom)
         {
             this.level = level;
             rect.X = x;
@@ -5156,7 +5156,7 @@ namespace General
             this.range = range;
 
             this.isBoss = bossRoom;
-            if(isBoss == true)
+            if (isBoss == true)
             {
                 bossIcon = new Bitmap("Teleporters/BossIcon.png");
             }
@@ -5179,7 +5179,7 @@ namespace General
                 for (int i = 0; i <= 40; i++)
                 {
                     string numbers = "";
-                    if(i < 10)
+                    if (i < 10)
                     {
                         numbers += "0";
                     }
@@ -5189,7 +5189,7 @@ namespace General
                 }
                 loopIt = false;
             }
-            else if(level == 2){
+            else if (level == 2) {
 
                 for (int i = 0; i <= 21; i++)
                 {
@@ -5209,7 +5209,7 @@ namespace General
 
         public Bitmap getFrame()
         {
-            if(this.loopIt == true)
+            if (this.loopIt == true)
             {
                 Bitmap frame = Animation.frames[currF];
                 if (currF < Animation.frames.Count - 1)
@@ -5221,15 +5221,15 @@ namespace General
             }
             else
             {
-                if(isUnlocked == false)
+                if (isUnlocked == false)
                 {
                     return Animation.frames[0];
                 }
                 else
                 {
-                    if(currF < Animation.frames.Count - 1)
+                    if (currF < Animation.frames.Count - 1)
                     {
-                        if(currF == Animation.frames.Count/4)
+                        if (currF == Animation.frames.Count / 4)
                         {
 
                             if (level == 1)
@@ -5250,7 +5250,7 @@ namespace General
 
         public void checkHero(Hero hero)
         {
-            if(loopIt == false && isUnlocked == true && currF < Animation.frames.Count - 1)
+            if (loopIt == false && isUnlocked == true && currF < Animation.frames.Count - 1)
             {
                 isHeroInRange = false;
                 return;
@@ -5267,16 +5267,16 @@ namespace General
                 isHeroInRange = true;
             }
             else isHeroInRange = false;
-            
+
         }
-        public void draw(Graphics g, Hero hero, bool showRange , float camX, float camY)
+        public void draw(Graphics g, Hero hero, bool showRange, float camX, float camY)
         {
             checkHero(hero);
-            if(isBoss == true)
+            if (isBoss == true)
             {
                 int width = 100;
                 int height = 80;
-                g.DrawImage(bossIcon, rect.X - camX+ rect.Width/2 - width/2, rect.Y - camY - height, width, height);
+                g.DrawImage(bossIcon, rect.X - camX + rect.Width / 2 - width / 2, rect.Y - camY - height, width, height);
 
             }
             g.DrawImage(getFrame(), rect.X - camX, rect.Y - camY, rect.Width, rect.Height);
@@ -5284,7 +5284,7 @@ namespace General
             if (showRange == true)
             {
                 Pen red = new Pen(Color.Red);
-                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range - camY, range*2 + rect.Width, range + rect.Height);
+                g.DrawRectangle(red, rect.X - range - camX, rect.Y - range - camY, range * 2 + rect.Width, range + rect.Height);
             }
 
             int h = 40;
@@ -5304,11 +5304,11 @@ namespace General
                 SolidBrush textBrush = new SolidBrush(Color.Black);
 
                 string text = "Press Q to unlock!";
-                if(hero.coins < this.requiredCoins)
+                if (hero.coins < this.requiredCoins)
                 {
                     text = "You need " + (requiredCoins - hero.coins).ToString() + " Coins!";
                 }
-                if(isUnlocked == true)
+                if (isUnlocked == true)
                 {
                     text = "Unlocked! Press Q";
                 }
@@ -5317,6 +5317,119 @@ namespace General
 
         }
     }
+
+    class bossUI{
+        public rect rect;
+        Bitmap bg = new Bitmap("ui/bossHP/health_under.png");
+        Bitmap bar = new Bitmap("ui/bossHP/bar.png");
+        Bitmap name = null;
+
+        public string Bname;
+
+        public bossUI(string bname , int ClientWidth)
+        {
+            int width = 500;
+            int height = 180;
+
+            rect.X = ClientWidth / 2 - width / 2;
+            rect.Y = 200;
+            rect.Width = width;
+            rect.Height = height;
+
+            this.Bname = bname;
+            string path = "ui/bossHP/" + Bname + ".png";
+
+            this.name = new Bitmap(path);
+        }
+
+        public void draw(Graphics g , int HP , int maxHP)
+        {
+            g.DrawImage(bg, rect.X, rect.Y, rect.Width, rect.Height);
+
+            if (name != null)
+            {
+                int nameX = rect.X + (rect.Width - name.Width) / 2;
+                int nameY = rect.Y + 8;
+                g.DrawImage(name, nameX, nameY, name.Width, name.Height);
+            }
+
+            int barStart = rect.X + 6;
+            int barMaxW = rect.Width - 12;
+            int barH = bar.Height;
+            int barY = rect.Y + (rect.Height - barH) / 2;
+
+            int drawW = 0;
+            int srcW = 0;
+
+            if (maxHP > 0)
+            {
+                int currentHP = HP;
+                if (currentHP < 0) currentHP = 0;
+                if (currentHP > maxHP) currentHP = maxHP;
+
+                drawW = barMaxW * currentHP / maxHP;
+                srcW = bar.Width * currentHP / maxHP;
+            }
+
+            if (drawW > 0)
+            {
+                Rectangle dstRect = new Rectangle(barStart, barY, drawW, barH);
+                Rectangle srcRect = new Rectangle(0, 0, srcW, bar.Height);
+                g.DrawImage(bar, dstRect, srcRect, GraphicsUnit.Pixel);
+            }
+            
+
+        }
+    }
+    class boss {
+        public string name;
+        public bool startFight = false;
+        public rectF R = new rectF();
+        public rectF drawR = new rectF();
+
+
+        public float speed = 4f;
+        public char moving = 'l';
+
+        public float velocityY = 0f;
+        public float gravity = 1.2f;
+        public float max_speed = 25f;
+
+        public bool isGrounded = false;
+        public bool wasGrounded = false;
+
+        public Health HP;
+
+        public bool isTakingDamage = false;
+        public bool isAttacking = false;
+        public bool isWakingUp = false;
+
+        public float wakeupDistance = 400f;
+
+
+        public int damageTimer = 0;
+
+        public int attackTimer = 0;
+        public int attackCooldown = 0;
+
+        public float attackrange = 65;
+        public float attackdis = 200;
+
+        public float startX = 0f;
+        public float patrolDistance = 200f;
+        public float leftLimit = 0f;
+        public float rightLimit = 0f;
+
+        public bool coindropped = false;
+
+        public AnimationController anim = new AnimationController();
+
+        public boss()
+        {
+
+        }
+    }
+
     public partial class Form1 : Form
     {
         Save save = new Save();
