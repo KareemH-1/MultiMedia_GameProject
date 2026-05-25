@@ -5319,7 +5319,7 @@ namespace General
     }
 
     class bossUI{
-        public rect rect;
+        public rect rect = new rect();
         Bitmap bg = new Bitmap("ui/bossHP/health_under.png");
         Bitmap bar = new Bitmap("ui/bossHP/bar.png");
         Bitmap name = null;
@@ -5328,11 +5328,11 @@ namespace General
 
         public bossUI(string bname , int ClientWidth)
         {
-            int width = 500;
-            int height = 180;
+            int width = 400;
+            int height = 150;
 
             rect.X = ClientWidth / 2 - width / 2;
-            rect.Y = 200;
+            rect.Y = 50;
             rect.Width = width;
             rect.Height = height;
 
@@ -5346,16 +5346,11 @@ namespace General
         {
             g.DrawImage(bg, rect.X, rect.Y, rect.Width, rect.Height);
 
-            if (name != null)
-            {
-                int nameX = rect.X + (rect.Width - name.Width) / 2;
-                int nameY = rect.Y + 8;
-                g.DrawImage(name, nameX, nameY, name.Width, name.Height);
-            }
+           
 
-            int barStart = rect.X + 6;
+            int barStart = rect.X + 20;
             int barMaxW = rect.Width - 12;
-            int barH = bar.Height;
+            int barH = rect.Height;
             int barY = rect.Y + (rect.Height - barH) / 2;
 
             int drawW = 0;
@@ -5377,8 +5372,23 @@ namespace General
                 Rectangle srcRect = new Rectangle(0, 0, srcW, bar.Height);
                 g.DrawImage(bar, dstRect, srcRect, GraphicsUnit.Pixel);
             }
-            
 
+            if (name != null)
+            {
+                int w = 200 , h = 80;
+               
+                if(Bname == "Minatour")
+                {
+                    w = 300;
+                    h = 130;
+                }
+
+                int nameX = rect.X + (rect.Width - w) / 2;
+                int nameY = rect.Y + rect.Height / 2 - h / 2 - 5;
+                if (Bname == "Minatour") nameY += 5;
+
+                g.DrawImage(name, nameX, nameY, w, h);
+            }
         }
     }
     class boss {
@@ -5488,6 +5498,8 @@ namespace General
 
 
         float[] lastPos = { 0, 0 };
+
+        bossUI test;
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -6141,7 +6153,7 @@ namespace General
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
 
-
+            test = new bossUI("Minatour", this.ClientSize.Width);
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
 
@@ -6222,6 +6234,7 @@ namespace General
 
                     hero.Draw(g, showRanges, camX, camY);
 
+                    test.draw(g, 100, 200);
                     
                     save.autoSave(hero, enemyController.enemies, levels.currentLevel, g, this.ClientSize.Height);
                     
