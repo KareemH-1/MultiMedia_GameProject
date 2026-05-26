@@ -4881,9 +4881,9 @@ namespace General
             float ground2 = levels[2].worldHeight - 112 - 170;
             float ground4 = 1065 - 180;
 
-            int minW = 432, minH = 240;
+            int minW = 288, minH = 160;
 
-            levels[0].addBoss(new boss("Minatour", levels[0].worldWidth - 800, levels[0].worldHeight - minH - 80, minW, minH, 420, clientWidth));
+            levels[0].addBoss(new boss("Minatour", levels[0].worldWidth - 800, levels[0].worldHeight - minH - 30, minW, minH, 420, clientWidth));
             levels[1].Boss = null;
             levels[2].addBoss(new boss("Reaper", levels[2].worldWidth - 850, ground2, 190, 170, 520, clientWidth));
             levels[3].Boss = null;
@@ -5610,7 +5610,7 @@ namespace General
            
 
             int barStart = rect.X + 20;
-            int barMaxW = rect.Width - 12;
+            int barMaxW = rect.Width - 26;
             int barH = rect.Height;
             int barY = rect.Y + (rect.Height - barH) / 2;
 
@@ -5703,6 +5703,7 @@ namespace General
 
             this.HP = new Health(maxHP, maxHP);
 
+            this.name = name;
             if (name == "Aegis")
             {
                 drawR.Width = width;
@@ -5823,8 +5824,28 @@ namespace General
 
         void updateDrawR()
         {
-            drawR.X = R.X + (R.Width - drawR.Width) / 2f;
-            drawR.Y = R.Y + (R.Height - drawR.Height);
+            if (name == "Minatour")
+            {
+                drawR.Width = R.Width * 2;
+                drawR.Height = R.Height * 2;
+                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+                drawR.Y = R.Y - 130;
+            }
+            else if(name == "Reaper")
+            {
+                drawR.Width = R.Width * 2;
+                drawR.Height = R.Height * 2;
+                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+                drawR.Y = R.Y - 130;
+            }
+            else if(name == "Aegis")
+            {
+                drawR.Width = R.Width * 2;
+                drawR.Height = R.Height * 2;
+                drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+                drawR.Y = R.Y - 130;
+            }
+
         }
 
         public void takeHit(int amount)
@@ -5834,10 +5855,10 @@ namespace General
                 return;
             }
 
-            if (isTakingDamage)
+            /*if (isTakingDamage)
             {
                 return;
-            }
+            }*/
 
             startFight = true;
 
@@ -5857,7 +5878,6 @@ namespace General
                 return;
             }
 
-            isTakingDamage = true;
             damageTimer = 20;
             anim.restart();
         }
@@ -5928,7 +5948,6 @@ namespace General
         {
             updateDrawR();
 
-
             Bitmap frame;
 
             if (name == "Aegis")
@@ -5948,6 +5967,7 @@ namespace General
 
                 Pen p = new Pen(Color.Lime, 2);
                 g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
+
 
             }
 
