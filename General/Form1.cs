@@ -34,14 +34,14 @@ namespace General
             return "False";
         }
 
-        public void save(Hero hero, List<Enemy> Enemies, int level)
+        public void save(Hero hero, List<Enemy> Enemies, levelController levels, int level)
         {
             saveLvl(level);
             saveHero(hero);
-            saveEnemies(Enemies);
+            saveEnemies(Enemies, levels);
 
         }
-        public void autoSave(Hero hero, List<Enemy> Enemies, int level, Graphics g, int clientHeight)
+        public void autoSave(Hero hero, List<Enemy> Enemies, levelController levels, int level, Graphics g, int clientHeight)
         {
             if (timer < 20)
             {
@@ -76,7 +76,7 @@ namespace General
             {
                 timer = 0;
                 idx = 0;
-                save(hero, Enemies, level);
+                save(hero, Enemies, levels, level);
             }
         }
 
@@ -138,7 +138,7 @@ namespace General
             sw.Close();
         }
 
-        void saveEnemies(List<Enemy> enemies)
+        void saveEnemies(List<Enemy> enemies, levelController levels)
         {
             StreamWriter sw = new StreamWriter("Saves/Enemies.txt");
 
@@ -205,6 +205,22 @@ namespace General
                 sw.WriteLine("Enemy" + i + "_maxHP:" + enemy.HP.maxHP.ToString());
                 sw.WriteLine("Enemy" + i + "_HP:" + enemy.HP.HP.ToString());
             }
+
+            sw.WriteLine("BossCount:" + levels.levels.Count.ToString());
+            for (int i = 0; i < levels.levels.Count; i++)
+            {
+                level lvl = levels.levels[i];
+
+                if (lvl.Boss != null)
+                {
+                    sw.WriteLine("Boss" + i + "_X:" + lvl.Boss.R.X.ToString());
+                    sw.WriteLine("Boss" + i + "_Y:" + lvl.Boss.R.Y.ToString());
+                    sw.WriteLine("Boss" + i + "_HP:" + lvl.Boss.HP.HP.ToString());
+                    sw.WriteLine("Boss" + i + "_isDead:" + boolToText(lvl.Boss.isDead));
+                    sw.WriteLine("Boss" + i + "_startFight:" + boolToText(lvl.Boss.startFight));
+                }
+            }
+
             sw.Close();
         }
     }
@@ -245,13 +261,13 @@ namespace General
             }
         }
 
-        public Hero load(Hero hero, List<Enemy> enemies, int clientHeight)
+        public Hero load(Hero hero, List<Enemy> enemies, int clientHeight, levelController levels)
         {
 
 
             hero = loadHero(hero, clientHeight);
 
-            loadEnemies(enemies);
+            loadEnemies(enemies, levels);
             return hero;
         }
 
@@ -478,7 +494,7 @@ namespace General
             return hero;
         }
 
-        void loadEnemies(List<Enemy> enemies)
+        void loadEnemies(List<Enemy> enemies, levelController levels)
         {
             StreamReader sr = new StreamReader("Saves/Enemies.txt");
 
@@ -494,35 +510,46 @@ namespace General
 
                     if (variable != "EnemiesCount")
                     {
-                        int underscorePos = -1;
-                        for (int i = 5; i < variable.Length; i++)
+                        bool isEnemyLine = false;
+                        if (variable.Length >= 5)
                         {
-                            if (variable[i] == '_')
+                            if (variable[0] == 'E' && variable[1] == 'n' && variable[2] == 'e' && variable[3] == 'm' && variable[4] == 'y')
                             {
-                                underscorePos = i;
-                                break;
+                                isEnemyLine = true;
                             }
                         }
 
-                        if (underscorePos != -1)
+                        if (isEnemyLine == true)
                         {
-                            string numStr = "";
-                            for (int i = 5; i < underscorePos; i++)
+                            int underscorePos = -1;
+                            for (int i = 5; i < variable.Length; i++)
                             {
-                                numStr += variable[i];
+                                if (variable[i] == '_')
+                                {
+                                    underscorePos = i;
+                                    break;
+                                }
                             }
 
-                            string property = "";
-                            for (int i = underscorePos + 1; i < variable.Length; i++)
+                            if (underscorePos != -1)
                             {
-                                property += variable[i];
-                            }
+                                string numStr = "";
+                                for (int i = 5; i < underscorePos; i++)
+                                {
+                                    numStr += variable[i];
+                                }
 
-                            int enemyIndex = changeToInt(numStr);
+                                string property = "";
+                                for (int i = underscorePos + 1; i < variable.Length; i++)
+                                {
+                                    property += variable[i];
+                                }
 
-                            if (enemyIndex >= 0 && enemyIndex < enemies.Count)
-                            {
-                                Enemy enemy = enemies[enemyIndex];
+                                int enemyIndex = changeToInt(numStr);
+
+                                if (enemyIndex >= 0 && enemyIndex < enemies.Count)
+                                {
+                                    Enemy enemy = enemies[enemyIndex];
 
                                 if (property == "X")
                                 {
@@ -693,6 +720,75 @@ namespace General
                                 else if (property == "HP")
                                 {
                                     enemy.HP.HP = changeToInt(val);
+                                }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            bool isBossLine = false;
+                            if (variable.Length >= 4)
+                            {
+                                if (variable[0] == 'B' && variable[1] == 'o' && variable[2] == 's' && variable[3] == 's')
+                                {
+                                    isBossLine = true;
+                                }
+                            }
+
+                            if (isBossLine == true)
+                            {
+                                int underscorePos = -1;
+                                for (int i = 4; i < variable.Length; i++)
+                                {
+                                    if (variable[i] == '_')
+                                    {
+                                        underscorePos = i;
+                                        break;
+                                    }
+                                }
+
+                                if (underscorePos != -1)
+                                {
+                                    string numStr = "";
+                                    for (int i = 4; i < underscorePos; i++)
+                                    {
+                                        numStr += variable[i];
+                                    }
+
+                                    string property = "";
+                                    for (int i = underscorePos + 1; i < variable.Length; i++)
+                                    {
+                                        property += variable[i];
+                                    }
+
+                                    int levelIndex = changeToInt(numStr);
+                                    if (levelIndex >= 0 && levelIndex < levels.levels.Count)
+                                    {
+                                        boss lvlBoss = levels.levels[levelIndex].Boss;
+                                        if (lvlBoss != null)
+                                        {
+                                            if (property == "X")
+                                            {
+                                                lvlBoss.R.X = changeToInt(val);
+                                            }
+                                            else if (property == "Y")
+                                            {
+                                                lvlBoss.R.Y = changeToInt(val);
+                                            }
+                                            else if (property == "HP")
+                                            {
+                                                lvlBoss.HP.HP = changeToInt(val);
+                                            }
+                                            else if (property == "isDead")
+                                            {
+                                                lvlBoss.isDead = changeBool(val);
+                                            }
+                                            else if (property == "startFight")
+                                            {
+                                                lvlBoss.startFight = changeBool(val);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1594,7 +1690,7 @@ namespace General
         }
 
 
-        public void moveFireball(List<tile> tiles, List<Enemy> enemies)
+        public void moveFireball(List<tile> tiles, List<Enemy> enemies, boss currentBoss)
         {
 
             if (dirX > 0)
@@ -1655,9 +1751,28 @@ namespace General
                 }
 
             }
+
+            if (currentBoss != null)
+            {
+                if (currentBoss.isDead == false)
+                {
+                    if (rect.X < currentBoss.R.X + currentBoss.R.Width &&
+                        rect.X + rect.Width > currentBoss.R.X &&
+                        rect.Y < currentBoss.R.Y + currentBoss.R.Height &&
+                        rect.Y + rect.Height > currentBoss.R.Y)
+                    {
+                        currentBoss.takeHit(damage);
+                        if (isItSingle == false)
+                        {
+                            finished = true;
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
-        public void moveSingleFireball(List<tile> tiles, List<Enemy> enemies)
+        public void moveSingleFireball(List<tile> tiles, List<Enemy> enemies, boss currentBoss)
         {
             float remainingDist = 45;
 
@@ -1713,6 +1828,20 @@ namespace General
                             rect.Y + rect.Height > en.R.Y)
                         {
                             en.takeHit(damage);
+                        }
+                    }
+                }
+
+                if (currentBoss != null)
+                {
+                    if (currentBoss.isDead == false)
+                    {
+                        if (rect.X < currentBoss.R.X + currentBoss.R.Width &&
+                            rect.X + rect.Width > currentBoss.R.X &&
+                            rect.Y < currentBoss.R.Y + currentBoss.R.Height &&
+                            rect.Y + rect.Height > currentBoss.R.Y)
+                        {
+                            currentBoss.takeHit(damage);
                         }
                     }
                 }
@@ -2439,7 +2568,7 @@ namespace General
             fireballSpawnTimer = fireballSpawnDelay;
         }
 
-        public void updateFireballCast(List<Enemy> enemies, List<tile> tiles)
+        public void updateFireballCast(List<Enemy> enemies, boss currentBoss, List<tile> tiles)
         {
 
             if (isShooting && mana.mana >= fireballManaCost)
@@ -2459,9 +2588,9 @@ namespace General
             for (int i = fireballs.Count - 1; i >= 0; i--)
             {
                 if (fireballs[i].isItSingle)
-                    fireballs[i].moveSingleFireball(tiles, enemies);
+                    fireballs[i].moveSingleFireball(tiles, enemies, currentBoss);
                 else
-                    fireballs[i].moveFireball(tiles, enemies);
+                    fireballs[i].moveFireball(tiles, enemies, currentBoss);
 
                 if (fireballs[i].finished)
                     fireballs.RemoveAt(i);
@@ -2527,7 +2656,7 @@ namespace General
             }
         }
 
-        public void updateAttack(List<Enemy> enemies)
+        public void updateAttack(List<Enemy> enemies, boss currentBoss)
         {
             if (isAttacking == false) return;
 
@@ -2582,6 +2711,18 @@ namespace General
                             // break;
                         }
 
+                    }
+                }
+
+                if (currentBoss != null)
+                {
+                    if (currentBoss.isDead == false)
+                    {
+                        if (hitBox.X <= currentBoss.R.X + currentBoss.R.Width && hitBox.X + hitBox.Width >= currentBoss.R.X &&
+                            hitBox.Y <= currentBoss.R.Y + currentBoss.R.Height && hitBox.Y + hitBox.Height >= currentBoss.R.Y)
+                        {
+                            currentBoss.takeHit(Weapons[currentWeapon].damage);
+                        }
                     }
                 }
 
@@ -3382,6 +3523,40 @@ namespace General
                 animFolders = batFolders;
                 animFrames = batFrames;
             }
+            else if(type == "summon")
+            {
+                // , "summonAppear",
+                //"summonDeath" , "summonIdle"
+
+                drawR.X = R.X;
+                drawR.Y = R.Y + 20;
+                drawR.Width = 70;
+                drawR.Height = 70;
+
+                enemyName = "summon";
+
+                speed = 6f;
+                gravity = 0f;
+                max_speed = 20f;
+
+                patrolDistance = 2000f;
+                attackrange = 50f;
+                attackdis = 250f;
+
+                isSleeping = false;
+                isWakingUp = false;
+                canMoveAfterWakeup = false;
+
+                wakeupDistance = 2000f;
+
+                
+                HP = new Health(100, 100);
+                string[] batFolders = { "summonAppear", "summonDeath" , "summonIdle" };
+                int[] batFrames = { 6 , 5 , 4};
+
+                animFolders = batFolders;
+                animFrames = batFrames;
+            }
         }
 
         void createAnim()
@@ -3426,6 +3601,11 @@ namespace General
                 }
 
                 string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/";
+
+                if(this.enemyName == "summon")
+                {
+                    basePath = "Characters/Bosses/Reaper/";
+                }
                 string[] directions = { "left", "right" };
 
                 for (int d = 0; d < directions.Length; d++)
@@ -3436,11 +3616,21 @@ namespace General
                     {
                         isLeft = true;
                     }
-
-                    for (int j = 1; j <= animFrames[i]; j++)
+                    if (enemyName == "summon")
                     {
-                        Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
-                        a.addFrame(img, true, isLeft);
+                        for (int j = 0; j < animFrames[i]; j++)
+                        {
+                            Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                            a.addFrame(img, true, isLeft);
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 1; j <= animFrames[i]; j++)
+                        {
+                            Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                            a.addFrame(img, true, isLeft);
+                        }
                     }
                 }
 
@@ -4524,6 +4714,7 @@ namespace General
         public List<Enemy> enemies = new List<Enemy>();
         public List<tile> tiles = new List<tile>();
         public List<MovingPlatform> movingPlatforms = new List<MovingPlatform>();
+        public boss Boss;
         public Teleporter teleporter;
         public Bitmap background;
         public int worldWidth = 0;
@@ -4574,6 +4765,11 @@ namespace General
         {
             movingPlatforms.Add(movingPlatform);
         }
+
+        public void addBoss(boss bossEnemy)
+        {
+            Boss = bossEnemy;
+        }
     }
 
     public class levelController
@@ -4584,7 +4780,7 @@ namespace General
         public levelController(int height, int width)
         {
             initLevelData(height, width);
-            initAll(height);
+            initAll(height, width);
         }
 
         public void initLevelData(int height, int width)
@@ -4668,14 +4864,30 @@ namespace General
 
 
         }
-        public void initAll(int height)
+        public void initAll(int height, int width)
         {
             removeAllFromLevels();
             initTiles(height);
             initLadders(height);
             initEnemies(height);
             initPlatforms();
+            initBosses(width, height);
 
+        }
+
+        void initBosses(int clientWidth, int height)
+        {
+            float ground0 = height - 30 - 150;
+            float ground2 = levels[2].worldHeight - 112 - 170;
+            float ground4 = 1065 - 180;
+
+            int minW = 432, minH = 240;
+
+            levels[0].addBoss(new boss("Minatour", levels[0].worldWidth - 800, levels[0].worldHeight - minH - 80, minW, minH, 420, clientWidth));
+            levels[1].Boss = null;
+            levels[2].addBoss(new boss("Reaper", levels[2].worldWidth - 850, ground2, 190, 170, 520, clientWidth));
+            levels[3].Boss = null;
+            levels[4].addBoss(new boss("Aegis", levels[4].worldWidth / 2f - 140, ground4, 220, 250, 900, clientWidth));
         }
 
         void removeAllFromLevels()
@@ -5127,6 +5339,51 @@ namespace General
         {
             return levels[currentLevel].background;
         }
+
+        public boss getCurrentBoss()
+        {
+            if (currentLevel < 0 || currentLevel >= levels.Count)
+            {
+                return null;
+            }
+
+            return levels[currentLevel].Boss;
+        }
+
+        public bool currentBossIsAlive()
+        {
+            boss currentBoss = getCurrentBoss();
+            if (currentBoss == null)
+            {
+                return false;
+            }
+
+            if (currentBoss.isDead == false)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool currentBossIsAegisDead()
+        {
+            boss currentBoss = getCurrentBoss();
+            if (currentBoss == null)
+            {
+                return false;
+            }
+
+            if (currentBoss.name == "Aegis")
+            {
+                if (currentBoss.isDead)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     public class Teleporter
@@ -5269,7 +5526,7 @@ namespace General
             else isHeroInRange = false;
 
         }
-        public void draw(Graphics g, Hero hero, bool showRange, float camX, float camY)
+        public void draw(Graphics g, Hero hero, bool showRange, float camX, float camY, bool bossLocked)
         {
             checkHero(hero);
             if (isBoss == true)
@@ -5304,11 +5561,15 @@ namespace General
                 SolidBrush textBrush = new SolidBrush(Color.Black);
 
                 string text = "Press Q to unlock!";
-                if (hero.coins < this.requiredCoins)
+                if (bossLocked == true)
+                {
+                    text = "Kill Boss First";
+                }
+                else if (hero.coins < this.requiredCoins && isUnlocked == false)
                 {
                     text = "You need " + (requiredCoins - hero.coins).ToString() + " Coins!";
                 }
-                if (isUnlocked == true)
+                else if (isUnlocked == true)
                 {
                     text = "Unlocked! Press Q";
                 }
@@ -5318,7 +5579,7 @@ namespace General
         }
     }
 
-    class bossUI{
+    public class bossUI{
         public rect rect = new rect();
         Bitmap bg = new Bitmap("ui/bossHP/health_under.png");
         Bitmap bar = new Bitmap("ui/bossHP/bar.png");
@@ -5391,15 +5652,16 @@ namespace General
             }
         }
     }
-    class boss {
+    public class boss {
         public string name;
         public bool startFight = false;
         public rectF R = new rectF();
         public rectF drawR = new rectF();
-
+        public bossUI bossUI;
 
         public float speed = 4f;
         public char moving = 'l';
+        public char facing = 'l';
 
         public float velocityY = 0f;
         public float gravity = 1.2f;
@@ -5413,32 +5675,290 @@ namespace General
         public bool isTakingDamage = false;
         public bool isAttacking = false;
         public bool isWakingUp = false;
+        public bool isDead = false;
+        public bool attackDamageDone = false;
 
         public float wakeupDistance = 400f;
-
+        public float attackDistance = 120f;
+        public float attackRange = 90f;
 
         public int damageTimer = 0;
 
         public int attackTimer = 0;
         public int attackCooldown = 0;
+        public int attackFrameTimer = 0;
+        public int deathTimer = 0;
 
-        public float attackrange = 65;
-        public float attackdis = 200;
-
-        public float startX = 0f;
-        public float patrolDistance = 200f;
-        public float leftLimit = 0f;
-        public float rightLimit = 0f;
 
         public bool coindropped = false;
 
         public AnimationController anim = new AnimationController();
 
-        public boss()
+        public boss(string name, float x , float y , float width , float height , int maxHP , int clientWidth)
         {
+            R.X = x;
+            R.Y = y;
+            R.Width = width;
+            R.Height = height;
 
+            this.HP = new Health(maxHP, maxHP);
+
+            if (name == "Aegis")
+            {
+                drawR.Width = width;
+                drawR.Height = height;
+                speed = 0f;
+                wakeupDistance = 900f;
+                attackDistance = 240f;
+                attackRange = 160f;
+            }
+            else if (name == "Minatour")
+            {
+                drawR.Width = width * 1.15f;
+                drawR.Height = height * 1.15f;
+                speed = 3.5f;
+                wakeupDistance = 700f;
+                attackDistance = 140f;
+                attackRange = 95f;
+            }
+            else
+            {
+                drawR.Width = width * 1.1f;
+                drawR.Height = height * 1.1f;
+                speed = 4f;
+                wakeupDistance = 800f;
+                attackDistance = 150f;
+                attackRange = 100f;
+            }
+
+            bossUI = new bossUI(name , clientWidth);
+
+            initAnimations(name);
+            anim.changeAnimation("idle", -1);
+            updateDrawR();
         }
+
+        void initAnimations(string name)
+        {
+            string folder = "Characters/Bosses/" + name;
+
+            if(name == "Aegis")
+            {
+                Animation aegis = new Animation();
+                aegis.name = "idle";
+                for(int i =0; i < 15; i++)
+                {
+                    string curr = folder+ "/" + i.ToString() + ".png";
+                    aegis.frames.Add(new Bitmap(curr));
+                    
+                }
+
+                anim.addAnim(aegis);
+            }
+            else if (name == "Minatour")
+            {
+                string[] folders =
+                {
+                    "atk_1", "idle" , "walk"
+                };
+                int[] numFrames =
+                {
+                    16,16,12
+                };
+
+                for(int i =0; i < folders.Length; i++)
+                {
+                    Animation animation = new Animation();
+                    animation.name = folders[i];
+
+                    for(int j = 0; j < numFrames[i]; j++)
+                    {
+                        string curr = folder + "/left/" + animation.name + "/" + j.ToString() + ".png";
+                        animation.leftFrames.Add(new Bitmap(curr));
+                    }
+
+                    for (int j = 0; j < numFrames[i]; j++)
+                    {
+                        string curr = folder + "/right/" + animation.name + "/" + j.ToString() + ".png";
+                        animation.rightFrames.Add(new Bitmap(curr));
+                    }
+                    anim.addAnim(animation);
+
+                }
+            }
+            else if(name == "Reaper")
+            {
+                string[] folders =
+                {
+                    "attacking" , "death" , "idle",
+                    "skill1" , "summon"
+                };
+
+                int[] numFrames =
+                {
+                    13, 18, 8 , 12, 5
+                };
+
+                for (int i = 0; i < folders.Length; i++)
+                {
+                    Animation animation = new Animation();
+                    animation.name = folders[i];
+
+                    for (int j = 0; j < numFrames[i]; j++)
+                    {
+                        string curr = folder + "/left/" + animation.name + "/" + j.ToString() + ".png";
+                        animation.leftFrames.Add(new Bitmap(curr));
+                    }
+
+                    for (int j = 0; j < numFrames[i]; j++)
+                    {
+                        string curr = folder + "/right/" + animation.name + "/" + j.ToString() + ".png";
+                        animation.rightFrames.Add(new Bitmap(curr));
+                    }
+                    anim.addAnim(animation);
+
+                }
+            }
+        }
+
+        void updateDrawR()
+        {
+            drawR.X = R.X + (R.Width - drawR.Width) / 2f;
+            drawR.Y = R.Y + (R.Height - drawR.Height);
+        }
+
+        public void takeHit(int amount)
+        {
+            if (isDead)
+            {
+                return;
+            }
+
+            if (isTakingDamage)
+            {
+                return;
+            }
+
+            startFight = true;
+
+            HP.damage(amount);
+            isAttacking = false;
+            attackDamageDone = false;
+            attackFrameTimer = 0;
+            attackCooldown = 0;
+
+            if (HP.getHP() <= 0)
+            {
+                isDead = true;
+                isTakingDamage = false;
+                deathTimer = 0;
+                anim.changeAnimation("death", -1);
+                anim.restart();
+                return;
+            }
+
+            isTakingDamage = true;
+            damageTimer = 20;
+            anim.restart();
+        }
+
+        public void Update(Hero hero)
+        {
+            updateDrawR();
+
+            if (startFight == false)
+            {
+                float distanceX = 0;
+                if (hero.R.X > R.X)
+                {
+                    distanceX = hero.R.X - R.X;
+                }
+                else
+                {
+                    distanceX = R.X - hero.R.X;
+                }
+
+                float distanceY = 0;
+                if (hero.R.Y > R.Y)
+                {
+                    distanceY = hero.R.Y - R.Y;
+                }
+                else
+                {
+                    distanceY = R.Y - hero.R.Y;
+                }
+
+                if (distanceX <= 200)
+                {
+                    if (distanceY <= 200)
+                    {
+                        startFight = true;
+                    }
+                }
+            }
+
+            if (isDead)
+            {
+                deathTimer++;
+                anim.changeAnimation("death", -1);
+                return;
+            }
+
+            if (isTakingDamage)
+            {
+                damageTimer--;
+                if (damageTimer <= 0)
+                {
+                    isTakingDamage = false;
+                }
+                anim.changeAnimation("idle", -1);
+                return;
+            }
+
+            if (name == "Aegis")
+            {
+                anim.changeAnimation("main", -1);
+            }
+            else
+            {
+                anim.changeAnimation("idle", -1);
+            }
+        }
+        public void Draw(Graphics g, bool showRanges, float camX, float camY)
+        {
+            updateDrawR();
+
+
+            Bitmap frame;
+
+            if (name == "Aegis")
+                frame = anim.playFrame(false, false);
+            else if (moving == 'l')
+                frame = anim.playFrame(true, true);
+            else
+                frame = anim.playFrame(false, true);
+            
+
+            if (frame != null)
+            {
+                g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
+            }
+            if (showRanges)
+            {
+
+                Pen p = new Pen(Color.Lime, 2);
+                g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
+
+            }
+
+            if (startFight == true)
+            {
+                bossUI.draw(g, HP.HP, HP.maxHP);
+            }
+        }
+
     }
+
 
     public partial class Form1 : Form
     {
@@ -5465,6 +5985,10 @@ namespace General
         int gameOverScreenDelay = 0;
         int gameOverScreenDelayMax = 10;
 
+        List<Button> WinBtns = new List<Button>();
+        int currWinBtn = 0;
+        bool isWinScreenShown = false;
+
         bool showRanges = false;
         Bitmap off; 
         Random RR = new Random();
@@ -5473,6 +5997,7 @@ namespace General
         int levelIntroTimer = 0;
         int levelIntroTimerMax = 10;
         int levelIntroNumber = 1;
+        bool isVictory = false;
 
         float camX = 0;
         float camY = 0;
@@ -5499,7 +6024,6 @@ namespace General
 
         float[] lastPos = { 0, 0 };
 
-        bossUI test;
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -5556,7 +6080,7 @@ namespace General
                     if (lastMenuScreen == 0)
                     {
                         startNewGame();
-                        save.save(hero, enemyController.enemies , levels.currentLevel);
+                        save.save(hero, enemyController.enemies , levels, levels.currentLevel);
                     }
 
                     startGame();
@@ -5572,6 +6096,20 @@ namespace General
                     {
                         currGameOverBtn = i;
                         manageGameOver();
+                        break;
+                    }
+                }
+            }
+            else if (isWinScreenShown == true)
+            {
+                for (int i = 0; i < WinBtns.Count; i++)
+                {
+                    Button btn = WinBtns[i];
+                    if (e.X > btn.rect.X && e.X < btn.rect.X + btn.rect.Width
+                                && e.Y > btn.rect.Y && e.Y < btn.rect.Y + btn.rect.Height)
+                    {
+                        currWinBtn = i;
+                        manageWinScreen();
                         break;
                     }
                 }
@@ -5810,7 +6348,7 @@ namespace General
                         if (lastMenuScreen == 0)
                         {
                             startNewGame();
-                            save.save(hero, enemyController.enemies , levels.currentLevel);
+                            save.save(hero, enemyController.enemies , levels, levels.currentLevel);
 
                         }
 
@@ -5830,6 +6368,13 @@ namespace General
                     if (e.KeyCode == Keys.Enter)
                     {
                         manageGameOver();
+                    }
+                }
+                else if (isWinScreenShown == true)
+                {
+                    if (e.KeyCode == Keys.Enter)
+                    {
+                        manageWinScreen();
                     }
                 }
                 else if (isGamePaused == true)
@@ -5890,7 +6435,7 @@ namespace General
                         {
                             if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                             {
-                                if (e.KeyCode == Keys.Q)
+                                if (e.KeyCode == Keys.Q && !IsBossGateActive())
                                 {
                                     int oldLevel = levels.currentLevel;
                                     levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
@@ -6022,7 +6567,7 @@ namespace General
                     {
                         if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                         {
-                            if (e.KeyCode == Keys.Q)
+                            if (e.KeyCode == Keys.Q && !IsBossGateActive())
                             {
                                 if (levels.levels[levels.currentLevel].teleporter.isUnlocked == false)
                                 {
@@ -6121,7 +6666,7 @@ namespace General
 
                     if (hero.currentWeapon == 0)
                     {
-                        hero.updateAttack(enemyController.enemies);
+                        hero.updateAttack(enemyController.enemies, levels.getCurrentBoss());
                     }
 
                     for (int i = 0; i < movingPlatforms.Count; i++)
@@ -6132,10 +6677,24 @@ namespace General
                     hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
                     hero.collectDroppedCoins(droppedCoins);
 
-                    hero.updateFireballCast(enemyController.enemies, tiles);
+                    hero.updateFireballCast(enemyController.enemies, levels.getCurrentBoss(), tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
 
                     hero.mana.tick();
+                    boss currentBoss = levels.getCurrentBoss();
+                    if (currentBoss != null)
+                    {
+                        if (currentBoss.name == "Aegis" && currentBoss.isDead && isVictory == false)
+                        {
+                            isVictory = true;
+                            isWinScreenShown = true;
+                            currWinBtn = 0;
+                            winBtns();
+                            timer.Stop();
+                            drawDubb(this.CreateGraphics());
+                            return;
+                        }
+                    }
                     enemyController.Update(tiles, hero, droppedCoins);
                     UpdateCamera();
                 }
@@ -6153,7 +6712,6 @@ namespace General
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
 
-            test = new bossUI("Minatour", this.ClientSize.Width);
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
 
@@ -6183,6 +6741,10 @@ namespace General
                 {
                     GameOverScreen(g);
                 }
+                else if (isWinScreenShown == true)
+                {
+                    WinScreen(g);
+                }
                 else if (isGamePaused == true)
                 {
                     SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
@@ -6211,7 +6773,7 @@ namespace General
 
                     if (levels.currentLevel < levels.levels.Count - 1)
                     {
-                        levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX, camY);
+                        levels.levels[levels.currentLevel].teleporter.draw(g, hero, showRanges, camX, camY, IsBossGateActive());
                     }
 
                     for (int i = 0; i < tiles.Count; i++)
@@ -6232,11 +6794,16 @@ namespace General
                         movingPlatforms[i].draw(g, camX);
                     }
 
+                    boss currentBoss = levels.getCurrentBoss();
+                    if (currentBoss != null)
+                    {
+                        currentBoss.Draw(g, showRanges, camX, camY);
+                    }
+
                     hero.Draw(g, showRanges, camX, camY);
 
-                    test.draw(g, 100, 200);
                     
-                    save.autoSave(hero, enemyController.enemies, levels.currentLevel, g, this.ClientSize.Height);
+                    save.autoSave(hero, enemyController.enemies, levels, levels.currentLevel, g, this.ClientSize.Height);
                     
                 }
 
@@ -6514,6 +7081,13 @@ namespace General
         void startGame()
         {
             hasStarted = true;
+            isVictory = false;
+            isWinScreenShown = false;
+
+            while (WinBtns.Count > 0)
+            {
+                WinBtns.RemoveAt(0);
+            }
 
             while (btns.Count > 0)
             {
@@ -6557,13 +7131,63 @@ namespace General
         {
             hero.isDead = false;
             isGameOverScreenShown = false;
+            isWinScreenShown = false;
             hasStarted = false;
             while (GameOverBtns.Count > 0)
             {
                 GameOverBtns.RemoveAt(0);
             }
+            while (WinBtns.Count > 0)
+            {
+                WinBtns.RemoveAt(0);
+            }
             currGameOverBtn = 0;
+            currWinBtn = 0;
             gameOverScreenDelay = 0;
+            currentButton = 0;
+            lastMenuScreen = 0;
+
+            while (btns.Count > 0)
+            {
+                btns.RemoveAt(0);
+            }
+            while (menuImgs.Count > 0)
+            {
+                menuImgs.RemoveAt(0);
+            }
+            while (heroColors.Count > 0)
+            {
+                heroColors.RemoveAt(0);
+            }
+            while (clrBtns.Count > 0)
+            {
+                clrBtns.RemoveAt(0);
+            }
+
+            initMenu();
+            initButtons();
+            timer.Start();
+            drawDubb(this.CreateGraphics());
+        }
+
+        void manageWinScreen()
+        {
+            isWinScreenShown = false;
+            isGameOverScreenShown = false;
+            isVictory = false;
+            hasStarted = false;
+
+            while (WinBtns.Count > 0)
+            {
+                WinBtns.RemoveAt(0);
+            }
+            while (GameOverBtns.Count > 0)
+            {
+                GameOverBtns.RemoveAt(0);
+            }
+
+            currWinBtn = 0;
+            currGameOverBtn = 0;
             currentButton = 0;
             lastMenuScreen = 0;
 
@@ -6599,7 +7223,7 @@ namespace General
             }
             else if (currPauseBtn == 1 && PauseBtns.Count == 3)
             {
-                save.save(hero, enemyController.enemies , levels.currentLevel);
+                save.save(hero, enemyController.enemies , levels, levels.currentLevel);
                 PauseBtns.RemoveAt(1);
                 drawDubb(this.CreateGraphics());
 
@@ -6687,6 +7311,22 @@ namespace General
             GameOverBtns.Add(btn);
         }
 
+        void winBtns()
+        {
+            while (WinBtns.Count > 0)
+            {
+                WinBtns.RemoveAt(0);
+            }
+
+            int w = 300, h = 60;
+
+            int ButtonsY = 280;
+            int ButtonsX = (this.ClientSize.Width / 2) - w / 2;
+
+            Button btn = new Button(ButtonsX, ButtonsY, w, h, "Main Menu");
+            WinBtns.Add(btn);
+        }
+
         void GameOverScreen(Graphics g)
         {
             Font titleFont = new Font("Comic Sans MS", 28, FontStyle.Bold);
@@ -6710,6 +7350,37 @@ namespace General
                 if (i == currGameOverBtn) isIt = true;
 
                 Button btn = GameOverBtns[i];
+
+                btn.draw(button, g, normalFont, white, isIt);
+            }
+        }
+
+        void WinScreen(Graphics g)
+        {
+            Font titleFont = new Font("Comic Sans MS", 28, FontStyle.Bold);
+            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+
+            SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
+            g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+            SolidBrush white = new SolidBrush(Color.White);
+            SolidBrush gold = new SolidBrush(Color.Gold);
+
+            int X = this.ClientSize.Width / 2;
+            int Y = 100;
+            string winText = "YOU WIN";
+            g.DrawString(winText, titleFont, gold, X - 95, Y);
+
+            for (int i = 0; i < WinBtns.Count; i++)
+            {
+                bool isIt = false;
+
+                if (i == currWinBtn)
+                {
+                    isIt = true;
+                }
+
+                Button btn = WinBtns[i];
 
                 btn.draw(button, g, normalFont, white, isIt);
             }
@@ -6744,6 +7415,22 @@ namespace General
         bool IsLeftMenu(int i)
         {
             if (i >= 0 && i <= 3) return true;
+
+            return false;
+        }
+
+        bool IsBossGateActive()
+        {
+            boss currentBoss = levels.getCurrentBoss();
+            if (currentBoss == null)
+            {
+                return false;
+            }
+
+            if (currentBoss.isDead == false)
+            {
+                return true;
+            }
 
             return false;
         }
@@ -7010,24 +7697,28 @@ namespace General
 
         void loadData()
         {
+            isVictory = false;
+            isWinScreenShown = false;
 
             load.loadLevel();
             levels.currentLevel = load.level;
 
-            levels.initAll(this.ClientSize.Height);
+            levels.initAll(this.ClientSize.Height, this.ClientSize.Width);
 
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
             levels.loadEnemies(enemyController.enemies);
             levels.loadPlatforms(movingPlatforms);
-            hero = load.load(hero, enemyController.enemies, this.ClientSize.Height);
+            hero = load.load(hero, enemyController.enemies, this.ClientSize.Height, levels);
         }    
 
         void startNewGame()
         {
+            isVictory = false;
+            isWinScreenShown = false;
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150, ChoiceIdx);
 
-            levels.initAll(this.ClientSize.Height);
+            levels.initAll(this.ClientSize.Height, this.ClientSize.Width);
 
             levels.currentLevel = 0;
             levels.loadLadders(ladders);
