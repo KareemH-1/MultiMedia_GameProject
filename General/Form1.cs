@@ -1867,6 +1867,254 @@ namespace General
         }
     }
 
+    public class Kamehameha
+    {
+        public bool active = false;
+
+        public char dir = 'r';
+
+        public float startX = 0f;
+        public float startY = 0f;
+
+        public float currentLength = 0f;
+        public float maxLength = 0f;
+
+        public float beamHeight = 16f;
+
+        public string state = "done";
+
+        public bool isFiring = false;
+        public bool contracting = false;
+
+        public int chargeTimer = 0;
+        public int chargeMax = 15;
+
+        public float expandSpeed = 24f;
+        public float contractSpeed = 12f;
+
+        public int tickCount = 0;
+        public int maxTicks = 10;
+
+        public int tickTimer = 0;
+        public int tickDelay = 10;
+
+        public int tickDamage = 3;
+
+        public float circleRadius = 0f;
+        public float maxCircleRadius = 16f;
+
+        public int colorIdx = 0;
+
+        Color getOuterColor()
+        {
+            if (colorIdx == 0) return Color.FromArgb(150, 0, 200, 255);
+
+            if (colorIdx == 1) return Color.FromArgb(150, 0, 255, 0);
+
+            if (colorIdx == 2) return Color.FromArgb(150, 200, 0, 255);
+
+            return Color.FromArgb(150, 255, 50, 0);
+        }
+
+        Color getInnerColor()
+        {
+            if (colorIdx == 0) return Color.Cyan;
+
+            if (colorIdx == 1) return Color.Lime;
+
+            if (colorIdx == 2) return Color.Magenta;
+
+            return Color.OrangeRed;
+        }
+
+        public void activate(float heroX, float heroY, char facing, float screenWidth, int heroColorIdx)
+        {
+            active = true;
+
+            dir = facing;
+
+            startX = heroX;
+            startY = heroY;
+
+            maxLength = screenWidth;
+            currentLength = 0f;
+
+            state = "charging";
+
+            isFiring = false;
+            contracting = false;
+
+            chargeTimer = 0;
+
+            tickCount = 0;
+            tickTimer = 0;
+
+            circleRadius = 0f;
+
+            colorIdx = heroColorIdx;
+        }
+
+        public void startContracting()
+        {
+            contracting = true;
+        }
+
+        void dealDamage(List<Enemy> enemies)
+        {
+            rectF beamRect = getBeamRect();
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                Enemy e = enemies[i];
+
+                if (e.isDead == false)
+                {
+                    if (beamRect.X < e.R.X + e.R.Width &&
+                        beamRect.X + beamRect.Width > e.R.X &&
+                        beamRect.Y < e.R.Y + e.R.Height &&
+                        beamRect.Y + beamRect.Height > e.R.Y)
+                    {
+                        e.takeHit(tickDamage);
+                    }
+                }
+            }
+        }
+
+        public void update(Hero hero, List<Enemy> enemies, boss currentBoss, float camX, float screenWidth)
+        {
+            if (active == false) return;
+
+            if (contracting == false)
+            {
+                if (dir == 'r') startX = hero.R.X + hero.R.Width;
+                else startX = hero.R.X;
+
+                startY = hero.R.Y + hero.R.Height * 0.4f;
+            }
+
+            if (dir == 'r') maxLength = (camX + screenWidth) - startX;
+            else maxLength = startX - camX;
+
+            if (maxLength < 0f) maxLength = 0f;
+
+            if (currentLength > maxLength) currentLength = maxLength;
+
+            if (state == "charging")
+            {
+                chargeTimer++;
+
+                circleRadius = maxCircleRadius * chargeTimer / chargeMax;
+
+                if (chargeTimer >= chargeMax)
+                {
+                    state = "firing";
+                    isFiring = true;
+                }
+            }
+            else if (isFiring == true)
+            {
+                if (contracting == false)
+                {
+                    if (currentLength < maxLength) currentLength += expandSpeed;
+
+                    if (currentLength > maxLength) currentLength = maxLength;
+
+                    tickTimer++;
+
+                    if (tickTimer >= tickDelay)
+                    {
+                        tickTimer = 0;
+
+                        tickCount++;
+
+                        dealDamage(enemies);
+
+                        if (tickCount >= maxTicks) startContracting();
+                    }
+                }
+                else
+                {
+                    currentLength -= contractSpeed;
+
+                    if (dir == 'r') startX += contractSpeed;
+                    else startX -= contractSpeed;
+
+                    tickTimer++;
+
+                    if (tickTimer >= tickDelay)
+                    {
+                        tickTimer = 0;
+                        dealDamage(enemies);
+                    }
+
+                    if (currentLength <= 0f)
+                    {
+                        currentLength = 0f;
+
+                        contracting = false;
+                        isFiring = false;
+                        active = false;
+
+                        state = "done";
+                    }
+                }
+            }
+        }
+
+        public rectF getBeamRect()
+        {
+            if (dir == 'r')
+            {
+                return new rectF(startX, startY - beamHeight / 2f, currentLength, beamHeight);
+            }
+            else
+            {
+                return new rectF(startX - currentLength, startY - beamHeight / 2f, currentLength, beamHeight);
+            }
+        }
+
+        public void draw(Graphics g, float camX, float camY)
+        {
+            if (active == false) return;
+
+            float cx = startX - camX;
+            float cy = startY - camY;
+
+            if (state == "charging")
+            {
+                Pen p = new Pen(getInnerColor(), 3);
+
+                g.DrawEllipse(p, cx - circleRadius, cy - circleRadius, circleRadius * 2, circleRadius * 2);
+
+                SolidBrush bsh = new SolidBrush(getOuterColor());
+
+                g.FillEllipse(bsh, cx - circleRadius, cy - circleRadius, circleRadius * 2, circleRadius * 2);
+            }
+
+            if (isFiring == true)
+            {
+                rectF beam = getBeamRect();
+
+                float bx = beam.X - camX;
+                float by = beam.Y - camY;
+
+                float midY = by + beamHeight / 2f;
+                float endX = bx + beam.Width;
+
+                Pen outerPen = new Pen(getOuterColor(), beamHeight + 6);
+
+                g.DrawLine(outerPen, bx, midY, endX, midY);
+
+                Pen mainPen = new Pen(Color.White, beamHeight - 4);
+
+                g.DrawLine(mainPen, bx, midY, endX, midY);
+
+                Pen innerPen = new Pen(getInnerColor(), beamHeight / 3f);
+
+                g.DrawLine(innerPen, bx, midY, endX, midY);
+            }
+        }
+    }
     public class Ladder
     {
         public rect rect = new rect();
@@ -2005,6 +2253,7 @@ namespace General
 
 
         public List<Fireball> fireballs = new List<Fireball>();
+        public Kamehameha kamehameha = new Kamehameha();
         public Random rnd = new Random();
 
         public bool isSpellCasting = false;
@@ -2141,6 +2390,7 @@ namespace General
                 }
             }
 
+            kamehameha.draw(g, camX, camY);
 
             UI.draw(g, HP, mana, coins);
             UI.drawWeaponsUI(g, Weapons, currentWeapon);
@@ -2752,6 +3002,16 @@ namespace General
                 moving = ' ';
                 isGrounded = false;
 
+                Movement(tiles, ladders, movingPlatforms);
+                updateAnimation();
+                return;
+            }
+            if (kamehameha.active == true && kamehameha.contracting == false)
+            {
+                moving = ' ';
+                isAttacking = false;
+                isShooting = false;
+                isCastingAbility = false;
                 Movement(tiles, ladders, movingPlatforms);
                 updateAnimation();
                 return;
@@ -4968,8 +5228,10 @@ namespace General
             en.spawn = true;
             levels[0].enemies.Add(en);
 
-
-
+            en = new Enemy(levels[0].worldWidth - 300, levels[0].worldHeight - 180, 90, 70, "mushroom");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[0].enemies.Add(en);
 
         }
 
@@ -6492,7 +6754,7 @@ namespace General
                         isGamePaused = true;
                         pauseGame();
                     }
-                    if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
+                    if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
                     {
                         if (hero.R.X + hero.R.Width < levels.levels[levels.currentLevel].worldWidth)
                         {
@@ -6500,7 +6762,7 @@ namespace General
                             hero.facing = 'r';
                         }
                     }
-                    if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
+                    if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
                     {
                         if (hero.R.X > 0)
                         {
@@ -6512,7 +6774,7 @@ namespace General
                     {
                         hero.checkUnder(tiles, ladders);
                     }
-                    if (e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
+                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
                     {
                         if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
@@ -6536,7 +6798,7 @@ namespace General
                         }
                     }
 
-                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false)
+                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
                     {
                         hero.isRunning = true;
                     }
@@ -6558,6 +6820,12 @@ namespace General
                         if (hero.isDead == true)
                         {
                             hero.isDead = false;
+                        }
+                        else if (hero.kamehameha.active == false)
+                        {
+                            float startX = hero.R.X + hero.R.Width;
+                            float startY = hero.R.Y + hero.R.Height * 0.4f;
+                            hero.kamehameha.activate(startX, startY, hero.facing, this.ClientSize.Width, hero.ColorIdx);
                         }
                     }
 
@@ -6699,6 +6967,7 @@ namespace General
 
                     hero.updateFireballCast(enemyController.enemies, levels.getCurrentBoss(), tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
+                    hero.kamehameha.update(hero, enemyController.enemies, levels.getCurrentBoss(), camX, this.ClientSize.Width);
 
                     hero.mana.tick();
                     boss currentBoss = levels.getCurrentBoss();
