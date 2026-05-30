@@ -1580,6 +1580,8 @@ namespace General
     public class Fireball
     {
         public bool isItSingle = false;
+        public List<Enemy> singleTargetsHit = new List<Enemy>();
+        public bool singleBossHit = false;
         public rectF rect;
         public rectF SingleDrawRect;
         public float traveledDist = 0f;
@@ -1827,7 +1829,20 @@ namespace General
                             rect.Y < en.R.Y + en.R.Height &&
                             rect.Y + rect.Height > en.R.Y)
                         {
-                            en.takeHit(damage);
+                            bool alreadyHit = false;
+                            for (int h = 0; h < singleTargetsHit.Count; h++)
+                            {
+                                if (singleTargetsHit[h] == en)
+                                {
+                                    alreadyHit = true;
+                                }
+                            }
+
+                            if (alreadyHit == false)
+                            {
+                                en.takeHit(damage);
+                                singleTargetsHit.Add(en);
+                            }
                         }
                     }
                 }
@@ -1841,7 +1856,11 @@ namespace General
                             rect.Y < currentBoss.R.Y + currentBoss.R.Height &&
                             rect.Y + rect.Height > currentBoss.R.Y)
                         {
-                            currentBoss.takeHit(damage);
+                            if (singleBossHit == false)
+                            {
+                                currentBoss.takeHit(damage);
+                                singleBossHit = true;
+                            }
                         }
                     }
                 }
@@ -1889,7 +1908,7 @@ namespace General
         public int chargeTimer = 0;
         public int chargeMax = 15;
 
-        public float expandSpeed = 24f;
+        public float expandSpeed = 60f;
         public float contractSpeed = 12f;
 
         public int tickCount = 0;
@@ -1904,6 +1923,82 @@ namespace General
         public float maxCircleRadius = 16f;
 
         public int colorIdx = 0;
+
+        void reset()
+        {
+            active = false;
+            isFiring = false;
+            contracting = false;
+            state = "done";
+            chargeTimer = 0;
+            currentLength = 0f;
+            tickCount = 0;
+            tickTimer = 0;
+            circleRadius = 0f;
+        }
+
+        public void stop()
+        {
+            reset();
+        }
+
+        bool overlapsBeamBand(rectF target)
+        {
+            float beamTop = startY - beamHeight / 2f;
+            float beamBottom = startY + beamHeight / 2f;
+
+            if (beamTop < target.Y + target.Height)
+            {
+                if (beamBottom > target.Y)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        float getCollisionLimit(List<tile> tiles)
+        {
+            float collisionLimit = 100000f;
+
+            if (tiles != null)
+            {
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    tile t = tiles[i];
+
+                    if (t.interact == true && t.jumpThrough == false)
+                    {
+                        if (overlapsBeamBand(t.R) == true)
+                        {
+                            float tileDistance = 0f;
+
+                            if (dir == 'r')
+                            {
+                                tileDistance = t.R.X - startX;
+                            }
+                            else
+                            {
+                                tileDistance = startX - (t.R.X + t.R.Width);
+                            }
+
+                            if (tileDistance < 0f)
+                            {
+                                tileDistance = 0f;
+                            }
+
+                            if (tileDistance < collisionLimit)
+                            {
+                                collisionLimit = tileDistance;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return collisionLimit;
+        }
 
         Color getOuterColor()
         {
@@ -1959,48 +2054,77 @@ namespace General
             contracting = true;
         }
 
-        void dealDamage(List<Enemy> enemies)
+        void dealDamage(List<Enemy> enemies, boss currentBoss)
         {
             rectF beamRect = getBeamRect();
 
-            for (int i = 0; i < enemies.Count; i++)
+            if (enemies != null)
             {
-                Enemy e = enemies[i];
-
-                if (e.isDead == false)
+                for (int i = 0; i < enemies.Count; i++)
                 {
-                    if (beamRect.X < e.R.X + e.R.Width &&
-                        beamRect.X + beamRect.Width > e.R.X &&
-                        beamRect.Y < e.R.Y + e.R.Height &&
-                        beamRect.Y + beamRect.Height > e.R.Y)
+                    Enemy e = enemies[i];
+
+                    if (e.isDead == false)
                     {
-                        e.takeHit(tickDamage);
+                        if (beamRect.X < e.R.X + e.R.Width &&
+                            beamRect.X + beamRect.Width > e.R.X &&
+                            beamRect.Y < e.R.Y + e.R.Height &&
+                            beamRect.Y + beamRect.Height > e.R.Y)
+                        {
+                            e.takeHit(tickDamage);
+                        }
+                    }
+                }
+            }
+
+            if (currentBoss != null)
+            {
+                if (currentBoss.isDead == false)
+                {
+                    if (beamRect.X < currentBoss.R.X + currentBoss.R.Width &&
+                        beamRect.X + beamRect.Width > currentBoss.R.X &&
+                        beamRect.Y < currentBoss.R.Y + currentBoss.R.Height &&
+                        beamRect.Y + beamRect.Height > currentBoss.R.Y)
+                    {
+                        currentBoss.takeHit(tickDamage);
                     }
                 }
             }
         }
 
-        public void update(Hero hero, List<Enemy> enemies, boss currentBoss, float camX, float screenWidth)
+        public void update(Hero hero, List<Enemy> enemies, boss currentBoss, List<tile> tiles, float camX, float screenWidth)
         {
             if (active == false) return;
 
-            if (contracting == false)
-            {
-                if (dir == 'r') startX = hero.R.X + hero.R.Width;
-                else startX = hero.R.X;
+            dir = hero.facing;
 
-                startY = hero.R.Y + hero.R.Height * 0.4f;
+            if (dir == 'r')
+            {
+                startX = hero.R.X + hero.R.Width;
+            }
+            else
+            {
+                startX = hero.R.X;
             }
 
-            if (dir == 'r') maxLength = (camX + screenWidth) - startX;
-            else maxLength = startX - camX;
+            startY = hero.R.Y + hero.R.Height * 0.4f;
 
-            if (maxLength < 0f) maxLength = 0f;
-
-            if (currentLength > maxLength) currentLength = maxLength;
+            if (hero.mana.mana <= 0f)
+            {
+                stop();
+                return;
+            }
 
             if (state == "charging")
             {
+                hero.mana.use(1);
+
+                if (hero.mana.mana <= 0f)
+                {
+                    stop();
+                    return;
+                }
+
                 chargeTimer++;
 
                 circleRadius = maxCircleRadius * chargeTimer / chargeMax;
@@ -2013,50 +2137,35 @@ namespace General
             }
             else if (isFiring == true)
             {
-                if (contracting == false)
+                hero.mana.use(1);
+
+                if (hero.mana.mana <= 0f)
                 {
-                    if (currentLength < maxLength) currentLength += expandSpeed;
-
-                    if (currentLength > maxLength) currentLength = maxLength;
-
-                    tickTimer++;
-
-                    if (tickTimer >= tickDelay)
-                    {
-                        tickTimer = 0;
-
-                        tickCount++;
-
-                        dealDamage(enemies);
-
-                        if (tickCount >= maxTicks) startContracting();
-                    }
+                    stop();
+                    return;
                 }
-                else
+
+                float collisionLimit = getCollisionLimit(tiles);
+
+                if (currentLength < collisionLimit)
                 {
-                    currentLength -= contractSpeed;
+                    currentLength += expandSpeed;
+                }
 
-                    if (dir == 'r') startX += contractSpeed;
-                    else startX -= contractSpeed;
+                if (currentLength > collisionLimit)
+                {
+                    currentLength = collisionLimit;
+                }
 
-                    tickTimer++;
+                tickTimer++;
 
-                    if (tickTimer >= tickDelay)
-                    {
-                        tickTimer = 0;
-                        dealDamage(enemies);
-                    }
+                if (tickTimer >= tickDelay)
+                {
+                    tickTimer = 0;
 
-                    if (currentLength <= 0f)
-                    {
-                        currentLength = 0f;
+                    tickCount++;
 
-                        contracting = false;
-                        isFiring = false;
-                        active = false;
-
-                        state = "done";
-                    }
+                    dealDamage(enemies, currentBoss);
                 }
             }
         }
@@ -2237,9 +2346,12 @@ namespace General
 
         public bool isAttacking = false;
         public bool attackHasHit = false;
+        public bool isCriticalAttack = false;
 
         public int attackHitFrame = 4; //first 4 frames in teh attack animation are normal
         public int attackComboExtraFrames = 2; // last 2 frames are extra whgen there is a combo
+        public int criticalStrikeChancePercent = 10;
+        public int criticalDamageMultiplierPercent = 175;
         public float attackMoveMultiplier = 0.55f;
 
         public char facing = 'r';
@@ -2273,6 +2385,11 @@ namespace General
         public float abilityManaCost = 50f;
         public bool abilityKeyDown = false;
         public bool isDead = false;
+        public int abilityCastTimer = 0;
+        public int abilityCastTimeout = 180;
+
+        public bool isLaserCasting = false;
+        public bool isLaserCastFinishing = false;
 
         public bool isAbilityUnlocked = true;
 
@@ -2340,7 +2457,25 @@ namespace General
 
             Bitmap frame;
 
-            if (isDead || isLanding || (isClimbing && !isClimbingMoving))
+            if (isLaserCasting)
+            {
+                if (facing == 'l')
+                {
+                    frame = anim.playFrame(true, true);
+                }
+                else
+                {
+                    frame = anim.playFrame(false, true);
+                }
+            }
+            else if (isLaserCastFinishing)
+            {
+                if (facing == 'l')
+                    frame = anim.playFrameOnce(true, true);
+                else
+                    frame = anim.playFrameOnce(false, true);
+            }
+            else if (isDead || isLanding || (isClimbing && !isClimbingMoving))
             {
                 if (isClimbing && !isClimbingMoving)
                 {
@@ -2553,6 +2688,61 @@ namespace General
                 anim.changeAnimation("death", -1);
                 return;
             }
+
+            if (isLaserCasting)
+            {
+                if (kamehameha.active == false)
+                {
+                    isLaserCasting = false;
+                    isLaserCastFinishing = true;
+                    if (anim.currIdx < 2)
+                    {
+                        anim.currIdx = 4;
+                        anim.frameDelayCount = 0;
+                    }
+                    anim.changeAnimation("spell_cast", -1);
+                    return;
+                }
+
+                anim.changeAnimation("spell_cast", -1);
+
+                if (anim.currIdx < 2)
+                {
+                    anim.currIdx = 2;
+                    anim.frameDelayCount = 0;
+                }
+                else if (anim.currIdx > 4)
+                {
+                    anim.currIdx = 2;
+                    anim.frameDelayCount = 0;
+                }
+
+                return;
+            }
+
+            if (isLaserCastFinishing)
+            {
+                anim.changeAnimation("spell_cast", -1);
+
+                Animation laserAnim = anim.getCurrentAnimation();
+                if (laserAnim != null)
+                {
+                    bool dirFacingL = false;
+                    if (facing == 'l')
+                    {
+                        dirFacingL = true;
+                    }
+
+                    List<Bitmap> laserFrames = laserAnim.getFrames(dirFacingL);
+                    if (laserFrames.Count > 0 && anim.currIdx >= laserFrames.Count - 1)
+                    {
+                        isLaserCastFinishing = false;
+                    }
+                }
+
+                return;
+            }
+
             if (isTakingDamage)
             {
                 anim.changeAnimation("taking_damage", -1);
@@ -2578,7 +2768,14 @@ namespace General
 
             if (isAttacking == true)
             {
-                anim.changeAnimation("attack", -1);
+                if (isCriticalAttack)
+                {
+                    anim.changeAnimation("critical_attack", -1);
+                }
+                else
+                {
+                    anim.changeAnimation("attack", -1);
+                }
                 return;
             }
 
@@ -2682,6 +2879,18 @@ namespace General
             takeDamage(25);
         }
 
+        void forceStopAbilityCast()
+        {
+            isCastingAbility = false;
+            abilityFireballSpawned = false;
+            abilityCastTimer = 0;
+            isLanding = false;
+            wasGrounded = isGrounded;
+            ySpeed = 0;
+            isGrounded = true;
+            updateAnimation();
+        }
+
         // Attack
         public void startAbilityCast()
         {
@@ -2698,6 +2907,7 @@ namespace General
 
             isCastingAbility = true;
             abilityFireballSpawned = false;
+            abilityCastTimer = 0;
             isAttacking = false;
             isShooting = false;
 
@@ -2712,6 +2922,7 @@ namespace General
             if (!isCastingAbility) return;
 
             anim.changeAnimation("spell_cast", -1);
+            abilityCastTimer++;
 
             if (!abilityFireballSpawned && anim.currIdx >= 3)
             {
@@ -2740,16 +2951,33 @@ namespace General
                 bool dirFacingL = false;
                 if (facing == 'l') dirFacingL = true;
                 List<Bitmap> spellFrames = spellAnim.getFrames(dirFacingL);
-                if (spellFrames.Count > 0 && anim.currIdx >= spellFrames.Count - 1)
+
+                if (spellFrames.Count > 0)
                 {
-                    isCastingAbility = false;
-                    abilityFireballSpawned = false;
-                    isLanding = false;
-                    wasGrounded = isGrounded;
-                    ySpeed = 0;
-                    isGrounded = true;
-                    updateAnimation();
+                    if (anim.currIdx >= spellFrames.Count - 1)
+                    {
+                        forceStopAbilityCast();
+                    }
                 }
+                else
+                {
+                    if (abilityCastTimer >= abilityCastTimeout)
+                    {
+                        forceStopAbilityCast();
+                    }
+                }
+            }
+            else
+            {
+                if (abilityCastTimer >= abilityCastTimeout)
+                {
+                    forceStopAbilityCast();
+                }
+            }
+
+            if (abilityCastTimer >= abilityCastTimeout)
+            {
+                forceStopAbilityCast();
             }
         }
 
@@ -2792,16 +3020,36 @@ namespace General
         {
             if ((isClimbing || isClimbingMoving)) return;
 
-            if (isAttacking || isDead)
+            if (isDead)
             {
                 return;
             }
+
+            if (isCastingAbility)
+            {
+                if (abilityCastTimer >= abilityCastTimeout)
+                {
+                    forceStopAbilityCast();
+                }
+                else
+                {
+                    return;
+                }
+            }
+
             if (currentWeapon == 0)
             {
                 swordLogic();
             }
             else if (currentWeapon == 1)
             {
+                if (isAttacking)
+                {
+                    isAttacking = false;
+                    attackHasHit = false;
+                    isDoingCombo = false;
+                }
+
                 fireballLogic();
             }
 
@@ -2865,19 +3113,9 @@ namespace General
         {
             if (isAttacking == true)
             {
-                Animation attackAnim = anim.getCurrentAnimation();
-                if (attackAnim != null)
+                if (isCriticalAttack == false)
                 {
-                    bool dirFacingL = false;
-                    if (facing == 'l') dirFacingL = true;
-                    List<Bitmap> atkFrames = attackAnim.getFrames(dirFacingL);
-                    int usableFrames = atkFrames.Count - attackComboExtraFrames;
-                    if (usableFrames <= 0)
-                    {
-                        usableFrames = atkFrames.Count;
-                    }
-                    if (anim.currIdx >= usableFrames)
-                        isDoingCombo = true;
+                    isDoingCombo = true;
                 }
                 return;
             }
@@ -2885,9 +3123,20 @@ namespace General
             isAttacking = true;
             attackHasHit = false;
             isDoingCombo = false;
+            isCriticalAttack = false;
             isRunning = false;
 
-            anim.changeAnimation("attack", -1);
+            int critRoll = rnd.Next(0, 100);
+            if (critRoll < criticalStrikeChancePercent)
+            {
+                isCriticalAttack = true;
+                anim.changeAnimation("critical_attack", -1);
+            }
+            else
+            {
+                anim.changeAnimation("attack", -1);
+            }
+
             anim.restart();
         }
 
@@ -2910,7 +3159,14 @@ namespace General
         {
             if (isAttacking == false) return;
 
-            anim.changeAnimation("attack", -1);
+            if (isCriticalAttack)
+            {
+                anim.changeAnimation("critical_attack", -1);
+            }
+            else
+            {
+                anim.changeAnimation("attack", -1);
+            }
 
             Animation attackAnim = anim.getCurrentAnimation();
             if (attackAnim == null) return;
@@ -2921,24 +3177,27 @@ namespace General
 
             int usableFrames = attackFrames.Count - attackComboExtraFrames;
 
+            if (isCriticalAttack)
+            {
+                isDoingCombo = false;
+                usableFrames = attackFrames.Count;
+            }
+            else if (isDoingCombo)
+            {
+                usableFrames = attackFrames.Count;
+            }
+
             if (usableFrames <= 0)
             {
                 usableFrames = attackFrames.Count;
             }
 
-            if (anim.currIdx >= usableFrames)
+            if (anim.currIdx >= usableFrames - 1)
             {
                 isAttacking = false;
                 attackHasHit = false;
-                if (isDoingCombo)
-                {
-                    isDoingCombo = false;
-                    isAttacking = true;
-                    anim.changeAnimation("attack", -1);
-                    anim.restart();
-                    attackHasHit = false;
-                    return;
-                }
+                isDoingCombo = false;
+                isCriticalAttack = false;
 
                 updateAnimation();
                 return;
@@ -2947,6 +3206,22 @@ namespace General
             if (attackHasHit == false && anim.currIdx >= attackHitFrame - 1)
             {
                 rectF hitBox = getAttackHitBox();
+                int attackDamage = Weapons[currentWeapon].damage;
+
+                if (isDoingCombo)
+                {
+                    attackDamage = ( attackDamage * 125 ) / 100;
+                }
+                else if (isCriticalAttack)
+                {
+                    int criticalScaledDamage = attackDamage * criticalDamageMultiplierPercent;
+                    attackDamage = criticalScaledDamage / 100;
+
+                    if (criticalScaledDamage % 100 != 0)
+                    {
+                        attackDamage++;
+                    }
+                }
 
                 for (int i = 0; i < enemies.Count; i++)
                 {
@@ -2957,7 +3232,7 @@ namespace General
                         if (hitBox.X <= en.R.X + en.R.Width && hitBox.X + hitBox.Width >= en.R.X &&
                             hitBox.Y <= en.R.Y + en.R.Height && hitBox.Y + hitBox.Height >= en.R.Y)
                         {
-                            en.takeHit(Weapons[currentWeapon].damage);
+                            en.takeHit(attackDamage);
                             // break;
                         }
 
@@ -2971,7 +3246,7 @@ namespace General
                         if (hitBox.X <= currentBoss.R.X + currentBoss.R.Width && hitBox.X + hitBox.Width >= currentBoss.R.X &&
                             hitBox.Y <= currentBoss.R.Y + currentBoss.R.Height && hitBox.Y + hitBox.Height >= currentBoss.R.Y)
                         {
-                            currentBoss.takeHit(Weapons[currentWeapon].damage);
+                            currentBoss.takeHit(attackDamage);
                         }
                     }
                 }
@@ -5872,7 +6147,7 @@ namespace General
            
 
             int barStart = rect.X + 20;
-            int barMaxW = rect.Width - 26;
+            int barMaxW = rect.Width - 50;
             int barH = rect.Height;
             int barY = rect.Y + (rect.Height - barH) / 2;
 
@@ -6135,8 +6410,13 @@ namespace General
                 isDead = true;
                 isTakingDamage = false;
                 deathTimer = 0;
-                anim.changeAnimation("death", -1);
-                anim.restart();
+
+                if (name == "Reaper")
+                {
+                    anim.changeAnimation("death", -1);
+                    anim.restart();
+                }
+
                 return;
             }
 
@@ -6182,7 +6462,12 @@ namespace General
             if (isDead)
             {
                 deathTimer++;
-                anim.changeAnimation("death", -1);
+
+                if (name == "Reaper")
+                {
+                    anim.changeAnimation("death", -1);
+                }
+
                 return;
             }
 
@@ -6210,9 +6495,29 @@ namespace General
         {
             updateDrawR();
 
+            if (isDead)
+            {
+                if (name != "Reaper")
+                {
+                    return;
+                }
+
+                Animation deathAnim = anim.getCurrentAnimation();
+                if (deathAnim != null)
+                {
+                    List<Bitmap> deathFrames = deathAnim.getFrames(moving == 'l');
+                    if (deathFrames.Count > 0 && deathTimer > deathFrames.Count * deathAnim.frameDelay)
+                    {
+                        return;
+                    }
+                }
+            }
+
             Bitmap frame;
 
-            if (name == "Aegis")
+            if (isDead && name == "Reaper")
+                frame = anim.playFrameOnce(moving == 'l', true);
+            else if (name == "Aegis")
                 frame = anim.playFrame(false, false);
             else if (moving == 'l')
                 frame = anim.playFrame(true, true);
@@ -6233,7 +6538,7 @@ namespace General
 
             }
 
-            if (startFight == true)
+            if (startFight == true && !isDead)
             {
                 bossUI.draw(g, HP.HP, HP.maxHP);
             }
@@ -6535,6 +6840,11 @@ namespace General
                 hero.isRunning = false;
             }
 
+            if (e.KeyCode == Keys.R)
+            {
+                hero.kamehameha.stop();
+            }
+
             if (e.KeyCode == Keys.E)
             {
                 hero.abilityKeyDown = false;
@@ -6754,17 +7064,25 @@ namespace General
                         isGamePaused = true;
                         pauseGame();
                     }
-                    if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
+                    if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
                     {
-                        if (hero.R.X + hero.R.Width < levels.levels[levels.currentLevel].worldWidth)
+                        if (hero.kamehameha.active == true)
+                        {
+                            hero.facing = 'r';
+                        }
+                        else if (hero.R.X + hero.R.Width < levels.levels[levels.currentLevel].worldWidth)
                         {
                             hero.moving = 'r';
                             hero.facing = 'r';
                         }
                     }
-                    if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
+                    if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
                     {
-                        if (hero.R.X > 0)
+                        if (hero.kamehameha.active == true)
+                        {
+                            hero.facing = 'l';
+                        }
+                        else if (hero.R.X > 0)
                         {
                             hero.moving = 'l';
                             hero.facing = 'l';
@@ -6774,7 +7092,7 @@ namespace General
                     {
                         hero.checkUnder(tiles, ladders);
                     }
-                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
+                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && hero.kamehameha.active == false)
                     {
                         if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
@@ -6798,7 +7116,7 @@ namespace General
                         }
                     }
 
-                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && (hero.kamehameha.active == false || hero.kamehameha.contracting == true))
+                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && hero.kamehameha.active == false)
                     {
                         hero.isRunning = true;
                     }
@@ -6823,9 +7141,24 @@ namespace General
                         }
                         else if (hero.kamehameha.active == false)
                         {
-                            float startX = hero.R.X + hero.R.Width;
-                            float startY = hero.R.Y + hero.R.Height * 0.4f;
-                            hero.kamehameha.activate(startX, startY, hero.facing, this.ClientSize.Width, hero.ColorIdx);
+                            if (hero.mana.mana > 0f)
+                            {
+                                hero.isLaserCasting = true;
+                                hero.isLaserCastFinishing = false;
+
+                                float startX = 0f;
+                                if (hero.facing == 'r')
+                                {
+                                    startX = hero.R.X + hero.R.Width;
+                                }
+                                else
+                                {
+                                    startX = hero.R.X;
+                                }
+
+                                float startY = hero.R.Y + hero.R.Height * 0.4f;
+                                hero.kamehameha.activate(startX, startY, hero.facing, this.ClientSize.Width, hero.ColorIdx);
+                            }
                         }
                     }
 
@@ -6967,7 +7300,7 @@ namespace General
 
                     hero.updateFireballCast(enemyController.enemies, levels.getCurrentBoss(), tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
-                    hero.kamehameha.update(hero, enemyController.enemies, levels.getCurrentBoss(), camX, this.ClientSize.Width);
+                    hero.kamehameha.update(hero, enemyController.enemies, levels.getCurrentBoss(), tiles, camX, this.ClientSize.Width);
 
                     hero.mana.tick();
                     boss currentBoss = levels.getCurrentBoss();
