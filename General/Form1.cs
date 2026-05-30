@@ -3066,6 +3066,13 @@ namespace General
             fireballSpawnTimer = fireballSpawnDelay;
         }
 
+        public void stopLaserCast()
+        {
+            isLaserCasting = false;
+            isLaserCastFinishing = false;
+            kamehameha.stop();
+        }
+
         public void updateFireballCast(List<Enemy> enemies, boss currentBoss, List<tile> tiles)
         {
 
@@ -5828,11 +5835,15 @@ namespace General
                 tiles.Add(temp);
             }
         }
-        public void nextLevel(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
+        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
         {
             if (currentLevel < levels.Count - 1)
             {
                 currentLevel++;
+                if (hero != null)
+                {
+                    hero.stopLaserCast();
+                }
                 removeAll(enemies, ladders, tiles, coins);
                 assignAll(enemies, ladders, tiles);
                 loadPlatforms(movingPlatforms);
@@ -7030,7 +7041,7 @@ namespace General
                                 if (e.KeyCode == Keys.Q && !IsBossGateActive())
                                 {
                                     int oldLevel = levels.currentLevel;
-                                    levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
 
                                     if (levels.currentLevel != oldLevel)
                                     {
@@ -7201,7 +7212,7 @@ namespace General
                                 else
                                 {
                                     int oldLevel = levels.currentLevel;
-                                    levels.nextLevel(enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
 
                                     if (levels.currentLevel != oldLevel)
                                     {

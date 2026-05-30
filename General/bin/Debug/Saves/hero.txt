@@ -1,4 +1,4 @@
-hero_color:1
+hero_color:0
 X,Y:30,613
 Moving: 
 ySpeed:0
