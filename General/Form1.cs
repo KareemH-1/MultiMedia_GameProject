@@ -6230,6 +6230,11 @@ namespace General
         public float attackDistance = 120f;
         public float attackRange = 90f;
 
+        public string movingDir = "none";
+        public float targetX = 0f;
+        public float targetY = 0f;
+        public bool hasTarget = false;
+
         public int damageTimer = 0;
 
         public int attackTimer = 0;
@@ -6381,10 +6386,11 @@ namespace General
             }
             else if(name == "Reaper")
             {
-                drawR.Width = R.Width * 2;
-                drawR.Height = R.Height * 2;
+                drawR.Width = (R.Width *2);
+                drawR.Height = (R.Height * 2);
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
-                drawR.Y = R.Y - 130;
+                drawR.Y = R.Y - 50;
+                speed = 10f;
             }
             else if(name == "Aegis")
             {
@@ -6409,6 +6415,8 @@ namespace General
             }*/
 
             startFight = true;
+            hasTarget = false;
+            movingDir = "none";
 
             HP.damage(amount);
             isAttacking = false;
@@ -6435,40 +6443,11 @@ namespace General
             anim.restart();
         }
 
-        public void Update(Hero hero)
+        public void Update(Hero hero, float worldWidth, float worldHeight)
         {
             updateDrawR();
 
-            if (startFight == false)
-            {
-                float distanceX = 0;
-                if (hero.R.X > R.X)
-                {
-                    distanceX = hero.R.X - R.X;
-                }
-                else
-                {
-                    distanceX = R.X - hero.R.X;
-                }
-
-                float distanceY = 0;
-                if (hero.R.Y > R.Y)
-                {
-                    distanceY = hero.R.Y - R.Y;
-                }
-                else
-                {
-                    distanceY = R.Y - hero.R.Y;
-                }
-
-                if (distanceX <= 200)
-                {
-                    if (distanceY <= 200)
-                    {
-                        startFight = true;
-                    }
-                }
-            }
+            updateFightStart(hero);
 
             if (isDead)
             {
@@ -6489,18 +6468,404 @@ namespace General
                 {
                     isTakingDamage = false;
                 }
-                anim.changeAnimation("idle", -1);
+                updateIdleAnimation();
                 return;
             }
 
             if (name == "Aegis")
             {
-                anim.changeAnimation("main", -1);
+                updateAegis(hero);
+                return;
+            }
+
+            if (name == "Minatour")
+            {
+                updateMinatour(hero);
+                return;
+            }
+
+            if (name == "Reaper")
+            {
+                updateReaper(hero, worldWidth, worldHeight);
+                return;
+            }
+
+            updateIdleAnimation();
+        }
+
+        void updateFightStart(Hero hero)
+        {
+            if (startFight == true)
+            {
+                return;
+            }
+
+            float distanceX = 0;
+            if (hero.R.X > R.X)
+            {
+                distanceX = hero.R.X - R.X;
             }
             else
             {
-                anim.changeAnimation("idle", -1);
+                distanceX = R.X - hero.R.X;
             }
+
+            float distanceY = 0;
+            if (hero.R.Y > R.Y)
+            {
+                distanceY = hero.R.Y - R.Y;
+            }
+            else
+            {
+                distanceY = R.Y - hero.R.Y;
+            }
+
+            if (distanceX <= 200)
+            {
+                if (distanceY <= 200)
+                {
+                    startFight = true;
+                }
+            }
+        }
+
+        void updateIdleAnimation()
+        {
+            anim.changeAnimation("idle", -1);
+        }
+
+        void updateAegis(Hero hero)
+        {
+            anim.changeAnimation("main", -1);
+        }
+
+        void updateMinatour(Hero hero)
+        {
+            anim.changeAnimation("idle", -1);
+        }
+
+        void updateReaper(Hero hero, float worldWidth, float worldHeight)
+        {
+            if (startFight == false)
+            {
+                anim.changeAnimation("idle", -1);
+                return;
+            }
+
+            if (hasTarget == false)
+            {
+                saveReaperTarget(hero);
+            }
+            else if (shouldRetargetReaper(hero))
+            {
+                saveReaperTarget(hero);
+            }
+
+            moveReaperTowardsTarget(hero, worldWidth, worldHeight);
+
+            if (reaperReachedTarget() == true)
+            {
+                hasTarget = false;
+                saveReaperTarget(hero);
+            }
+
+            anim.changeAnimation("idle", -1);
+        }
+
+        bool shouldRetargetReaper(Hero hero)
+        {
+            float heroCenterX = hero.R.X + hero.R.Width / 2f;
+            float heroCenterY = hero.R.Y + hero.R.Height / 2f;
+            float reaperCenterX = R.X + R.Width / 2f;
+            float reaperCenterY = R.Y + R.Height / 2f;
+
+            float diffX = heroCenterX - reaperCenterX;
+            float diffY = heroCenterY - reaperCenterY;
+
+            if (diffX < 0f)
+            {
+                diffX = -diffX;
+            }
+
+            if (diffY < 0f)
+            {
+                diffY = -diffY;
+            }
+
+            if (diffX > 200f)
+            {
+                return true;
+            }
+
+            if (diffY > 200f)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        void saveReaperTarget(Hero hero)
+        {
+            float heroCenterX = hero.R.X + hero.R.Width / 2f;
+            float heroCenterY = hero.R.Y + hero.R.Height / 2f;
+
+            targetX = heroCenterX - R.Width / 2f;
+            targetY = heroCenterY - R.Height / 2f;
+            hasTarget = true;
+
+            float diffX = targetX - R.X;
+            float diffY = targetY - R.Y;
+
+            if (diffX < 0f)
+            {
+                if (diffY < 0f)
+                {
+                    movingDir = "upLeft";
+                }
+                else if (diffY > 0f)
+                {
+                    movingDir = "downLeft";
+                }
+                else
+                {
+                    movingDir = "left";
+                }
+
+                moving = 'l';
+                facing = 'l';
+            }
+            else if (diffX > 0f)
+            {
+                if (diffY < 0f)
+                {
+                    movingDir = "upRight";
+                }
+                else if (diffY > 0f)
+                {
+                    movingDir = "downRight";
+                }
+                else
+                {
+                    movingDir = "right";
+                }
+
+                moving = 'r';
+                facing = 'r';
+            }
+            else
+            {
+                if (diffY < 0f)
+                {
+                    movingDir = "up";
+                }
+                else if (diffY > 0f)
+                {
+                    movingDir = "down";
+                }
+                else
+                {
+                    movingDir = "none";
+                }
+            }
+        }
+
+        void moveReaperTowardsTarget(Hero hero, float worldWidth, float worldHeight)
+        {
+            float step = speed;
+            float diagonalStep = speed;
+
+            float moveX = 0f;
+            float moveY = 0f;
+            float remainingX = targetX - R.X;
+            float remainingY = targetY - R.Y;
+
+            if (remainingX < 0f)
+            {
+                remainingX = -remainingX;
+            }
+
+            if (remainingY < 0f)
+            {
+                remainingY = -remainingY;
+            }
+
+            if (movingDir == "left")
+            {
+                if (remainingX < step)
+                {
+                    moveX = -remainingX;
+                }
+                else
+                {
+                    moveX = -step;
+                }
+            }
+            else if (movingDir == "right")
+            {
+                if (remainingX < step)
+                {
+                    moveX = remainingX;
+                }
+                else
+                {
+                    moveX = step;
+                }
+            }
+            else if (movingDir == "up")
+            {
+                if (remainingY < step)
+                {
+                    moveY = -remainingY;
+                }
+                else
+                {
+                    moveY = -step;
+                }
+            }
+            else if (movingDir == "down")
+            {
+                if (remainingY < step)
+                {
+                    moveY = remainingY;
+                }
+                else
+                {
+                    moveY = step;
+                }
+            }
+            else if (movingDir == "upLeft")
+            {
+                if (remainingX < diagonalStep)
+                {
+                    moveX = -remainingX;
+                }
+                else
+                {
+                    moveX = -diagonalStep;
+                }
+
+                if (remainingY < diagonalStep)
+                {
+                    moveY = -remainingY;
+                }
+                else
+                {
+                    moveY = -diagonalStep;
+                }
+            }
+            else if (movingDir == "upRight")
+            {
+                if (remainingX < diagonalStep)
+                {
+                    moveX = remainingX;
+                }
+                else
+                {
+                    moveX = diagonalStep;
+                }
+
+                if (remainingY < diagonalStep)
+                {
+                    moveY = -remainingY;
+                }
+                else
+                {
+                    moveY = -diagonalStep;
+                }
+            }
+            else if (movingDir == "downLeft")
+            {
+                if (remainingX < diagonalStep)
+                {
+                    moveX = -remainingX;
+                }
+                else
+                {
+                    moveX = -diagonalStep;
+                }
+
+                if (remainingY < diagonalStep)
+                {
+                    moveY = remainingY;
+                }
+                else
+                {
+                    moveY = diagonalStep;
+                }
+            }
+            else if (movingDir == "downRight")
+            {
+                if (remainingX < diagonalStep)
+                {
+                    moveX = remainingX;
+                }
+                else
+                {
+                    moveX = diagonalStep;
+                }
+
+                if (remainingY < diagonalStep)
+                {
+                    moveY = remainingY;
+                }
+                else
+                {
+                    moveY = diagonalStep;
+                }
+            }
+
+            float nextX = R.X + moveX;
+            float nextY = R.Y + moveY;
+
+            if (nextX < 0f)
+            {
+                nextX = 0f;
+            }
+            else if (nextX + R.Width > worldWidth)
+            {
+                nextX = worldWidth - R.Width;
+            }
+
+            if (nextY < 0f)
+            {
+                nextY = 0f;
+            }
+            else if (nextY + R.Height > worldHeight)
+            {
+                nextY = worldHeight - R.Height;
+            }
+
+            R.X = nextX;
+            R.Y = nextY;
+
+            updateDrawR();
+        }
+
+        bool reaperReachedTarget()
+        {
+            float diffX = R.X - targetX;
+            float diffY = R.Y - targetY;
+
+            if (diffX < 0f)
+            {
+                diffX = -diffX;
+            }
+
+            if (diffY < 0f)
+            {
+                diffY = -diffY;
+            }
+
+            if (diffX <= speed)
+            {
+                if (diffY <= speed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         public void Draw(Graphics g, bool showRanges, float camX, float camY)
         {
@@ -6526,14 +6891,69 @@ namespace General
 
             Bitmap frame;
 
-            if (isDead && name == "Reaper")
-                frame = anim.playFrameOnce(moving == 'l', true);
+            if (isDead)
+            {
+                if (name == "Reaper")
+                {
+                    if (moving == 'l')
+                    {
+                        frame = anim.playFrameOnce(true, true);
+                    }
+                    else
+                    {
+                        frame = anim.playFrameOnce(false, true);
+                    }
+                }
+                else
+                {
+                    frame = null;
+                }
+            }
+            else if (isTakingDamage)
+            {
+                if (moving == 'l')
+                {
+                    frame = anim.playFrameOnce(true, true);
+                }
+                else
+                {
+                    frame = anim.playFrameOnce(false, true);
+                }
+            }
+            else if (isAttacking)
+            {
+                if (moving == 'l')
+                {
+                    frame = anim.playFrameOnce(true, true);
+                }
+                else
+                {
+                    frame = anim.playFrameOnce(false, true);
+                }
+            }
+            else if (isWakingUp)
+            {
+                if (moving == 'l')
+                {
+                    frame = anim.playFrameOnce(true, true);
+                }
+                else
+                {
+                    frame = anim.playFrameOnce(false, true);
+                }
+            }
             else if (name == "Aegis")
+            {
                 frame = anim.playFrame(false, false);
+            }
             else if (moving == 'l')
+            {
                 frame = anim.playFrame(true, true);
+            }
             else
+            {
                 frame = anim.playFrame(false, true);
+            }
             
 
             if (frame != null)
@@ -7296,9 +7716,11 @@ namespace General
                         tiles[i].checkHero(hero);
                     }
 
+                    boss currentBoss = levels.getCurrentBoss();
+
                     if (hero.currentWeapon == 0)
                     {
-                        hero.updateAttack(enemyController.enemies, levels.getCurrentBoss());
+                        hero.updateAttack(enemyController.enemies, currentBoss);
                     }
 
                     for (int i = 0; i < movingPlatforms.Count; i++)
@@ -7309,14 +7731,19 @@ namespace General
                     hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
                     hero.collectDroppedCoins(droppedCoins);
 
-                    hero.updateFireballCast(enemyController.enemies, levels.getCurrentBoss(), tiles);
+                    hero.updateFireballCast(enemyController.enemies, currentBoss, tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
-                    hero.kamehameha.update(hero, enemyController.enemies, levels.getCurrentBoss(), tiles, camX, this.ClientSize.Width);
+                    hero.kamehameha.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
 
                     hero.mana.tick();
-                    boss currentBoss = levels.getCurrentBoss();
+
                     if (currentBoss != null)
                     {
+                        if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
+                        {
+                            currentBoss.Update(hero, levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight);
+                        }
+
                         if (currentBoss.name == "Aegis" && currentBoss.isDead && isVictory == false)
                         {
                             isVictory = true;
