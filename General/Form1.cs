@@ -3760,7 +3760,22 @@ namespace General
 
         public DroppedCoin(float x, float y, string type, int val)
         {
-            cointype = type;
+            string drawType = type;
+
+            if (type == "copper")
+            {
+                if (val >= 1000)
+                {
+                    drawType = "gold";
+                }
+                else if (val >= 100)
+                {
+                    drawType = "silver";
+                }
+            }
+
+            cointype = drawType;
+
             if (type == "gold")
             {
                 coinvalue = val * 1000;
@@ -3779,7 +3794,7 @@ namespace General
             R.Width = 25;
             R.Height = 25;
 
-            if (type == "copper")
+            if (drawType == "copper")
             {
                 for (int i = 1; i <= 7; i++)
                 {
@@ -3787,7 +3802,7 @@ namespace General
                     frames.Add(img);
                 }
             }
-            else if (type == "silver")
+            else if (drawType == "silver")
             {
                 for (int i = 1; i <= 7; i++)
                 {
@@ -3795,7 +3810,7 @@ namespace General
                     frames.Add(img);
                 }
             }
-            else if (type == "gold")
+            else if (drawType == "gold")
             {
                 for (int i = 1; i <= 7; i++)
                 {
@@ -3982,6 +3997,8 @@ namespace General
         public float attackrange = 65;
         public float attackdis = 200;
 
+        public int summonSlot = -1;
+
         public float startX = 0f;
         public float patrolDistance = 200f;
         public float leftLimit = 0f;
@@ -4031,7 +4048,11 @@ namespace General
 
             createAnim();
 
-            if (isSleeping)
+            if (enemyName == "summon")
+            {
+                anim.changeAnimation("summonIdle", -1);
+            }
+            else if (isSleeping)
             {
                 anim.changeAnimation("sleep", -1);
             }
@@ -4123,28 +4144,34 @@ namespace General
                 //"summonDeath" , "summonIdle"
 
                 drawR.X = R.X;
-                drawR.Y = R.Y + 20;
-                drawR.Width = 70;
-                drawR.Height = 70;
+                drawR.Y = R.Y;
+                drawR.Width = 110;
+                drawR.Height = 110;
 
                 enemyName = "summon";
+                enemyFolder = "Reaper";
+                attackanimname = "summonIdle";
 
-                speed = 6f;
+                speed = 8f;
                 gravity = 0f;
                 max_speed = 20f;
 
                 patrolDistance = 2000f;
-                attackrange = 50f;
-                attackdis = 250f;
+                attackrange = 20f;
+                attackdis = 2000f;
 
                 isSleeping = false;
                 isWakingUp = false;
                 canMoveAfterWakeup = false;
 
                 wakeupDistance = 2000f;
+                spawnrange = 4000;
+                spawnTime = 0;
+
+                summonSlot = -1;
 
                 
-                HP = new Health(100, 100);
+                HP = new Health(10, 10);
                 string[] batFolders = { "summonAppear", "summonDeath" , "summonIdle" };
                 int[] batFrames = { 6 , 5 , 4};
 
@@ -4194,12 +4221,6 @@ namespace General
                     a.frameDelay = 1;
                 }
 
-                string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/";
-
-                if(this.enemyName == "summon")
-                {
-                    basePath = "Characters/Bosses/Reaper/";
-                }
                 string[] directions = { "left", "right" };
 
                 for (int d = 0; d < directions.Length; d++)
@@ -4212,17 +4233,21 @@ namespace General
                     }
                     if (enemyName == "summon")
                     {
+                        string basePath = "Characters/Bosses/Reaper/" + directions[d] + "/" + animFolders[i] + "/";
+
                         for (int j = 0; j < animFrames[i]; j++)
                         {
-                            Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                            Bitmap img = new Bitmap(basePath + j.ToString() + ".png");
                             a.addFrame(img, true, isLeft);
                         }
                     }
                     else
                     {
+                        string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/" + directions[d] + "/";
+
                         for (int j = 1; j <= animFrames[i]; j++)
                         {
-                            Bitmap img = new Bitmap(basePath + directions[d] + "/" + j.ToString() + ".png");
+                            Bitmap img = new Bitmap(basePath + j.ToString() + ".png");
                             a.addFrame(img, true, isLeft);
                         }
                     }
@@ -4309,13 +4334,27 @@ namespace General
         {
             if (isDead == true)
             {
-                anim.changeAnimation("die", -1);
+                if (enemyName == "summon")
+                {
+                    anim.changeAnimation("summonDeath", -1);
+                }
+                else
+                {
+                    anim.changeAnimation("die", -1);
+                }
                 return;
             }
 
             if (isTakingDamage)
             {
-                anim.changeAnimation("hit", -1);
+                if (enemyName == "summon")
+                {
+                    anim.changeAnimation("summonIdle", -1);
+                }
+                else
+                {
+                    anim.changeAnimation("hit", -1);
+                }
                 damageTimer--;
 
                 if (damageTimer <= 0)
@@ -4377,6 +4416,12 @@ namespace General
                 return;
             }
 
+            if (enemyName == "summon")
+            {
+                anim.changeAnimation("summonIdle", -1);
+                return;
+            }
+
             if (isAttacking)
             {
                 anim.changeAnimation(attackanimname, -1);
@@ -4405,7 +4450,14 @@ namespace General
 
                 deathTimer = 0;
 
-                anim.changeAnimation("die", -1);
+                if (enemyName == "summon")
+                {
+                    anim.changeAnimation("summonDeath", -1);
+                }
+                else
+                {
+                    anim.changeAnimation("die", -1);
+                }
                 anim.restart();
             }
             else
@@ -4416,7 +4468,14 @@ namespace General
 
                     damageTimer = 15;
 
-                    anim.changeAnimation("hit", -1);
+                    if (enemyName == "summon")
+                    {
+                        anim.changeAnimation("summonIdle", -1);
+                    }
+                    else
+                    {
+                        anim.changeAnimation("hit", -1);
+                    }
                     anim.restart();
                 }
             }
@@ -4513,8 +4572,20 @@ namespace General
 
         int calculateHowValue()
         {
-            int multiplier = rr.Next(1, 5);
-            return (HP.maxHP * 20) / multiplier;
+            int minValue = HP.maxHP / 2;
+            int maxValue = HP.maxHP + (HP.maxHP / 2);
+
+            if (minValue < 1)
+            {
+                minValue = 1;
+            }
+
+            if (maxValue < minValue)
+            {
+                maxValue = minValue;
+            }
+
+            return rr.Next(minValue, maxValue + 1);
         }
 
         int[] calculateHowManyCoins()
@@ -4570,6 +4641,77 @@ namespace General
             return slot;
         }
 
+        int addValueCoins(List<DroppedCoin> droppedCoins, float baseX, float baseY, int totalValue, int minCount, int maxCount, int slot)
+        {
+            int coinCount = rr.Next(minCount, maxCount + 1);
+
+            if (coinCount < 1)
+            {
+                coinCount = 1;
+            }
+
+            if (coinCount > totalValue)
+            {
+                coinCount = totalValue;
+            }
+
+            int remaining = totalValue;
+
+            for (int i = 0; i < coinCount; i++)
+            {
+                int coinsLeft = coinCount - i;
+                int value = remaining;
+
+                if (coinsLeft > 1)
+                {
+                    int target = remaining / coinsLeft;
+                    int min = target / 2;
+                    int max = target + target / 2;
+                    int maxAllowed = remaining - (coinsLeft - 1);
+
+                    if (min < 1)
+                    {
+                        min = 1;
+                    }
+
+                    if (remaining >= 100 && min < 100)
+                    {
+                        min = 100;
+                    }
+
+                    if (max > maxAllowed)
+                    {
+                        max = maxAllowed;
+                    }
+
+                    if (max < min)
+                    {
+                        max = min;
+                    }
+
+                    value = rr.Next(min, max + 1);
+
+                    if (value > maxAllowed)
+                    {
+                        value = maxAllowed;
+                    }
+                }
+
+                if (value < 1)
+                {
+                    value = 1;
+                }
+
+                float x = baseX + getDropX(slot);
+                DroppedCoin coin = new DroppedCoin(x, baseY, "copper", value);
+                droppedCoins.Add(coin);
+                slot++;
+                remaining -= value;
+            }
+
+            return slot;
+        }
+
         public void dropCoin(List<DroppedCoin> droppedCoins)
         {
             if (coindropped == true)
@@ -4579,23 +4721,12 @@ namespace General
 
             float baseX = R.X + (R.Width / 2f);
             float baseY = R.Y + (R.Height / 2f);
-            float dropY = baseY;
+            int totalValue = calculateHowValue();
             int slot = 0;
 
-            if (enemyName == "mushroom")
+            if (enemyName != "summon")
             {
-                int[] howMany = calculateHowManyCoins();
-                slot = addCoins(droppedCoins, "copper", howMany[0], baseX, dropY, slot);
-                slot = addCoins(droppedCoins, "silver", howMany[1], baseX, dropY, slot);
-                slot = addCoins(droppedCoins, "gold", howMany[2], baseX, dropY, slot);
-                coindropped = true;
-            }
-            else if (enemyName == "bat")
-            {
-                int[] howMany = calculateHowManyCoins();
-                slot = addCoins(droppedCoins, "copper", howMany[0], baseX, dropY, slot);
-                slot = addCoins(droppedCoins, "silver", howMany[1], baseX, dropY, slot);
-                slot = addCoins(droppedCoins, "gold", howMany[2], baseX, dropY, slot);
+                slot = addValueCoins(droppedCoins, baseX, baseY, totalValue, 1, 3, slot);
                 coindropped = true;
             }
         }
@@ -4707,10 +4838,153 @@ namespace General
 
         void moveEnemy(Enemy e, List<tile> tiles, Hero hero)
         {
+            if (e.enemyName == "summon")
+            {
+                moveSummon(e, tiles, hero);
+                return;
+            }
+
             if (e.enemyName == "bat")
                 moveFly(e, tiles, hero);
             else
                 moveGround(e, tiles, hero);
+        }
+
+        void moveSummon(Enemy e, List<tile> tiles, Hero hero)
+        {
+            if (e.attackCooldown > 0)
+            {
+                e.attackCooldown--;
+            }
+
+            if (e.isDead || e.isTakingDamage)
+            {
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+            float heroCenterX = hero.R.X + hero.R.Width / 2f;
+            float heroCenterY = hero.R.Y + hero.R.Height / 2f;
+
+            int targetIndex = e.summonSlot;
+
+            float targetOffsetX = 0f;
+            float targetOffsetY = 0f;
+
+            if (targetIndex == 0)
+            {
+                targetOffsetY = -hero.R.Height * 0.25f;
+            }
+            else if (targetIndex == 1)
+            {
+                targetOffsetX = -hero.R.Width * 0.35f;
+            }
+            else if (targetIndex == 2)
+            {
+                targetOffsetX = hero.R.Width * 0.35f;
+            }
+            else if (targetIndex == 3)
+            {
+                targetOffsetY = hero.R.Height * 0.25f;
+            }
+
+            float targetX = heroCenterX + targetOffsetX;
+            float targetY = heroCenterY + targetOffsetY;
+
+            float summonCenterX = e.R.X + e.R.Width / 2f;
+            float summonCenterY = e.R.Y + e.R.Height / 2f;
+
+            float moveX = 0f;
+            float moveY = 0f;
+
+            float deltaX = targetX - summonCenterX;
+            if (deltaX >= 0f)
+            {
+                if (deltaX <= e.speed)
+                {
+                    moveX = deltaX;
+                }
+                else
+                {
+                    moveX = e.speed;
+                }
+            }
+            else
+            {
+                deltaX = -deltaX;
+                if (deltaX <= e.speed)
+                {
+                    moveX = -deltaX;
+                }
+                else
+                {
+                    moveX = -e.speed;
+                }
+            }
+
+            float deltaY = targetY - summonCenterY;
+            if (deltaY >= 0f)
+            {
+                if (deltaY <= e.speed)
+                {
+                    moveY = deltaY;
+                }
+                else
+                {
+                    moveY = e.speed;
+                }
+            }
+            else
+            {
+                deltaY = -deltaY;
+                if (deltaY <= e.speed)
+                {
+                    moveY = -deltaY;
+                }
+                else
+                {
+                    moveY = -e.speed;
+                }
+            }
+
+            e.R.X += moveX;
+            e.R.Y += moveY;
+
+            if (moveX < 0f)
+            {
+                e.moving = 'l';
+                e.facing = 'l';
+            }
+            else if (moveX > 0f)
+            {
+                e.moving = 'r';
+                e.facing = 'r';
+            }
+
+            if (e.R.X < hero.R.X + hero.R.Width)
+            {
+                if (e.R.X + e.R.Width > hero.R.X)
+                {
+                    if (e.R.Y < hero.R.Y + hero.R.Height)
+                    {
+                        if (e.R.Y + e.R.Height > hero.R.Y)
+                        {
+                            if (e.attackCooldown <= 0)
+                            {
+                                if (!hero.isDead)
+                                {
+                                    hero.takeDamage(10);
+                                    e.attackCooldown = 45;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            e.applyPhysics(tiles);
+            e.updateAnimation();
         }
 
         void moveFly(Enemy e, List<tile> tiles, Hero hero)
@@ -6306,6 +6580,11 @@ namespace General
         public bool hasTarget = false;
         public int reaperCloseDelayTimer = 0;
         public int reaperCloseDelayMax = 20;
+        public int summonTick = 0;
+        public int summonGap = 360;
+        public int summonAnimTimer = 0;
+
+        public Random rr = new Random();
 
         public int damageTimer = 0;
 
@@ -6513,7 +6792,7 @@ namespace General
             anim.restart();
         }
 
-        public void Update(Hero hero, float worldWidth, float worldHeight)
+        public void Update(Hero hero, float worldWidth, float worldHeight, List<Enemy> enemies)
         {
             updateDrawR();
 
@@ -6556,7 +6835,7 @@ namespace General
 
             if (name == "Reaper")
             {
-                updateReaper(hero, worldWidth, worldHeight);
+                updateReaper(hero, worldWidth, worldHeight, enemies);
                 return;
             }
 
@@ -6614,11 +6893,31 @@ namespace General
             anim.changeAnimation("idle", -1);
         }
 
-        void updateReaper(Hero hero, float worldWidth, float worldHeight)
+        void updateReaper(Hero hero, float worldWidth, float worldHeight, List<Enemy> enemies)
         {
             if (startFight == false)
             {
                 anim.changeAnimation("idle", -1);
+                summonTick = 0;
+                summonAnimTimer = 0;
+                return;
+            }
+
+            if (summonAnimTimer > 0)
+            {
+                summonAnimTimer--;
+                anim.changeAnimation("summon", -1);
+                return;
+            }
+
+            summonTick++;
+            if (summonTick >= summonGap)
+            {
+                summonTick = 0;
+                anim.changeAnimation("summon", -1);
+                anim.restart();
+                summonAnimTimer = 40;
+                spawnSummons(hero, enemies, worldWidth, worldHeight);
                 return;
             }
 
@@ -6673,6 +6972,110 @@ namespace General
             }
 
             anim.changeAnimation("idle", -1);
+        }
+
+        void spawnSummons(Hero hero, List<Enemy> enemies, float worldWidth, float worldHeight)
+        {
+            int summonCount = rr.Next(2, 5);
+            List<int> slots = new List<int>();
+            slots.Add(0);
+            slots.Add(1);
+            slots.Add(2);
+            slots.Add(3);
+
+            int bossCenterX = Convert.ToInt32(R.X + R.Width / 2f);
+            int bossCenterY = Convert.ToInt32(R.Y + R.Height / 2f);
+
+            for (int i = 0; i < summonCount; i++)
+            {
+                int slotIndex = rr.Next(0, slots.Count);
+                int targetIndex = slots[slotIndex];
+                slots.RemoveAt(slotIndex);
+
+                int summonWidth = 70;
+                int summonHeight = 70;
+
+                int spawnX = 0;
+                int spawnY = 0;
+
+                if (targetIndex == 0)
+                {
+                    spawnX = bossCenterX - summonWidth / 2;
+                    spawnY = Convert.ToInt32(R.Y) - summonHeight - 30;
+                }
+                else if (targetIndex == 1)
+                {
+                    spawnX = Convert.ToInt32(R.X) - summonWidth - 30;
+                    spawnY = bossCenterY - summonHeight / 2;
+                }
+                else if (targetIndex == 2)
+                {
+                    spawnX = Convert.ToInt32(R.X + R.Width) + 30;
+                    spawnY = bossCenterY - summonHeight / 2;
+                }
+                else if (targetIndex == 3)
+                {
+                    spawnX = bossCenterX - summonWidth / 2;
+                    spawnY = Convert.ToInt32(R.Y + R.Height) + 30;
+                }
+
+                if (spawnX < 0)
+                {
+                    spawnX = 0;
+                }
+                else if (spawnX + summonWidth > worldWidth)
+                {
+                    spawnX = Convert.ToInt32(worldWidth) - summonWidth;
+                }
+
+                if (spawnY < 0)
+                {
+                    spawnY = 0;
+                }
+                else if (spawnY + summonHeight > worldHeight)
+                {
+                    spawnY = Convert.ToInt32(worldHeight) - summonHeight;
+                }
+
+                Enemy summon = new Enemy(spawnX, spawnY, summonWidth, summonHeight, "summon");
+                summon.spawn = true;
+                summon.spawnrange = 4000;
+                summon.CanSpawn = false;
+                summon.spawnTime = 0;
+                summon.isWaiting = false;
+                summon.isRunning = false;
+                summon.isAttacking = false;
+                summon.isTakingDamage = false;
+                summon.isDead = false;
+                summon.attackCooldown = rr.Next(10, 30);
+                summon.summonSlot = targetIndex;
+                summon.velocityY = 0f;
+                summon.isGrounded = true;
+                summon.wasGrounded = true;
+
+                if (targetIndex == 0)
+                {
+                    summon.facing = 'l';
+                    summon.moving = ' ';
+                }
+                else if (targetIndex == 1)
+                {
+                    summon.facing = 'r';
+                    summon.moving = 'r';
+                }
+                else if (targetIndex == 2)
+                {
+                    summon.facing = 'l';
+                    summon.moving = 'l';
+                }
+                else if (targetIndex == 3)
+                {
+                    summon.facing = 'l';
+                    summon.moving = ' ';
+                }
+
+                enemies.Add(summon);
+            }
         }
 
         bool shouldRetargetReaper(Hero hero)
@@ -6971,10 +7374,28 @@ namespace General
             return false;
         }
 
+        int calculateHowValue()
+        {
+            int minValue = HP.maxHP / 2;
+            int maxValue = HP.maxHP + (HP.maxHP / 2);
+
+            if (minValue < 1)
+            {
+                minValue = 1;
+            }
+
+            if (maxValue < minValue)
+            {
+                maxValue = minValue;
+            }
+
+            return rr.Next(minValue, maxValue + 1);
+        }
+
         int[] calculateHowManyCoins()
         {
             int[] coins = { 0, 0, 0 };
-            int val = HP.maxHP * 10;
+            int val = calculateHowValue();
 
             int remaining = val;
 
@@ -7024,6 +7445,77 @@ namespace General
             return slot;
         }
 
+        int addValueCoins(List<DroppedCoin> droppedCoins, float baseX, float baseY, int totalValue, int minCount, int maxCount, int slot)
+        {
+            int coinCount = rr.Next(minCount, maxCount + 1);
+
+            if (coinCount < 1)
+            {
+                coinCount = 1;
+            }
+
+            if (coinCount > totalValue)
+            {
+                coinCount = totalValue;
+            }
+
+            int remaining = totalValue;
+
+            for (int i = 0; i < coinCount; i++)
+            {
+                int coinsLeft = coinCount - i;
+                int value = remaining;
+
+                if (coinsLeft > 1)
+                {
+                    int target = remaining / coinsLeft;
+                    int min = target / 2;
+                    int max = target + target / 2;
+                    int maxAllowed = remaining - (coinsLeft - 1);
+
+                    if (min < 1)
+                    {
+                        min = 1;
+                    }
+
+                    if (remaining >= 100 && min < 100)
+                    {
+                        min = 100;
+                    }
+
+                    if (max > maxAllowed)
+                    {
+                        max = maxAllowed;
+                    }
+
+                    if (max < min)
+                    {
+                        max = min;
+                    }
+
+                    value = rr.Next(min, max + 1);
+
+                    if (value > maxAllowed)
+                    {
+                        value = maxAllowed;
+                    }
+                }
+
+                if (value < 1)
+                {
+                    value = 1;
+                }
+
+                float x = baseX + getDropX(slot);
+                DroppedCoin coin = new DroppedCoin(x, baseY, "copper", value);
+                droppedCoins.Add(coin);
+                slot++;
+                remaining -= value;
+            }
+
+            return slot;
+        }
+
         public void dropCoin(List<DroppedCoin> droppedCoins)
         {
             if (coindropped == true)
@@ -7035,10 +7527,8 @@ namespace General
             float baseY = R.Y + (R.Height / 2f);
             int slot = 0;
 
-            int[] howMany = calculateHowManyCoins();
-            slot = addCoins(droppedCoins, "copper", howMany[0], baseX, baseY, slot);
-            slot = addCoins(droppedCoins, "silver", howMany[1], baseX, baseY, slot);
-            slot = addCoins(droppedCoins, "gold", howMany[2], baseX, baseY, slot);
+            int totalValue = calculateHowValue();
+            slot = addValueCoins(droppedCoins, baseX, baseY, totalValue, 2, 4, slot);
 
             coindropped = true;
         }
@@ -7928,7 +8418,7 @@ namespace General
                     {
                         if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
                         {
-                            currentBoss.Update(hero, levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight);
+                            currentBoss.Update(hero, levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight, enemyController.enemies);
                         }
 
                         if (currentBoss.isDead == true && currentBoss.coindropped == false)

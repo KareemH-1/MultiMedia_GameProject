@@ -5,9 +5,9 @@ Boss0_Y:603
 Boss0_HP:0
 Boss0_isDead:True
 Boss0_startFight:True
-Boss2_X:2343.629
-Boss2_Y:918
-Boss2_HP:520
+Boss2_X:1340
+Boss2_Y:299.25
+Boss2_HP:505
 Boss2_isDead:False
 Boss2_startFight:True
 Boss4_X:1444

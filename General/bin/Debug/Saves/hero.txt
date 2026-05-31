@@ -1,11 +1,11 @@
-hero_color:2
-X,Y:2991,878.5
-Moving: 
+hero_color:0
+X,Y:1123,222.5
+Moving:l
 ySpeed:0
 jumpsUsed:0
 isTakingDamage:False
 takingDamageTimer:0
-coins:2089
+coins:378
 isAttacking:False
 attackHasHit:False
 maxHP:100
