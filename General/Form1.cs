@@ -3761,7 +3761,18 @@ namespace General
         public DroppedCoin(float x, float y, string type, int val)
         {
             cointype = type;
-            coinvalue = val;
+            if (type == "gold")
+            {
+                coinvalue = val * 1000;
+            }
+            else if (type == "silver")
+            {
+                coinvalue = val * 100;
+            }
+            else
+            {
+                coinvalue = val;
+            }
 
             R.X = x;
             R.Y = y;
@@ -3773,6 +3784,22 @@ namespace General
                 for (int i = 1; i <= 7; i++)
                 {
                     Bitmap img = new Bitmap("Collectables/Coins/Bronze/" + i.ToString() + ".png");
+                    frames.Add(img);
+                }
+            }
+            else if (type == "silver")
+            {
+                for (int i = 1; i <= 7; i++)
+                {
+                    Bitmap img = new Bitmap("Collectables/Coins/Silver/" + i.ToString() + ".png");
+                    frames.Add(img);
+                }
+            }
+            else if (type == "gold")
+            {
+                for (int i = 1; i <= 7; i++)
+                {
+                    Bitmap img = new Bitmap("Collectables/Coins/Gold/" + i.ToString() + ".png");
                     frames.Add(img);
                 }
             }
@@ -3860,6 +3887,31 @@ namespace General
                     }
                 }
             }
+        }
+
+        public bool isOutOfMap(float worldWidth, float worldHeight)
+        {
+            if (R.X + R.Width < 0f)
+            {
+                return true;
+            }
+
+            if (R.X > worldWidth)
+            {
+                return true;
+            }
+
+            if (R.Y + R.Height < 0f)
+            {
+                return true;
+            }
+
+            if (R.Y > worldHeight)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void draw(Graphics g, float camX, float camY)
@@ -4462,7 +4514,7 @@ namespace General
         int calculateHowValue()
         {
             int multiplier = rr.Next(1, 5);
-            return (HP.maxHP / multiplier);
+            return (HP.maxHP * 20) / multiplier;
         }
 
         int[] calculateHowManyCoins()
@@ -4486,6 +4538,38 @@ namespace General
 
             return coins;
         }
+
+        float getDropX(int slot)
+        {
+            float spacing = 10f;
+            if (slot == 0)
+            {
+                return 0f;
+            }
+
+            int step = (slot + 1) / 2;
+
+            if (slot % 2 == 1)
+            {
+                return -spacing * step;
+            }
+
+            return spacing * step;
+        }
+
+        int addCoins(List<DroppedCoin> droppedCoins, string type, int count, float baseX, float baseY, int slot)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float x = baseX + getDropX(slot);
+                DroppedCoin coin = new DroppedCoin(x, baseY, type, 1);
+                droppedCoins.Add(coin);
+                slot++;
+            }
+
+            return slot;
+        }
+
         public void dropCoin(List<DroppedCoin> droppedCoins)
         {
             if (coindropped == true)
@@ -4493,40 +4577,25 @@ namespace General
                 return;
             }
 
+            float baseX = R.X + (R.Width / 2f);
+            float baseY = R.Y + (R.Height / 2f);
+            float dropY = baseY;
+            int slot = 0;
+
             if (enemyName == "mushroom")
             {
-                float x = R.X + (R.Width / 2);
-                float y = R.Y + (R.Height / 2);
-
                 int[] howMany = calculateHowManyCoins();
-                for (int i = 0; i < 3; i++)
-                {
-                    string type;
-                    if (i == 0) type = "copper";
-                    else if (i == 1) type = "silver";
-                    else type = "gold";
-                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
-
-                    droppedCoins.Add(coin);
-                }
+                slot = addCoins(droppedCoins, "copper", howMany[0], baseX, dropY, slot);
+                slot = addCoins(droppedCoins, "silver", howMany[1], baseX, dropY, slot);
+                slot = addCoins(droppedCoins, "gold", howMany[2], baseX, dropY, slot);
                 coindropped = true;
             }
             else if (enemyName == "bat")
             {
-                float x = R.X + (R.Width / 2);
-                float y = R.Y + (R.Height / 2);
-
                 int[] howMany = calculateHowManyCoins();
-                for (int i = 0; i < 3; i++)
-                {
-                    string type;
-                    if (i == 0) type = "copper";
-                    else if (i == 1) type = "silver";
-                    else type = "gold";
-                    DroppedCoin coin = new DroppedCoin(x, y, type, howMany[i]);
-
-                    droppedCoins.Add(coin);
-                }
+                slot = addCoins(droppedCoins, "copper", howMany[0], baseX, dropY, slot);
+                slot = addCoins(droppedCoins, "silver", howMany[1], baseX, dropY, slot);
+                slot = addCoins(droppedCoins, "gold", howMany[2], baseX, dropY, slot);
                 coindropped = true;
             }
         }
@@ -6225,6 +6294,7 @@ namespace General
         public bool isWakingUp = false;
         public bool isDead = false;
         public bool attackDamageDone = false;
+        public bool coindropped = false;
 
         public float wakeupDistance = 400f;
         public float attackDistance = 120f;
@@ -6234,6 +6304,8 @@ namespace General
         public float targetX = 0f;
         public float targetY = 0f;
         public bool hasTarget = false;
+        public int reaperCloseDelayTimer = 0;
+        public int reaperCloseDelayMax = 20;
 
         public int damageTimer = 0;
 
@@ -6243,7 +6315,6 @@ namespace General
         public int deathTimer = 0;
 
 
-        public bool coindropped = false;
 
         public AnimationController anim = new AnimationController();
 
@@ -6420,7 +6491,6 @@ namespace General
 
             HP.damage(amount);
             isAttacking = false;
-            attackDamageDone = false;
             attackFrameTimer = 0;
             attackCooldown = 0;
 
@@ -6552,6 +6622,39 @@ namespace General
                 return;
             }
 
+            float heroCenterX = hero.R.X + hero.R.Width / 2f;
+            float heroCenterY = hero.R.Y + hero.R.Height / 2f;
+            float reaperCenterX = R.X + R.Width / 2f;
+            float reaperCenterY = R.Y + R.Height / 2f;
+
+            float distanceX = heroCenterX - reaperCenterX;
+            float distanceY = heroCenterY - reaperCenterY;
+
+            if (distanceX < 0f)
+            {
+                distanceX = -distanceX;
+            }
+
+            if (distanceY < 0f)
+            {
+                distanceY = -distanceY;
+            }
+
+            if (distanceX <= 120f && distanceY <= 120f)
+            {
+                if (reaperCloseDelayTimer <= 0)
+                {
+                    reaperCloseDelayTimer = reaperCloseDelayMax;
+                }
+            }
+
+            if (reaperCloseDelayTimer > 0)
+            {
+                reaperCloseDelayTimer--;
+                anim.changeAnimation("idle", -1);
+                return;
+            }
+
             if (hasTarget == false)
             {
                 saveReaperTarget(hero);
@@ -6611,7 +6714,7 @@ namespace General
             float heroCenterY = hero.R.Y + hero.R.Height / 2f;
 
             targetX = heroCenterX - R.Width / 2f;
-            targetY = heroCenterY - R.Height / 2f;
+            targetY = heroCenterY - R.Height / 2f - 50f;
             hasTarget = true;
 
             float diffX = targetX - R.X;
@@ -6867,6 +6970,79 @@ namespace General
 
             return false;
         }
+
+        int[] calculateHowManyCoins()
+        {
+            int[] coins = { 0, 0, 0 };
+            int val = HP.maxHP * 10;
+
+            int remaining = val;
+
+            int NGold = remaining / 1000;
+            remaining = remaining - NGold * 1000;
+
+            int NSilver = remaining / 100;
+            remaining = remaining - NSilver * 100;
+
+            int NBronze = remaining;
+
+            coins[0] = NBronze;
+            coins[1] = NSilver;
+            coins[2] = NGold;
+
+            return coins;
+        }
+
+        float getDropX(int slot)
+        {
+            float spacing = 8f;
+            if (slot == 0)
+            {
+                return 0f;
+            }
+
+            int step = (slot + 1) / 2;
+
+            if (slot % 2 == 1)
+            {
+                return -spacing * step;
+            }
+
+            return spacing * step;
+        }
+
+        int addCoins(List<DroppedCoin> droppedCoins, string type, int count, float baseX, float baseY, int slot)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float x = baseX + getDropX(slot);
+                DroppedCoin coin = new DroppedCoin(x, baseY, type, 1);
+                droppedCoins.Add(coin);
+                slot++;
+            }
+
+            return slot;
+        }
+
+        public void dropCoin(List<DroppedCoin> droppedCoins)
+        {
+            if (coindropped == true)
+            {
+                return;
+            }
+
+            float baseX = R.X + (R.Width / 2f);
+            float baseY = R.Y + (R.Height / 2f);
+            int slot = 0;
+
+            int[] howMany = calculateHowManyCoins();
+            slot = addCoins(droppedCoins, "copper", howMany[0], baseX, baseY, slot);
+            slot = addCoins(droppedCoins, "silver", howMany[1], baseX, baseY, slot);
+            slot = addCoins(droppedCoins, "gold", howMany[2], baseX, baseY, slot);
+
+            coindropped = true;
+        }
+
         public void Draw(Graphics g, bool showRanges, float camX, float camY)
         {
             updateDrawR();
@@ -7699,6 +7875,17 @@ namespace General
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
                         droppedCoins[i].applyGravity(tiles);
+
+                        if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
+                        {
+                            if (droppedCoins[i].isOutOfMap(levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight))
+                            {
+                                hero.coins += droppedCoins[i].coinvalue;
+                                droppedCoins.RemoveAt(i);
+                                i--;
+                                continue;
+                            }
+                        }
                     }
 
                     if (upHeld == true)
@@ -7742,6 +7929,11 @@ namespace General
                         if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
                         {
                             currentBoss.Update(hero, levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight);
+                        }
+
+                        if (currentBoss.isDead == true && currentBoss.coindropped == false)
+                        {
+                            currentBoss.dropCoin(droppedCoins);
                         }
 
                         if (currentBoss.name == "Aegis" && currentBoss.isDead && isVictory == false)
