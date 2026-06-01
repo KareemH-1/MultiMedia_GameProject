@@ -1,11 +1,19 @@
 hero_color:0
+<<<<<<< HEAD
 X,Y:30,661
+=======
+X,Y:100,967.5
+>>>>>>> 7d445384b574006a4d9a2506f9389438400f8beb
 Moving: 
 ySpeed:0
 jumpsUsed:0
 isTakingDamage:False
 takingDamageTimer:0
+<<<<<<< HEAD
 coins:0
+=======
+coins:2831
+>>>>>>> 7d445384b574006a4d9a2506f9389438400f8beb
 isAttacking:False
 attackHasHit:False
 maxHP:100

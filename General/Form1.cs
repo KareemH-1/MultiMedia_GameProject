@@ -1743,7 +1743,7 @@ namespace General
                         rect.Y < en.R.Y + en.R.Height &&
                         rect.Y + rect.Height > en.R.Y)
                     {
-                        en.takeHit(damage);
+                        en.takeHit(damage, strong);
                         if (isItSingle == false)
                         {
                             finished = true;
@@ -1763,7 +1763,7 @@ namespace General
                         rect.Y < currentBoss.R.Y + currentBoss.R.Height &&
                         rect.Y + rect.Height > currentBoss.R.Y)
                     {
-                        currentBoss.takeHit(damage);
+                        currentBoss.takeHit(damage, strong);
                         if (isItSingle == false)
                         {
                             finished = true;
@@ -2350,7 +2350,7 @@ namespace General
 
         public int attackHitFrame = 4; //first 4 frames in teh attack animation are normal
         public int attackComboExtraFrames = 2; // last 2 frames are extra whgen there is a combo
-        public int criticalStrikeChancePercent = 10;
+        public int criticalStrikeChancePercent = 15;
         public int criticalDamageMultiplierPercent = 175;
         public float attackMoveMultiplier = 0.55f;
 
@@ -3239,7 +3239,7 @@ namespace General
                         if (hitBox.X <= en.R.X + en.R.Width && hitBox.X + hitBox.Width >= en.R.X &&
                             hitBox.Y <= en.R.Y + en.R.Height && hitBox.Y + hitBox.Height >= en.R.Y)
                         {
-                            en.takeHit(attackDamage);
+                            en.takeHit(attackDamage, isCriticalAttack);
                             // break;
                         }
 
@@ -3253,7 +3253,7 @@ namespace General
                         if (hitBox.X <= currentBoss.R.X + currentBoss.R.Width && hitBox.X + hitBox.Width >= currentBoss.R.X &&
                             hitBox.Y <= currentBoss.R.Y + currentBoss.R.Height && hitBox.Y + hitBox.Height >= currentBoss.R.Y)
                         {
-                            currentBoss.takeHit(attackDamage);
+                            currentBoss.takeHit(attackDamage, isCriticalAttack);
                         }
                     }
                 }
@@ -4010,6 +4010,8 @@ namespace General
         public int waitTime = 0;
         public int waitingTimer = 60;
 
+        public List<DamagePopup> damagePopups = new List<DamagePopup>();
+
         public int spawnX = 0;
         public int spawnY = 0;
 
@@ -4466,7 +4468,46 @@ namespace General
             }
         }
 
-        public void takeHit(int amount)
+        void addDamagePopup(int amount, bool isCritical)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            float popupX = R.X + (R.Width / 2f);
+            float popupY = R.Y + (R.Height / 2f);
+
+            damagePopups.Add(new DamagePopup("-" + amount.ToString(), popupX, popupY, Color.White, false));
+
+            if (isCritical)
+            {
+                damagePopups.Add(new DamagePopup("Critical Strike", popupX, popupY - 18f, Color.Gold, true));
+            }
+        }
+
+        void updateDamagePopups()
+        {
+            for (int i = damagePopups.Count - 1; i >= 0; i--)
+            {
+                damagePopups[i].Update();
+
+                if (damagePopups[i].shouldRemove())
+                {
+                    damagePopups.RemoveAt(i);
+                }
+            }
+        }
+
+        void drawDamagePopups(Graphics g, float camX, float camY)
+        {
+            for (int i = 0; i < damagePopups.Count; i++)
+            {
+                damagePopups[i].Draw(g, camX, camY);
+            }
+        }
+
+        public void takeHit(int amount, bool isCritical = false)
         {
             if (isDead == true)
             {
@@ -4474,6 +4515,7 @@ namespace General
             }
 
             HP.damage(amount);
+            addDamagePopup(amount, isCritical);
 
             isAttacking = false;
             attackmode = false;
@@ -4546,6 +4588,8 @@ namespace General
 
         public void draw(Graphics g, bool showRanges, float camX, float camY)
         {
+            updateDamagePopups();
+
             if (spawn)
             {
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
@@ -4604,6 +4648,8 @@ namespace General
                     UI.positionAbove(screenR, 8);
                     UI.draw(g, HP, null, 0);
                 }
+
+                drawDamagePopups(g, camX, camY);
             }
         }
 
@@ -5758,7 +5804,7 @@ namespace General
             startHeroX = 100;
             startHeroY = 1065;
 
-            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, true, "Boss Room");
+            lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, false, "Boss Room");
             levels.Add(lvl);
 
             initTeleporters();
@@ -6547,7 +6593,7 @@ namespace General
            
 
             int barStart = rect.X + 20;
-            int barMaxW = rect.Width - 50;
+            int barMaxW = rect.Width - 38;
             int barH = rect.Height;
             int barY = rect.Y + (rect.Height - barH) / 2;
 
@@ -6589,6 +6635,79 @@ namespace General
             }
         }
     }
+
+    public class DamagePopup
+    {
+        public string text;
+        public float x;
+        public float y;
+        public Color color;
+        public float speed;
+        public int maxTime;
+        public int timer;
+        public bool isCritical;
+
+        public DamagePopup(string text, float x, float y, Color color, bool isCritical)
+        {
+            this.text = text;
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.isCritical = isCritical;
+
+            if (isCritical)
+            {
+                this.speed = 1.75f;
+                this.maxTime = 32;
+            }
+            else
+            {
+                this.speed = 1.35f;
+                this.maxTime = 26;
+            }
+
+            this.timer = 0;
+        }
+
+        public void Update()
+        {
+            y -= speed;
+            timer++;
+        }
+
+        public bool shouldRemove()
+        {
+            if (timer >= maxTime)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Draw(Graphics g, float camX, float camY)
+        {
+            float drawX = x - camX - (text.Length*7 / 2);
+            float drawY = y - camY - 8;
+            Font font;
+
+            if (isCritical)
+            {
+                font = new Font("Palatino Linotype", 10, FontStyle.Bold);
+            }
+            else
+            {
+                font = new Font("Palatino Linotype", 9, FontStyle.Bold);
+            }
+
+            SolidBrush outlineBrush = new SolidBrush(Color.Black);
+            SolidBrush fillBrush = new SolidBrush(color);
+
+            g.DrawString(text, font, outlineBrush, drawX + 1f, drawY + 1f);
+            g.DrawString(text, font, fillBrush, drawX, drawY);
+        }
+    }
+
     public class boss {
         public string name;
         public bool startFight = false;
@@ -6615,6 +6734,8 @@ namespace General
         public bool isDead = false;
         public bool attackDamageDone = false;
         public bool coindropped = false;
+
+        public List<DamagePopup> damagePopups = new List<DamagePopup>();
 
         public float wakeupDistance = 400f;
         public float attackDistance = 120f;
@@ -6798,7 +6919,46 @@ namespace General
 
         }
 
-        public void takeHit(int amount)
+        void addDamagePopup(int amount, bool isCritical)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            float popupX = R.X + (R.Width / 2f);
+            float popupY = R.Y + (R.Height / 2f);
+
+            damagePopups.Add(new DamagePopup("-" + amount.ToString(), popupX, popupY, Color.White, false));
+
+            if (isCritical)
+            {
+                damagePopups.Add(new DamagePopup("Critical Strike", popupX, popupY - 18f, Color.Gold, true));
+            }
+        }
+
+        void updateDamagePopups()
+        {
+            for (int i = damagePopups.Count - 1; i >= 0; i--)
+            {
+                damagePopups[i].Update();
+
+                if (damagePopups[i].shouldRemove())
+                {
+                    damagePopups.RemoveAt(i);
+                }
+            }
+        }
+
+        void drawDamagePopups(Graphics g, float camX, float camY)
+        {
+            for (int i = 0; i < damagePopups.Count; i++)
+            {
+                damagePopups[i].Draw(g, camX, camY);
+            }
+        }
+
+        public void takeHit(int amount, bool isCritical = false)
         {
             if (isDead)
             {
@@ -6815,6 +6975,7 @@ namespace General
             movingDir = "none";
 
             HP.damage(amount);
+            addDamagePopup(amount, isCritical);
             isAttacking = false;
             attackFrameTimer = 0;
 
@@ -6935,7 +7096,7 @@ namespace General
 
         void updateAegis(Hero hero)
         {
-            anim.changeAnimation("main", -1);
+            anim.changeAnimation("idle", -1);
         }
 
         void updateMinatour(Hero hero, float worldWidth)
@@ -7664,11 +7825,13 @@ namespace General
         public void Draw(Graphics g, bool showRanges, float camX, float camY)
         {
             updateDrawR();
+            updateDamagePopups();
 
             if (isDead)
             {
                 if (name != "Reaper")
                 {
+                    drawDamagePopups(g, camX, camY);
                     return;
                 }
 
@@ -7767,6 +7930,8 @@ namespace General
             {
                 bossUI.draw(g, HP.HP, HP.maxHP);
             }
+
+            drawDamagePopups(g, camX, camY);
         }
 
     }

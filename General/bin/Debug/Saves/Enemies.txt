@@ -164,6 +164,7 @@ Enemy3_enemyName:sprout
 Enemy3_maxHP:30
 Enemy3_HP:30
 BossCount:5
+<<<<<<< HEAD
 Boss0_X:3104
 Boss0_Y:651
 Boss0_HP:420
@@ -174,6 +175,18 @@ Boss2_Y:806
 Boss2_HP:520
 Boss2_isDead:False
 Boss2_startFight:False
+=======
+Boss0_X:1152
+Boss0_Y:603
+Boss0_HP:0
+Boss0_isDead:True
+Boss0_startFight:True
+Boss2_X:1220
+Boss2_Y:179
+Boss2_HP:0
+Boss2_isDead:True
+Boss2_startFight:True
+>>>>>>> 7d445384b574006a4d9a2506f9389438400f8beb
 Boss4_X:1444
 Boss4_Y:885
 Boss4_HP:900
