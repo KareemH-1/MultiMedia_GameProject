@@ -4588,10 +4588,9 @@ namespace General
 
         public void draw(Graphics g, bool showRanges, float camX, float camY)
         {
-            updateDamagePopups();
-
             if (spawn)
             {
+                updateDamagePopups();
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y + (R.Height - drawR.Height);
                 if (this.enemyType == "bat")
@@ -6693,11 +6692,11 @@ namespace General
 
             if (isCritical)
             {
-                font = new Font("Palatino Linotype", 10, FontStyle.Bold);
+                font = new Font("Arial", 10, FontStyle.Bold);
             }
             else
             {
-                font = new Font("Palatino Linotype", 9, FontStyle.Bold);
+                font = new Font("Arial", 9, FontStyle.Bold);
             }
 
             SolidBrush outlineBrush = new SolidBrush(Color.Black);
