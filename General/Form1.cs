@@ -3990,6 +3990,8 @@ namespace General
         public int attackFrameTimer = 0;
         public int attackCooldown = 0;
         public string attackanimname;
+        public string moveAnimName = "run";
+        public string dieAnimName = "die";
 
         public bool attackDamageDone = false;
         public bool attackmode = false;
@@ -4178,6 +4180,41 @@ namespace General
                 animFolders = batFolders;
                 animFrames = batFrames;
             }
+            else if (type == "sprout")
+            {
+                drawR.X = R.X;
+                drawR.Y = R.Y;
+                drawR.Width = R.Width * 1.5f;
+                drawR.Height = R.Height * 1.5f;
+
+                enemyName = "sprout";
+                enemyFolder = "Sprout";
+                attackanimname = "attack";
+                moveAnimName = "move";
+                dieAnimName = "idle";
+
+                speed = 3f;
+                gravity = 1.2f;
+                max_speed = 25f;
+
+                patrolDistance = 200f;
+                attackrange = 55f;
+                attackdis = 180f;
+                isSleeping = false;
+                isWakingUp = false;
+                canMoveAfterWakeup = true;
+
+                spawnrange = 600;
+                spawnTime = 600;
+
+                HP = new Health(30, 30);
+
+                string[] sproutFolders = { "attack", "hit", "idle", "move" };
+                int[] sproutFrames = { 6, 5, 4, 5 };
+
+                animFolders = sproutFolders;
+                animFrames = sproutFrames;
+            }
         }
 
         void createAnim()
@@ -4340,7 +4377,7 @@ namespace General
                 }
                 else
                 {
-                    anim.changeAnimation("die", -1);
+                    anim.changeAnimation(dieAnimName, -1);
                 }
                 return;
             }
@@ -4387,7 +4424,7 @@ namespace General
                 if (waitTime >= waitingTimer)
                 {
                     waitTime = 0;
-                    anim.changeAnimation("run", -1);
+                    anim.changeAnimation(moveAnimName, -1);
                     isWaiting = false;
                     isRunning = true;
 
@@ -4412,7 +4449,7 @@ namespace General
 
             if (isRunning)
             {
-                anim.changeAnimation("run", -1);
+                anim.changeAnimation(moveAnimName, -1);
                 return;
             }
 
@@ -4456,7 +4493,7 @@ namespace General
                 }
                 else
                 {
-                    anim.changeAnimation("die", -1);
+                    anim.changeAnimation(dieAnimName, -1);
                 }
                 anim.restart();
             }
@@ -5102,7 +5139,7 @@ namespace General
                     e.isRunning = true;
                     if (e.R.X > hero.R.X) { e.R.X -= e.speed; dx = -e.speed; }
                     else if (e.R.X < hero.R.X) { e.R.X += e.speed; dx = e.speed; }
-                    e.anim.changeAnimation("run", -1);
+                    e.anim.changeAnimation(e.moveAnimName, -1);
                 }
 
                 if (distanceY > e.attackrange)
@@ -5306,7 +5343,7 @@ namespace General
                         else { e.moving = 'l'; e.facing = 'l'; }
                     }
 
-                    e.anim.changeAnimation("run", -1);
+                    e.anim.changeAnimation(e.moveAnimName, -1);
                     e.anim.restart();
                 }
             }
@@ -5344,7 +5381,7 @@ namespace General
                 {
                     if (e.R.X > hero.R.X) { e.R.X -= e.speed; dx = -e.speed; e.moving = 'l'; e.facing = 'l'; }
                     else if (e.R.X < hero.R.X) { e.R.X += e.speed; dx = e.speed; e.moving = 'r'; e.facing = 'r'; }
-                    e.anim.changeAnimation("run", -1);
+                    e.anim.changeAnimation(e.moveAnimName, -1);
                 }
             }
 
@@ -5673,7 +5710,7 @@ namespace General
 
             //level 1 (idx 0)
             Bitmap background = new Bitmap("Backgrounds/Forest.png");
-            int worldWidth = background.Width;
+            int worldWidth = background.Width * 2;
             int worldHeight = height;
 
             float startHeroX = 30;
@@ -5854,6 +5891,15 @@ namespace General
             levels[0].enemies.Add(en);
 
             en = new Enemy(levels[0].worldWidth - 300, levels[0].worldHeight - 180, 90, 70, "mushroom");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[0].enemies.Add(en);
+
+            int sproutW = 90;
+            int sproutH = 70;
+            int sproutY = getAboveGroundLoc(sproutH, height);
+
+            en = new Enemy(1400, sproutY, sproutW, sproutH, "sprout");
             en.CanSpawn = true;
             en.spawn = true;
             levels[0].enemies.Add(en);
@@ -6622,7 +6668,7 @@ namespace General
                 drawR.Height = height * 1.15f;
                 speed = 3.5f;
                 wakeupDistance = 700f;
-                attackDistance = 140f;
+                attackDistance = 80f;
                 attackRange = 95f;
             }
             else
@@ -6771,7 +6817,6 @@ namespace General
             HP.damage(amount);
             isAttacking = false;
             attackFrameTimer = 0;
-            attackCooldown = 0;
 
             if (HP.getHP() <= 0)
             {
@@ -6797,6 +6842,11 @@ namespace General
             updateDrawR();
 
             updateFightStart(hero);
+
+            if (attackCooldown > 0)
+            {
+                attackCooldown--;
+            }
 
             if (isDead)
             {
@@ -6829,7 +6879,7 @@ namespace General
 
             if (name == "Minatour")
             {
-                updateMinatour(hero);
+                updateMinatour(hero, worldWidth);
                 return;
             }
 
@@ -6888,9 +6938,87 @@ namespace General
             anim.changeAnimation("main", -1);
         }
 
-        void updateMinatour(Hero hero)
+        void updateMinatour(Hero hero, float worldWidth)
         {
-            anim.changeAnimation("idle", -1);
+            if (startFight == false)
+            {
+                anim.changeAnimation("idle", -1);
+                return;
+            }
+
+            if (isAttacking)
+            {
+                attackFrameTimer--;
+
+                if (attackFrameTimer <= 0)
+                {
+                    isAttacking = false;
+                    attackDamageDone = false;
+                    attackCooldown = 80;
+                }
+                else
+                {
+                    if (anim.currIdx >= 4 && attackDamageDone == false)
+                    {
+                        hero.takeDamage(20);
+                        attackDamageDone = true;
+                    }
+                }
+
+                return;
+            }
+
+            float distanceX = 0;
+            if (hero.R.X > R.X)
+            {
+                distanceX = hero.R.X - R.X;
+                moving = 'r';
+                facing = 'r';
+            }
+            else
+            {
+                distanceX = R.X - hero.R.X;
+                moving = 'l';
+                facing = 'l';
+            }
+
+            if (distanceX <= attackDistance)
+            {
+                if (attackCooldown <= 0)
+                {
+                    isAttacking = true;
+                    attackDamageDone = false;
+                    attackFrameTimer = 18;
+                    anim.changeAnimation("atk_1", -1);
+                    anim.restart();
+                }
+                else
+                {
+                    anim.changeAnimation("idle", -1);
+                }
+                return;
+            }
+
+            if (moving == 'l')
+            {
+                R.X -= speed;
+
+                if (R.X < 0)
+                {
+                    R.X = 0;
+                }
+            }
+            else
+            {
+                R.X += speed;
+
+                if (R.X + R.Width > worldWidth)
+                {
+                    R.X = worldWidth - R.Width;
+                }
+            }
+
+            anim.changeAnimation("walk", -1);
         }
 
         void updateReaper(Hero hero, float worldWidth, float worldHeight, List<Enemy> enemies)
