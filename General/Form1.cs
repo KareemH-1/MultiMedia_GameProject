@@ -1366,7 +1366,7 @@ namespace General
 
             if (newAnim == -1)
             {
-                MessageBox.Show("Animation not found");
+                MessageBox.Show("Animation not found " + name);
                 return;
             }
 
@@ -4023,6 +4023,10 @@ namespace General
 
         public bool coindropped = false;
 
+
+        public bool isCharging = false;
+
+        public float chargeSpeed = 26f;
         public AnimationController anim = new AnimationController();
 
         public Enemy(int startX, int startY, int w, int h, string type)
@@ -4213,6 +4217,42 @@ namespace General
 
                 string[] sproutFolders = { "attack", "hit", "idle", "move" };
                 int[] sproutFrames = { 6, 5, 4, 5 };
+
+                animFolders = sproutFolders;
+                animFrames = sproutFrames;
+            }
+
+            else if (type == "horse")
+            {
+                drawR.X = R.X;
+                drawR.Y = R.Y;
+                drawR.Width = R.Width * 1.5f;
+                drawR.Height = R.Height * 1.5f;
+
+                enemyName = "horse";
+                enemyFolder = "Horse";
+                attackanimname = "";
+                moveAnimName = "Run";
+                dieAnimName = "Idle";
+
+                speed = 16f;
+                gravity = 1.2f;
+                max_speed = 25f;
+
+                patrolDistance = 200f;
+                attackrange = 55f;
+                attackdis = 180f;
+                isSleeping = false;
+                isWakingUp = false;
+                canMoveAfterWakeup = true;
+
+                spawnrange = 600;
+                spawnTime = 600;
+
+                HP = new Health(150, 150);
+
+                string[] sproutFolders = { "Run" , "idle" };
+                int[] sproutFrames = { 3,4 };
 
                 animFolders = sproutFolders;
                 animFrames = sproutFrames;
@@ -4535,7 +4575,8 @@ namespace General
                 }
                 else
                 {
-                    anim.changeAnimation(dieAnimName, -1);
+                    if(enemyName != "horse")
+                        anim.changeAnimation(dieAnimName, -1);
                 }
                 anim.restart();
             }
@@ -4553,7 +4594,9 @@ namespace General
                     }
                     else
                     {
-                        anim.changeAnimation("hit", -1);
+
+                        if (enemyName != "horse")
+                            anim.changeAnimation("hit", -1);
                     }
                     anim.restart();
                 }
@@ -5267,6 +5310,496 @@ namespace General
 
         void moveGround(Enemy e, List<tile> tiles, Hero hero)
         {
+            if (e.enemyType == "horse")
+            {
+                bool overlapX = false;
+                bool overlapY = false;
+
+                if (e.R.X < hero.R.X + hero.R.Width)
+                {
+                    if (e.R.X + e.R.Width > hero.R.X)
+                    {
+                        overlapX = true;
+                    }
+                }
+
+                if (e.R.Y < hero.R.Y + hero.R.Height)
+                {
+                    if (e.R.Y + e.R.Height > hero.R.Y)
+                    {
+                        overlapY = true;
+                    }
+                }
+
+                if (overlapX == true)
+                {
+                    if (overlapY == true)
+                    {
+                        if (e.attackCooldown <= 0)
+                        {
+                            if (hero.isDead == false)
+                            {
+                                hero.takeDamage(15);
+                                e.attackCooldown = 60;
+                            }
+                        }
+                    }
+                }
+
+                if (e.attackCooldown > 0)
+                {
+                    e.attackCooldown--;
+                }
+
+                float distX = 0f;
+                float distY = 0f;
+
+                if (e.R.X > hero.R.X)
+                {
+                    distX = e.R.X - hero.R.X;
+                }
+                else
+                {
+                    distX = hero.R.X - e.R.X;
+                }
+
+                if (e.R.Y > hero.R.Y)
+                {
+                    distY = e.R.Y - hero.R.Y;
+                }
+                else
+                {
+                    distY = hero.R.Y - e.R.Y;
+                }
+
+                bool heroIsClose = false;
+                bool heroIsSameLevel = false;
+                bool pathClear = false;
+
+                if (distX <= 600)
+                {
+                    heroIsClose = true;
+                }
+
+                if (distY < 60)
+                {
+                    heroIsSameLevel = true;
+                }
+
+                if (e.isCharging == false)
+                {
+                    if (heroIsClose == true)
+                    {
+                        if (heroIsSameLevel == true)
+                        {
+                            float checkStep = 40f;
+                            float startX = 0f;
+                            float endX = 0f;
+
+                            if (hero.R.X > e.R.X)
+                            {
+                                startX = e.R.X + e.R.Width;
+                                endX = hero.R.X;
+                            }
+                            else
+                            {
+                                startX = hero.R.X + hero.R.Width;
+                                endX = e.R.X;
+                            }
+
+                            bool blockedByWall = false;
+                            bool hasGroundAlongPath = true;
+                            float checkX = startX;
+
+                            while (checkX < endX)
+                            {
+                                bool groundFoundAtStep = false;
+                                bool wallFoundAtStep = false;
+
+                                for (int i = 0; i < tiles.Count; i++)
+                                {
+                                    tile t = tiles[i];
+
+                                    if (t.interact == true)
+                                    {
+                                        if (t.jumpThrough == false)
+                                        {
+                                            bool wallOverlapX = false;
+                                            bool wallOverlapY = false;
+
+                                            if (checkX + e.R.Width > t.R.X)
+                                            {
+                                                if (checkX < t.R.X + t.R.Width)
+                                                {
+                                                    wallOverlapX = true;
+                                                }
+                                            }
+
+                                            if (e.R.Y + e.R.Height > t.R.Y)
+                                            {
+                                                if (e.R.Y < t.R.Y + t.R.Height)
+                                                {
+                                                    wallOverlapY = true;
+                                                }
+                                            }
+
+                                            if (wallOverlapX == true)
+                                            {
+                                                if (wallOverlapY == true)
+                                                {
+                                                    wallFoundAtStep = true;
+                                                }
+                                            }
+                                        }
+
+                                        bool footOverlapX = false;
+                                        bool groundOverlapY = false;
+
+                                        if (checkX + e.R.Width > t.R.X)
+                                        {
+                                            if (checkX < t.R.X + t.R.Width)
+                                            {
+                                                footOverlapX = true;
+                                            }
+                                        }
+
+                                        if (t.R.Y >= e.R.Y + e.R.Height - 4)
+                                        {
+                                            if (t.R.Y <= e.R.Y + e.R.Height + 12)
+                                            {
+                                                groundOverlapY = true;
+                                            }
+                                        }
+
+                                        if (footOverlapX == true)
+                                        {
+                                            if (groundOverlapY == true)
+                                            {
+                                                groundFoundAtStep = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (wallFoundAtStep == true)
+                                {
+                                    blockedByWall = true;
+                                    break;
+                                }
+
+                                if (groundFoundAtStep == false)
+                                {
+                                    hasGroundAlongPath = false;
+                                    break;
+                                }
+
+                                checkX += checkStep;
+                            }
+
+                            if (blockedByWall == false)
+                            {
+                                if (hasGroundAlongPath == true)
+                                {
+                                    pathClear = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (pathClear == true)
+                {
+                    if (e.isCharging == false)
+                    {
+                        e.isCharging = true;
+                        e.isWaiting = false;
+
+                        if (hero.R.X > e.R.X)
+                        {
+                            e.facing = 'r';
+                            e.moving = 'r';
+                        }
+                        else
+                        {
+                            e.facing = 'l';
+                            e.moving = 'l';
+                        }
+                    }
+                }
+
+                if (e.isCharging == true)
+                {
+                    e.anim.changeAnimation("Run", -1);
+
+                    float nextX = 0f;
+
+                    if (e.facing == 'r')
+                    {
+                        nextX = e.R.X + e.chargeSpeed;
+                    }
+                    else
+                    {
+                        nextX = e.R.X - e.chargeSpeed;
+                    }
+
+                    bool hitWall = false;
+                    bool groundAhead = false;
+
+                    for (int i = 0; i < tiles.Count; i++)
+                    {
+                        tile t = tiles[i];
+
+                        if (t.interact == true)
+                        {
+                            if (t.jumpThrough == false)
+                            {
+                                bool nextOverlapX = false;
+                                bool currentOverlapY = false;
+
+                                if (nextX + e.R.Width > t.R.X)
+                                {
+                                    if (nextX < t.R.X + t.R.Width)
+                                    {
+                                        nextOverlapX = true;
+                                    }
+                                }
+
+                                if (e.R.Y + e.R.Height > t.R.Y)
+                                {
+                                    if (e.R.Y < t.R.Y + t.R.Height)
+                                    {
+                                        currentOverlapY = true;
+                                    }
+                                }
+
+                                if (nextOverlapX == true)
+                                {
+                                    if (currentOverlapY == true)
+                                    {
+                                        hitWall = true;
+                                    }
+                                }
+                            }
+
+                            bool groundCheckX = false;
+                            bool groundCheckY = false;
+
+                            float groundCheckLeft = 0f;
+                            float groundCheckRight = 0f;
+
+                            if (e.facing == 'r')
+                            {
+                                groundCheckLeft = nextX + e.R.Width / 2f;
+                                groundCheckRight = nextX + e.R.Width;
+                            }
+                            else
+                            {
+                                groundCheckLeft = nextX;
+                                groundCheckRight = nextX + e.R.Width / 2f;
+                            }
+
+                            if (groundCheckRight > t.R.X)
+                            {
+                                if (groundCheckLeft < t.R.X + t.R.Width)
+                                {
+                                    groundCheckX = true;
+                                }
+                            }
+
+                            if (t.R.Y >= e.R.Y + e.R.Height - 4)
+                            {
+                                if (t.R.Y <= e.R.Y + e.R.Height + 12)
+                                {
+                                    groundCheckY = true;
+                                }
+                            }
+
+                            if (groundCheckX == true)
+                            {
+                                if (groundCheckY == true)
+                                {
+                                    groundAhead = true;
+                                }
+                            }
+                        }
+                    }
+
+                    bool shouldStop = false;
+
+                    if (hitWall == true)
+                    {
+                        shouldStop = true;
+                    }
+
+                    if (groundAhead == false)
+                    {
+                        shouldStop = true;
+                    }
+
+                    if (shouldStop == true)
+                    {
+                        e.isCharging = false;
+                        e.isWaiting = true;
+                        e.waitTime = 0;
+                        e.anim.changeAnimation("idle", -1);
+                        e.anim.restart();
+                    }
+                    else
+                    {
+                        e.R.X = nextX;
+                    }
+
+                    e.applyPhysics(tiles);
+                    return;
+                }
+
+                if (e.isWaiting == true)
+                {
+                    e.waitTime++;
+                    e.anim.changeAnimation("idle", -1);
+
+                    if (e.waitTime >= 30)
+                    {
+                        e.waitTime = 0;
+                        e.isWaiting = false;
+
+                        if (e.facing == 'l')
+                        {
+                            e.facing = 'r';
+                            e.moving = 'r';
+                        }
+                        else
+                        {
+                            e.facing = 'l';
+                            e.moving = 'l';
+                        }
+
+                        e.anim.changeAnimation("Run", -1);
+                        e.anim.restart();
+                    }
+
+                    e.applyPhysics(tiles);
+                    return;
+                }
+
+                float patrolNextX = 0f;
+
+                if (e.facing == 'r')
+                {
+                    patrolNextX = e.R.X + e.speed;
+                }
+                else
+                {
+                    patrolNextX = e.R.X - e.speed;
+                }
+
+                bool patrolHitWall = false;
+                bool patrolGroundAhead = false;
+
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    tile t = tiles[i];
+
+                    if (t.interact == true)
+                    {
+                        if (t.jumpThrough == false)
+                        {
+                            bool nextOverlapX = false;
+                            bool currentOverlapY = false;
+
+                            if (patrolNextX + e.R.Width > t.R.X)
+                            {
+                                if (patrolNextX < t.R.X + t.R.Width)
+                                {
+                                    nextOverlapX = true;
+                                }
+                            }
+
+                            if (e.R.Y + e.R.Height > t.R.Y)
+                            {
+                                if (e.R.Y < t.R.Y + t.R.Height)
+                                {
+                                    currentOverlapY = true;
+                                }
+                            }
+
+                            if (nextOverlapX == true)
+                            {
+                                if (currentOverlapY == true)
+                                {
+                                    patrolHitWall = true;
+                                }
+                            }
+
+                            float leadingX = 0f;
+
+                            if (e.facing == 'r')
+                            {
+                                leadingX = patrolNextX + e.R.Width;
+                            }
+                            else
+                            {
+                                leadingX = patrolNextX;
+                            }
+
+                            bool footOverlapX = false;
+                            bool footGroundY = false;
+
+                            if (leadingX > t.R.X)
+                            {
+                                if (leadingX < t.R.X + t.R.Width)
+                                {
+                                    footOverlapX = true;
+                                }
+                            }
+
+                            if (t.R.Y >= e.R.Y + e.R.Height - 4)
+                            {
+                                if (t.R.Y <= e.R.Y + e.R.Height + 8)
+                                {
+                                    footGroundY = true;
+                                }
+                            }
+
+                            if (footOverlapX == true)
+                            {
+                                if (footGroundY == true)
+                                {
+                                    patrolGroundAhead = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                bool patrolShouldTurn = false;
+
+                if (patrolHitWall == true)
+                {
+                    patrolShouldTurn = true;
+                }
+
+                if (patrolGroundAhead == false)
+                {
+                    patrolShouldTurn = true;
+                }
+
+                if (patrolShouldTurn == true)
+                {
+                    e.isWaiting = true;
+                    e.waitTime = 0;
+                    e.anim.changeAnimation("idle", -1);
+                    e.anim.restart();
+                }
+                else
+                {
+                    e.R.X = patrolNextX;
+                    e.anim.changeAnimation("Run", -1);
+                }
+
+                e.applyPhysics(tiles);
+                return;
+            }
             if (hero.isDead)
             {
                 e.attackmode = false;
@@ -5949,6 +6482,16 @@ namespace General
             en.spawn = true;
             levels[0].enemies.Add(en);
 
+
+            en = new Enemy(205, 646 - 120, 200, 120, "horse");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[2].enemies.Add(en);
+
+            en = new Enemy(1499, 320 - 120, 200, 120, "horse");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[2].enemies.Add(en);
         }
 
         void initPlatforms()

@@ -1,11 +1,11 @@
 hero_color:2
-X,Y:2459,878.5
+X,Y:2020.5,549.5
 Moving: 
 ySpeed:0
 jumpsUsed:0
 isTakingDamage:False
 takingDamageTimer:0
-coins:791
+coins:394
 isAttacking:False
 attackHasHit:False
 maxHP:100
@@ -13,7 +13,7 @@ HP:40
 maxMana:100
 mana:100
 regenRate:0.5
-facing:r
+facing:l
 Weapon0_Damage:25
 Weapon1_Damage:15
 currentWeapon:0
