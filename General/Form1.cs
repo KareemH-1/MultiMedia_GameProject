@@ -6759,7 +6759,13 @@ namespace General
         public int attackFrameTimer = 0;
         public int deathTimer = 0;
 
-
+        public int spinTimer = 0;
+        public int spinCooldown = 120;
+        public int spinChance = 100;
+        public bool doSpin = false;
+        int spinDamageInterval = 3;
+        int spinDamageTimer = 0;
+        public float normalSpeed = 0f;
 
         public AnimationController anim = new AnimationController();
 
@@ -6906,7 +6912,11 @@ namespace General
                 drawR.Height = (R.Height * 2);
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y - 50;
-                speed = 10f;
+                if (doSpin == false)
+                {
+                    speed = 10f;
+                }
+                else speed = 18;
             }
             else if(name == "Aegis")
             {
@@ -7206,6 +7216,149 @@ namespace General
                 anim.restart();
                 summonAnimTimer = 40;
                 spawnSummons(hero, enemies, worldWidth, worldHeight);
+                return;
+            }
+
+            if (isAttacking)
+            {
+                attackFrameTimer--;
+
+                if (attackFrameTimer <= 0)
+                {
+                    isAttacking = false;
+                    attackDamageDone = false;
+                    attackCooldown = 80;
+
+                    if (doSpin)
+                    {
+                        doSpin = false;
+                        spinDamageTimer = 0;
+                    }
+                }
+                else
+                {
+                    if (doSpin)
+                    {
+                        saveReaperTarget(hero);
+                        moveReaperTowardsTarget(hero, worldWidth, worldHeight);
+
+                        spinDamageTimer++;
+                        if (spinDamageTimer >= spinDamageInterval)
+                        {
+                            spinDamageTimer = 0;
+
+                            bool spinHit = false;
+                            if (R.X <= hero.R.X + hero.R.Width &&
+                                R.X + R.Width >= hero.R.X &&
+                                R.Y <= hero.R.Y + hero.R.Height &&
+                                R.Y + R.Height >= hero.R.Y)
+                            {
+                                spinHit = true;
+                            }
+
+                            if (spinHit)
+                            {
+                                hero.takeDamage(20);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (anim.currIdx >= 8 && attackDamageDone == false)
+                        {
+                            bool canHit1 = false;
+                            if (R.X <= hero.R.X + hero.R.Width &&
+                                R.X + R.Width >= hero.R.X &&
+                                R.Y <= hero.R.Y + hero.R.Height &&
+                                R.Y + R.Height >= hero.R.Y)
+                            {
+                                canHit1 = true;
+                            }
+
+                            if (canHit1 == true)
+                            {
+                                hero.takeDamage(15);
+                            }
+                            attackDamageDone = true;
+                        }
+                        else if (anim.currIdx == 2)
+                        {
+                            bool canHit1 = false;
+                            if (R.X <= hero.R.X + hero.R.Width &&
+                                R.X + R.Width >= hero.R.X &&
+                                R.Y <= hero.R.Y + hero.R.Height &&
+                                R.Y + R.Height >= hero.R.Y)
+                            {
+                                canHit1 = true;
+                            }
+
+                            if (canHit1 == true)
+                            {
+                                hero.takeDamage(10);
+                            }
+                        }
+                    }
+                }
+
+                return;
+            }
+
+            bool canHit = false;
+            if(R.X <= hero.R.X + hero.R.Width &&
+                R.X + R.Width >= hero.R.X &&
+                R.Y <= hero.R.Y + hero.R.Height &&
+                R.Y + R.Height >= hero.R.Y)
+            {
+                canHit = true;
+            }
+
+            bool isClose = false;
+            int gap = 200;
+            if (R.X <= hero.R.X + hero.R.Width  + gap &&
+                R.X + R.Width + gap >= hero.R.X &&
+                R.Y <= hero.R.Y + hero.R.Height + gap &&
+                R.Y + R.Height + gap  >= hero.R.Y)
+            {
+                isClose = true;
+            }
+            if (doSpin == false)
+            {
+                spinTimer++;
+            }
+            if(isClose == true)
+            {
+                if (spinTimer >= spinCooldown)
+                {
+                    spinTimer = 0;
+                    if (rr.Next(0, 100) <= spinChance)
+                    {
+                        doSpin = true;
+                        isAttacking = true;
+
+                        attackCooldown = 80;
+                        attackDamageDone = false;
+                        attackFrameTimer = 11;
+                        anim.changeAnimation("skill1", -1);
+                        anim.restart();
+                    }
+                    return;
+                }
+            }
+
+            if (canHit == true)
+            {
+                if (attackCooldown <= 0)
+                {
+                    isAttacking = true;
+                    attackDamageDone = false;
+                    attackFrameTimer = 13;
+                    anim.changeAnimation("attacking", -1);
+                    anim.restart();
+                }
+                else
+                {
+                    anim.changeAnimation("idle", -1);
+                }
                 return;
             }
 
