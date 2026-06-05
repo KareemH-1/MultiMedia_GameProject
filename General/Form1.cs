@@ -3941,6 +3941,206 @@ namespace General
             updateAnimation();
         }
     }
+
+    public class MagicianCharge
+    {
+        public rectF r = new rectF();
+        public rectF drawR = new rectF();
+        public char dir;
+
+        public string type = "";
+        public int speed = 16;
+        public int damage = 20;
+        public Animation anim = new Animation();
+        public int AnimIdx = 0;
+        public bool didHit = false;
+        public bool hasFinished = false;
+
+        public int travelledDist = 0;
+        public int maxDist = 2000;
+
+        int endRepeatIdx = 4; //index to stop repeating animation of moving
+        int startRepeatIdx = 0;
+
+        public bool hasLeft = false;
+        public MagicianCharge(float x , float y , string type , char direction )
+        {
+            dir = direction;
+            this.type = type;
+            r.X = x;
+            r.Width = 50;
+            r.Height = 50;
+            r.Y = y;
+
+            if (type == "arrow")
+            {
+                string direc = "right";
+                if (direction == 'l') direc = "left";
+
+                damage = 15;
+                speed = 40;
+                for(int i =1; i<= 6; i++)
+                {
+                    string path = "Characters/Enemies/Magician/Charge_2/" + direc + "/Charge_2_" + i.ToString() + ".png";
+                    anim.addFrame(new Bitmap(path) , false , false);
+                }
+            }
+            else if(type == "sphere")
+            {
+                string direc = "right";
+                if (direction == 'l') direc = "left";
+
+                damage = 30;
+                speed = 25;
+                for (int i = 1; i <= 9; i++)
+                {
+                    string path = "Characters/Enemies/Magician/Charge_1/" + direc + "/Charge_1_" + i.ToString() + ".png";
+                    anim.addFrame(new Bitmap(path), false, false);
+
+                }
+            }
+        }
+
+        public void moveCharge(Hero hero, List<tile> tiles)
+        {
+            if (didHit == true) return;
+
+            if (dir == 'r')
+            {
+                this.r.X += speed;
+            }
+            else
+            {
+                this.r.X -= speed;
+            }
+
+            travelledDist += speed;
+
+            if (travelledDist >= maxDist)
+            {
+                didHit = true;
+                return;
+            }
+
+            if (travelledDist > 60)
+            {
+                hasLeft = true;
+            }
+
+            if (r.X < hero.R.X + hero.R.Width)
+            {
+                if (r.X + r.Width > hero.R.X)
+                {
+                    if (r.Y < hero.R.Y + hero.R.Height)
+                    {
+                        if (r.Y + r.Height > hero.R.Y)
+                        {
+                            hero.takeDamage(damage);
+                            didHit = true;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if (hasLeft == true)
+            {
+                for (int t = 0; t < tiles.Count; t++)
+                {
+                    tile tl = tiles[t];
+
+                    if (tl.interact == true)
+                    {
+                        if (tl.jumpThrough == false)
+                        {
+                            if (r.X < tl.R.X + tl.R.Width)
+                            {
+                                if (r.X + r.Width > tl.R.X)
+                                {
+                                    if (r.Y < tl.R.Y + tl.R.Height)
+                                    {
+                                        if (r.Y + r.Height > tl.R.Y)
+                                        {
+                                            didHit = true;
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public void updateDrawR()
+        {
+            drawR.Width = 68 * 2;
+            drawR.Height = 128 * 2;
+            drawR.X = r.X - (drawR.Width / 2) + (r.Width / 2);
+            drawR.Y = r.Y - (drawR.Height / 2) + (r.Height / 2) ;
+        }
+        public void draw(Graphics g , bool showRange , float camX , float camY)
+        {
+            updateDrawR();
+
+            if (showRange == true)
+            {
+                Pen pn = new Pen(Color.DarkMagenta, 2);
+                g.DrawRectangle(pn, r.X - camX, r.Y - camY, r.Width, r.Height);
+            }
+
+            if (hasFinished == false)
+            {
+                Bitmap frame = anim.frames[AnimIdx];
+
+                if (didHit == false)
+                {
+                    if (type == "arrow")
+                    {
+                        AnimIdx++;
+                        if (AnimIdx == anim.frames.Count)
+                        {
+                            AnimIdx = 1;
+                        }
+                    }
+                    if (type == "sphere")
+                    {
+                        AnimIdx++;
+                        if (AnimIdx == endRepeatIdx + 1)
+                        {
+                            AnimIdx = startRepeatIdx;
+                        }
+                    }
+                }
+                else
+                {
+                    if (type == "arrow")
+                    {
+                        hasFinished = true;
+                    }
+                    if (type == "sphere")
+                    {
+                        if (AnimIdx < 5)
+                        {
+                            AnimIdx = 5;
+                        }
+                        else
+                        {
+                            AnimIdx++;
+                            if (AnimIdx == anim.frames.Count - 1)
+                            {
+                                hasFinished = true;
+                            }
+                        }
+                    }
+                }
+
+                g.DrawImage(frame, drawR.X - camX , drawR.Y - camY, drawR.Width, drawR.Height);
+            }
+        }
+    }
     public class Enemy
     {
         public rectF R = new rectF();
@@ -4028,6 +4228,9 @@ namespace General
 
         public float chargeSpeed = 26f;
         public AnimationController anim = new AnimationController();
+
+        public string chargeType;
+        public List<MagicianCharge> charges = new List<MagicianCharge>();
 
         public Enemy(int startX, int startY, int w, int h, string type)
         {
@@ -4257,6 +4460,43 @@ namespace General
                 animFolders = sproutFolders;
                 animFrames = sproutFrames;
             }
+            else if (type == "magician")
+            {
+                drawR.X = R.X;
+                drawR.Y = R.Y;
+                drawR.Width = R.Width * 1.5f;
+                drawR.Height = R.Height * 1.5f;
+
+                enemyName = "magician";
+                enemyFolder = "Magician";
+                attackanimname = "Attack_1";
+                moveAnimName = "Walk";
+                dieAnimName = "Dead";
+  
+                speed = 5f;
+                gravity = 1.2f;
+                max_speed = 25f;
+
+                patrolDistance = 200f;
+                attackrange = 55f; 
+                attackdis = 1000f;
+                isSleeping = false;
+                isWakingUp = false;
+                canMoveAfterWakeup = true;
+
+                spawnrange = 600;
+                spawnTime = 600;
+
+                HP = new Health(150, 150);
+
+                string[] MagicianFolders = { "Attack_1", "Attack_2" , "Magic_arrow" , "Magic_sphere",
+                "Dead" , "hit" , "idle" , "Jump" , "Walk" , "Run"};
+
+                int[] MagicianFrames = { 7, 9 , 6 , 16 , 4 , 4 , 8 , 8  , 7 , 8 };
+
+                animFolders = MagicianFolders;
+                animFrames = MagicianFrames;
+            }
         }
 
         void createAnim()
@@ -4317,6 +4557,16 @@ namespace General
                         for (int j = 0; j < animFrames[i]; j++)
                         {
                             Bitmap img = new Bitmap(basePath + j.ToString() + ".png");
+                            a.addFrame(img, true, isLeft);
+                        }
+                    }
+                    else if(enemyName == "magician")
+                    {
+                        string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/" + directions[d] + "/";
+
+                        for (int j = 1; j <= animFrames[i]; j++)
+                        {
+                            Bitmap img = new Bitmap(basePath + animFolders[i] + "_" + j.ToString() + ".png");
                             a.addFrame(img, true, isLeft);
                         }
                     }
@@ -4448,14 +4698,17 @@ namespace General
             {
                 anim.changeAnimation(attackanimname, -1);
 
-                attackFrameTimer--;
-
-                if (attackFrameTimer <= 0)
+                if (enemyName != "magician")
                 {
-                    isAttacking = false;
-                    attackCooldown = 100;
-                    anim.changeAnimation("idle", -1);
-                    anim.restart();
+                    attackFrameTimer--;
+
+                    if (attackFrameTimer <= 0)
+                    {
+                        isAttacking = false;
+                        attackCooldown = 100;
+                        anim.changeAnimation("idle", -1);
+                        anim.restart();
+                    }
                 }
 
                 return;
@@ -4564,6 +4817,13 @@ namespace General
 
             if (HP.getHP() <= 0)
             {
+                if(enemyName == "magician")
+                {
+                    while(charges.Count > 0)
+                    {
+                        charges.RemoveAt(0);
+                    }
+                }
                 isDead = true;
                 isTakingDamage = false;
 
@@ -4640,6 +4900,21 @@ namespace General
                 {
                     drawR.Y = R.Y - 20;
 
+                }
+                if(enemyType == "magician")
+                {
+                    for(int i =0; i< charges.Count; i++)
+                    {
+                        if(charges[i].hasFinished == true)
+                        {
+                            charges.RemoveAt(i);
+                            i--;
+                        }
+                        else
+                        {
+                            charges[i].draw(g, showRanges, camX, camY);
+                        }
+                    }
                 }
 
                 Bitmap frame;
@@ -5800,6 +6075,353 @@ namespace General
                 e.applyPhysics(tiles);
                 return;
             }
+            if (e.enemyType == "magician")
+            {
+                if (hero.isDead)
+                {
+                    e.attackmode = false;
+                    e.isAttacking = false;
+                    e.attackFrameTimer = 0;
+                    e.attackDamageDone = false;
+                }
+
+                if (e.attackCooldown > 0)
+                    e.attackCooldown--;
+
+                for (int c = e.charges.Count - 1; c >= 0; c--)
+                {
+                    e.charges[c].moveCharge(hero, tiles);
+                    if (e.charges[c].hasFinished)
+                    {
+                        e.charges.RemoveAt(c);
+                    }
+                }
+
+                if (e.isDead || e.isTakingDamage)
+                {
+                    e.applyPhysics(tiles);
+                    e.updateAnimation();
+                    return;
+                }
+
+                float distX = 0f;
+                float distY = 0f;
+                char direc = e.moving;
+
+                if (e.R.X > hero.R.X)
+                {
+                    distX = e.R.X - hero.R.X;
+                    direc = 'l';
+                }
+                else if (e.R.X < hero.R.X)
+                {
+                    distX = hero.R.X - e.R.X;
+                    direc = 'r';
+                }
+
+                if (e.R.Y > hero.R.Y)
+                    distY = e.R.Y - hero.R.Y;
+                else if (hero.R.Y > e.R.Y)
+                    distY = hero.R.Y - e.R.Y;
+
+                bool isSameY = false;
+                if (distY < 80)
+                    isSameY = true;
+
+                bool heroInRange = false;
+                if (distX <= e.attackdis)
+                {
+                    if (isSameY)
+                    {
+                        if (!hero.isDead)
+                        {
+                            heroInRange = true;
+                        }
+                    }
+                }
+
+                if (heroInRange)
+                {
+                    e.attackmode = true;
+                }
+                else
+                {
+                    e.attackmode = false;
+                    if (e.isAttacking)
+                    {
+                        e.isAttacking = false;
+                        e.attackDamageDone = false;
+                    }
+                }
+
+                if (e.attackmode)
+                {
+                    e.facing = direc;
+                    e.moving = ' ';
+                    e.isRunning = false;
+
+                    if (e.isAttacking)
+                    {
+                        Animation currAnim = e.anim.getCurrentAnimation();
+                        if (currAnim != null)
+                        {
+                            bool facingL = false;
+                            if (e.facing == 'l')
+                                facingL = true;
+
+                            List<Bitmap> frames = currAnim.getFrames(facingL);
+                            if (frames.Count > 0)
+                            {
+                                if (e.anim.currIdx >= frames.Count - 1)
+                                {
+                                    if (!e.attackDamageDone)
+                                    {
+                                        float spawnX = 0f;
+                                        float spawnY = e.R.Y + e.R.Height / 2f - 32f;
+
+                                        if (e.facing == 'l')
+                                        {
+                                            spawnX = e.R.X - 68;
+                                        }
+                                        else
+                                        {
+                                            spawnX = e.R.X + e.R.Width;
+                                        }
+
+                                        MagicianCharge charge = new MagicianCharge(spawnX, spawnY, e.chargeType, e.facing);
+                                        e.charges.Add(charge);
+
+                                        e.attackDamageDone = true;
+                                    }
+
+                                    e.isAttacking = false;
+                                    e.attackCooldown = 90;
+                                    e.anim.changeAnimation("idle", -1);
+                                    e.anim.restart();
+                                }
+                            }
+                        }
+
+                        e.applyPhysics(tiles);
+                        e.updateAnimation();
+                        return;
+                    }
+
+                    Animation currIdleAnim = e.anim.getCurrentAnimation();
+                    bool alreadyIdling = false;
+                    if (currIdleAnim != null)
+                    {
+                        if (currIdleAnim.name == "idle")
+                        {
+                            alreadyIdling = true;
+                        }
+                    }
+
+                    if (alreadyIdling == false)
+                    {
+                        e.anim.changeAnimation("idle", -1);
+                        e.anim.restart();
+                    }
+
+                    if (e.attackCooldown <= 0)
+                    {
+                        if (!hero.isDead)
+                        {
+                            int rr = e.rr.Next(0, 2);
+
+                            string animName = "";
+
+                            if (rr == 0)
+                            {
+                                e.chargeType = "arrow";
+                                animName = "Attack_1";
+                                e.attackFrameTimer = 60;
+                            }
+                            else
+                            {
+                                e.chargeType = "sphere";
+                                animName = "Magic_sphere";
+                                e.attackFrameTimer = 120;
+                            }
+
+                            e.isAttacking = true;
+                            e.attackDamageDone = false;
+                            e.attackanimname = animName;
+                            e.anim.changeAnimation(animName, -1);
+                            e.anim.restart();
+                        }
+                    }
+
+                    e.applyPhysics(tiles);
+                    e.updateAnimation();
+                    return;
+                }
+
+                if (e.isWaiting)
+                {
+                    e.waitTime++;
+
+                    Animation currWaitAnim = e.anim.getCurrentAnimation();
+                    bool alreadyIdleWait = false;
+                    if (currWaitAnim != null)
+                    {
+                        if (currWaitAnim.name == "idle")
+                        {
+                            alreadyIdleWait = true;
+                        }
+                    }
+
+                    if (alreadyIdleWait == false)
+                    {
+                        e.anim.changeAnimation("idle", -1);
+                        e.anim.restart();
+                    }
+
+                    if (e.waitTime >= 60)
+                    {
+                        e.waitTime = 0;
+                        e.isWaiting = false;
+
+                        if (e.facing == 'l')
+                        {
+                            e.facing = 'r';
+                            e.moving = 'r';
+                        }
+                        else
+                        {
+                            e.facing = 'l';
+                            e.moving = 'l';
+                        }
+
+                        e.anim.changeAnimation(e.moveAnimName, -1);
+                        e.anim.restart();
+                    }
+
+                    e.applyPhysics(tiles);
+                    return;
+                }
+
+                float patrolNextX = 0f;
+                if (e.facing == 'r')
+                    patrolNextX = e.R.X + e.speed;
+                else
+                    patrolNextX = e.R.X - e.speed;
+
+                bool patrolHitWall = false;
+                bool patrolGroundAhead = false;
+
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    tile t = tiles[i];
+
+                    if (t.interact)
+                    {
+                        if (!t.jumpThrough)
+                        {
+                            bool nextOverlapX = false;
+                            bool currentOverlapY = false;
+
+                            if (patrolNextX + e.R.Width > t.R.X)
+                            {
+                                if (patrolNextX < t.R.X + t.R.Width)
+                                {
+                                    nextOverlapX = true;
+                                }
+                            }
+
+                            if (e.R.Y + e.R.Height > t.R.Y)
+                            {
+                                if (e.R.Y < t.R.Y + t.R.Height)
+                                {
+                                    currentOverlapY = true;
+                                }
+                            }
+
+                            if (nextOverlapX)
+                            {
+                                if (currentOverlapY)
+                                {
+                                    patrolHitWall = true;
+                                }
+                            }
+
+                            float leadingX = 0f;
+                            if (e.facing == 'r')
+                                leadingX = patrolNextX + e.R.Width;
+                            else
+                                leadingX = patrolNextX;
+
+                            bool footOverlapX = false;
+                            bool footGroundY = false;
+
+                            if (leadingX > t.R.X)
+                            {
+                                if (leadingX < t.R.X + t.R.Width)
+                                {
+                                    footOverlapX = true;
+                                }
+                            }
+
+                            if (t.R.Y >= e.R.Y + e.R.Height - 4)
+                            {
+                                if (t.R.Y <= e.R.Y + e.R.Height + 8)
+                                {
+                                    footGroundY = true;
+                                }
+                            }
+
+                            if (footOverlapX)
+                            {
+                                if (footGroundY)
+                                {
+                                    patrolGroundAhead = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (patrolHitWall)
+                {
+                    e.isWaiting = true;
+                    e.waitTime = 0;
+                    e.anim.changeAnimation("idle", -1);
+                    e.anim.restart();
+                }
+                else if (!patrolGroundAhead)
+                {
+                    e.isWaiting = true;
+                    e.waitTime = 0;
+                    e.anim.changeAnimation("idle", -1);
+                    e.anim.restart();
+                }
+                else
+                {
+                    e.R.X = patrolNextX;
+
+                    Animation currWalkAnim = e.anim.getCurrentAnimation();
+                    bool alreadyWalking = false;
+                    if (currWalkAnim != null)
+                    {
+                        if (currWalkAnim.name == e.moveAnimName)
+                        {
+                            alreadyWalking = true;
+                        }
+                    }
+
+                    if (alreadyWalking == false)
+                    {
+                        e.anim.changeAnimation(e.moveAnimName, -1);
+                        e.anim.restart();
+                    }
+                }
+
+                e.applyPhysics(tiles);
+                e.updateAnimation();
+                return;
+            }
+
+
             if (hero.isDead)
             {
                 e.attackmode = false;
@@ -6488,7 +7110,20 @@ namespace General
             en.spawn = true;
             levels[2].enemies.Add(en);
 
-            en = new Enemy(1499, 320 - 120, 200, 120, "horse");
+            en = new Enemy(3490, 319 - 120, 200, 120, "horse");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[2].enemies.Add(en);
+
+
+            en = new Enemy(1500, 320 - 110, 110, 110, "magician");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[2].enemies.Add(en);
+
+
+
+            en = new Enemy(3520, 647 - 110, 110, 110, "magician");
             en.CanSpawn = true;
             en.spawn = true;
             levels[2].enemies.Add(en);
@@ -9569,6 +10204,14 @@ namespace General
                 }
                 hero.isCastingAbility = false;
                 hero.abilityFireballSpawned = false;
+            }
+
+            for (int i = 0; i < enemyController.enemies.Count; i++)
+            {
+                while (enemyController.enemies[i].charges.Count > 0)
+                {
+                    enemyController.enemies[i].charges.RemoveAt(0);
+                }
             }
         }
 
