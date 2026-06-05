@@ -1551,6 +1551,12 @@ namespace General
         public int maxTimer = 20;
 
         public bool repeat = false;
+
+        public void setOffset(int offsetX , int offsetY)
+        {
+            this.offsetX = offsetX;
+            this.offsetY = offsetY;
+        }
         public void draw(Graphics g, rectF ownerR, float camX, float camY)
         {
             if (followPlayer)
@@ -2332,6 +2338,7 @@ namespace General
 
         Animation doubleJumpAnimation;
         Animation fireballAnimation;
+        Animation healAnimation;
         public int coins = 0;
 
         public AnimationController anim = new AnimationController();
@@ -2556,6 +2563,20 @@ namespace General
                 else frame = new Bitmap("vfx/BurnEffect/Frames/BurnEffect_" + i + ".png");
 
                 fireballAnimation.addFrame(frame, false, false);
+            }
+
+            healAnimation = new Animation();
+            healAnimation.name = "heal";
+            healAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/HealEffect/Frames/HealEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/HealEffect/Frames/HealEffect_" + i + ".png");
+
+                healAnimation.addFrame(frame, false, false);
             }
         }
 
@@ -3001,6 +3022,32 @@ namespace General
 
 
             fx.maxTimer = doubleJumpAnimation.frames.Count * doubleJumpAnimation.frameDelay;
+
+            vfxes.Add(fx);
+        }
+
+
+        public void heal(int amount)
+        {
+            HP.heal(amount);
+            createHealVFX();
+        }
+        void createHealVFX()
+        {
+            vfx fx = new vfx();
+
+            fx.name = "heal";
+            fx.anim.addAnim(healAnimation);
+            fx.anim.changeAnimation("heal", -1);
+
+
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height =drawR.Height;
+
+            fx.setOffset(0, 30);
+
+            fx.followPlayer = true;
+
 
             vfxes.Add(fx);
         }
@@ -9903,6 +9950,11 @@ namespace General
 
 
                         }
+                    }
+
+                    if(e.KeyCode == Keys.H)
+                    {
+                        hero.heal(10);
                     }
                     if (levels.currentLevel < levels.levels.Count - 1)
                     {
