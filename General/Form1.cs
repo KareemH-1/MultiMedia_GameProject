@@ -3511,8 +3511,7 @@ namespace General
             float moveSpeed = speed;
 
             if (isShielding)
-            {
-                moveSpeed = 0;
+            {moveSpeed = 0;
             }
 
             if (isRunning == true)
@@ -10644,6 +10643,16 @@ namespace General
             textY += 35;
 
             G.DrawString("E -> Ability", smallFont, white, x + 70, textY);
+
+
+            textY += 35;
+
+            G.DrawString("F -> Shielding", smallFont, white, x + 70, textY);
+
+
+            textY += 35;
+
+            G.DrawString("R -> Lazer shooting", smallFont, white, x + 70, textY);
         }
 
         void drawCreditsScreen(Graphics G, int x, int y, int width, int height, Font titleFont, Font normalFont, SolidBrush white, SolidBrush gold)
