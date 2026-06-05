@@ -1531,7 +1531,7 @@ namespace General
             currIdx = 0;
             frameDelayCount = 0;
         }
-
+        
     }
 
     public class vfx
@@ -2407,6 +2407,12 @@ namespace General
         public bool isDoingCombo = false;
 
 
+        public bool isShielding = false;
+        public bool shieldKeyHeld = false;
+        public int shieldAnimFrame = 0; 
+        public Animation shieldEffectAnimation;
+
+
         //General
         public Hero(int startX, int startY, int w, int h, int colorIdx)
         {
@@ -2463,8 +2469,27 @@ namespace General
             }
 
             Bitmap frame;
+            if (isShielding && anim.getCurrentAnimation().name == "shield_defence")
+            {
+                bool dirFacingL = false;
+                if (facing == 'l') dirFacingL = true;
+                
+                Animation shieldAnim = anim.getCurrentAnimation();
+                
+                List<Bitmap> shieldFrames = shieldAnim.getFrames(dirFacingL);
+                
+                int lastFrame = shieldFrames.Count - 1;
 
-            if (isLaserCasting)
+                if (anim.currIdx >= lastFrame)
+                {
+                    frame = anim.playCurrentFrame(dirFacingL, true);
+                }
+                else
+                {
+                    frame = anim.playFrame(dirFacingL, true);
+                }
+            }
+            else if (isLaserCasting)
             {
                 if (facing == 'l')
                 {
@@ -2578,8 +2603,129 @@ namespace General
 
                 healAnimation.addFrame(frame, false, false);
             }
+
+            shieldEffectAnimation = new Animation();
+            shieldEffectAnimation.name = "shieldEffect";
+            shieldEffectAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/ShieldEffect/Frames/ShieldEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/ShieldEffect/Frames/ShieldEffect_" + i + ".png");
+
+                shieldEffectAnimation.addFrame(frame, false, false);
+            }
         }
 
+        public void startShield()
+        {
+            if (isDead) return;
+            if (isTakingDamage) return;
+            if (isClimbing || isClimbingMoving) return;
+
+            isAttacking = false;
+            attackHasHit = false;
+            isDoingCombo = false;
+            isShooting = false;
+            isCastingAbility = false;
+            abilityFireballSpawned = false;
+            stopLaserCast();
+
+            shieldKeyHeld = true;
+
+            if (!isShielding)
+            {
+                isShielding = true;
+                createShieldVFX();
+                anim.changeAnimation("shield_defence", -1);
+                anim.restart();
+                anim.currIdx = 0;
+            }
+        }
+
+        public void stopShield()
+        {
+            shieldKeyHeld = false;
+            isShielding = false;
+
+            for (int i = vfxes.Count - 1; i >= 0; i--)
+            {
+                if (vfxes[i].name == "shieldEffect")
+                {
+                    vfxes.RemoveAt(i);
+                }
+            }
+        }
+
+        void createShieldVFX()
+        {
+            for (int i = vfxes.Count - 1; i >= 0; i--)
+            {
+                if (vfxes[i].name == "shieldEffect")
+                    vfxes.RemoveAt(i);
+            }
+
+            vfx fx = new vfx();
+            fx.name = "shieldEffect";
+            fx.repeat = true;
+            fx.anim.addAnim(shieldEffectAnimation);
+            fx.anim.changeAnimation("shieldEffect", -1);
+
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height = drawR.Height;
+            fx.setOffset(0, 30);
+            fx.followPlayer = true;
+
+            vfxes.Add(fx);
+        }
+
+        public void updateShield()
+        {
+            if (!isShielding) return;
+
+            isAttacking = false;
+            isShooting = false;
+            isCastingAbility = false;
+
+            if (anim.getCurrentAnimation().name != "shield_defence")
+            {
+                anim.changeAnimation("shield_defence", -1);
+                anim.restart();
+                return;
+            }
+
+            Animation shieldAnim = anim.getCurrentAnimation();
+            if (shieldAnim == null) return;
+
+            bool dirFacingL = false;
+            if (facing == 'l') dirFacingL = true;
+
+            List<Bitmap> frames = shieldAnim.getFrames(dirFacingL);
+            int lastFrame = frames.Count - 1;
+
+            if (anim.currIdx >= lastFrame)
+            {
+                anim.currIdx = lastFrame;
+                anim.frameDelayCount = 0;
+            }
+        }
+
+        public int applyShieldDamage(int rawDamage)
+        {
+            if (!isShielding) return rawDamage;
+
+            int perfectBlockRoll = rnd.Next(0, 100);
+            if (perfectBlockRoll < 10)
+            {
+                return 0;
+            }
+
+            int blockPercent = rnd.Next(60, 99);
+            int blocked = (rawDamage * blockPercent) / 100;
+            int remaining = rawDamage - blocked;
+            return remaining;
+        }
         public void collectDroppedCoins(List<DroppedCoin> droppedCoins)
         {
             for (int i = 0; i < droppedCoins.Count; i++)
@@ -2787,6 +2933,12 @@ namespace General
                 return;
             }
 
+            if (isShielding)
+            {
+                updateShield();
+                return;
+            }
+
             if (isAttacking == true)
             {
                 if (isCriticalAttack)
@@ -2799,6 +2951,8 @@ namespace General
                 }
                 return;
             }
+
+
 
             if (isLanding)
             {
@@ -2832,7 +2986,8 @@ namespace General
         }
 
         public void takeDamage(int amount)
-        {
+        {   
+
             if ((isClimbing || isClimbingMoving)) return;
 
             if (isDead == true)
@@ -2844,7 +2999,15 @@ namespace General
                 return;
             }
 
+
+            if (isShielding)
+            {
+                amount = applyShieldDamage(amount);
+                if (amount <= 0) return;
+            }
+
             HP.damage(amount);
+
             isAttacking = false;
             isShooting = false;
             isCastingAbility = false;
@@ -3345,8 +3508,12 @@ namespace General
                 updateAnimation();
                 return;
             }
-
             float moveSpeed = speed;
+
+            if (isShielding)
+            {
+                moveSpeed = 0;
+            }
 
             if (isRunning == true)
             {
@@ -3724,6 +3891,8 @@ namespace General
 
         public void jump()
         {
+            if (isShielding) return;
+
             isClimbing = false;
             isClimbingMoving = false;
             climbDir = ' ';
@@ -9602,6 +9771,11 @@ namespace General
                 hero.stopJump();
             }
 
+            if (e.KeyCode == Keys.F)
+            {
+                hero.stopShield();
+            }
+
             if (e.KeyCode == Keys.ShiftKey)
             {
                 hero.isRunning = false;
@@ -9895,6 +10069,10 @@ namespace General
                         else showRanges = true;
                     }
 
+                    if(e.KeyCode == Keys.F)
+                    {
+                        hero.startShield();
+                    }
                     if (e.KeyCode == Keys.E && hero.abilityKeyDown == false)
                     {
                         hero.abilityKeyDown = true;
