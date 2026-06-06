@@ -2008,13 +2008,26 @@ namespace General
 
         Color getOuterColor()
         {
-            if (colorIdx == 0) return Color.FromArgb(150, 0, 200, 255);
+            Color result;
 
-            if (colorIdx == 1) return Color.FromArgb(150, 0, 255, 0);
+            if (colorIdx == 0)
+            {
+                result = Color.FromArgb(0, 200, 255);
+            }
+            else if (colorIdx == 1)
+            {
+                result = Color.FromArgb(0, 255, 0);
+            }
+            else if (colorIdx == 2)
+            {
+                result = Color.FromArgb(200, 0, 255);
+            }
+            else
+            {
+                result = Color.FromArgb(255, 50, 0);
+            }
 
-            if (colorIdx == 2) return Color.FromArgb(150, 200, 0, 255);
-
-            return Color.FromArgb(150, 255, 50, 0);
+            return result;
         }
 
         Color getInnerColor()
@@ -2295,6 +2308,14 @@ namespace General
         }
     }
 
+    public class Inventory
+    {
+        public int healthPotions = 0;
+        public int manaPotions = 0;
+        public int goldenPotions = 0;
+        public int suspiciousPotions = 0;
+    }
+
     public class Hero
     {
         public int ColorIdx = 0;
@@ -2339,12 +2360,17 @@ namespace General
         Animation doubleJumpAnimation;
         Animation fireballAnimation;
         Animation healAnimation;
+        Animation freezeAnimation;
+        Animation blessedAnimation;
+        Animation poisonBubbleAnimation;
         public int coins = 0;
+        public int goldenEffectTimer = 0;
 
         public AnimationController anim = new AnimationController();
 
         public Health HP = new Health(100, 100);
         public Mana mana = new Mana(100, 100);
+        public Inventory inventory = new Inventory();
         public UIEntity UI = new UIEntity(20f, 20f, 236f, 26f, true, true);
 
 
@@ -2547,6 +2573,21 @@ namespace General
                 }
             }
 
+            if (goldenEffectTimer > 0)
+            {
+                goldenEffectTimer--;
+                if (goldenEffectTimer <= 0)
+                {
+                    for (int i = vfxes.Count - 1; i >= 0; i--)
+                    {
+                        if (vfxes[i].name == "goldenEffect")
+                        {
+                            vfxes[i].finished = true;
+                        }
+                    }
+                }
+            }
+
             for (int i = vfxes.Count - 1; i >= 0; i--)
             {
                 vfxes[i].draw(g, R, camX, camY);
@@ -2615,6 +2656,42 @@ namespace General
                 else frame = new Bitmap("vfx/ShieldEffect/Frames/ShieldEffect_" + i + ".png");
 
                 shieldEffectAnimation.addFrame(frame, false, false);
+            }
+
+            freezeAnimation = new Animation();
+            freezeAnimation.name = "freeze";
+            freezeAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/FreezeEffect/Frames/FreezeEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/FreezeEffect/Frames/FreezeEffect_" + i + ".png");
+                freezeAnimation.addFrame(frame, false, false);
+            }
+
+            blessedAnimation = new Animation();
+            blessedAnimation.name = "blessed";
+            blessedAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/BlessedEffect/Frames/BlessedEffect_0" + i + ".png");
+                else frame = new Bitmap("vfx/BlessedEffect/Frames/BlessedEffect_" + i + ".png");
+                blessedAnimation.addFrame(frame, false, false);
+            }
+
+            poisonBubbleAnimation = new Animation();
+            poisonBubbleAnimation.name = "poisonBubble";
+            poisonBubbleAnimation.frameDelay = 0;
+
+            for (int i = 0; i <= 15; i++)
+            {
+                Bitmap frame;
+                if (i < 10) frame = new Bitmap("vfx/PoisonBubble/Frames/PoisonBubble_0" + i + ".png");
+                else frame = new Bitmap("vfx/PoisonBubble/Frames/PoisonBubble_" + i + ".png");
+                poisonBubbleAnimation.addFrame(frame, false, false);
             }
         }
 
@@ -2740,6 +2817,28 @@ namespace General
                     coins += coin.coinvalue;
 
                     droppedCoins.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
+        public void collectDroppedPotions(List<DroppedPotion> droppedPotions)
+        {
+            for (int i = 0; i < droppedPotions.Count; i++)
+            {
+                DroppedPotion potion = droppedPotions[i];
+
+                if (R.X < potion.R.X + potion.R.Width &&
+                    R.X + R.Width > potion.R.X &&
+                    R.Y < potion.R.Y + potion.R.Height &&
+                    R.Y + R.Height > potion.R.Y)
+                {
+                    if (potion.potionType == "health") inventory.healthPotions++;
+                    else if (potion.potionType == "mana") inventory.manaPotions++;
+                    else if (potion.potionType == "golden") inventory.goldenPotions++;
+                    else if (potion.potionType == "suspicious") inventory.suspiciousPotions++;
+
+                    droppedPotions.RemoveAt(i);
                     i--;
                 }
             }
@@ -3693,9 +3792,9 @@ namespace General
                                 if (R.X + R.Width > tileToCheck.R.X && R.X < tileToCheck.R.X + tileToCheck.R.Width)
                                 {
                                     float prevTop = prevY;
-                                    float prevBottom = prevY + R.Height;
+                                    float prevBot = prevY + R.Height;
 
-                                    if (prevBottom > tileToCheck.R.Y && prevTop < tileToCheck.R.Y + tileToCheck.R.Height)
+                                    if (prevBot > tileToCheck.R.Y && prevTop < tileToCheck.R.Y + tileToCheck.R.Height)
                                     {
                                         if (ySpeed < 0)
                                         {
@@ -3953,6 +4052,69 @@ namespace General
             }
         }
 
+        public void restoreHealth(int amount)
+        {
+            HP.HP += amount;
+            if (HP.HP > HP.maxHP) HP.HP = HP.maxHP;
+            vfx fx = new vfx();
+            fx.name = "healEffect";
+            fx.repeat = false;
+            fx.anim.addAnim(healAnimation);
+            fx.anim.changeAnimation("heal", -1);
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height = drawR.Height;
+            fx.setOffset(0, 30);
+            fx.followPlayer = true;
+            vfxes.Add(fx);
+        }
+
+        public void restoreMana(int amount)
+        {
+            mana.mana += amount;
+            if (mana.mana > mana.maxMana) mana.mana = mana.maxMana;
+            vfx fx = new vfx();
+            fx.name = "freezeEffect";
+            fx.repeat = false;
+            fx.anim.addAnim(freezeAnimation);
+            fx.anim.changeAnimation("freeze", -1);
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height = drawR.Height;
+            fx.setOffset(0, 30);
+            fx.followPlayer = true;
+            vfxes.Add(fx);
+        }
+
+        public void useGoldenPotion()
+        {
+            goldenEffectTimer = 300;
+            vfx fx = new vfx();
+            fx.name = "goldenEffect";
+            fx.repeat = true;
+            fx.anim.addAnim(blessedAnimation);
+            fx.anim.changeAnimation("blessed", -1);
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height = drawR.Height;
+            fx.setOffset(0, 30);
+            fx.followPlayer = true;
+            vfxes.Add(fx);
+        }
+
+        public void useSuspiciousPotion()
+        {
+            HP.HP -= 20;
+            if (HP.HP < 0) HP.HP = 0;
+            vfx fx = new vfx();
+            fx.name = "poisonBubble";
+            fx.repeat = false;
+            fx.anim.addAnim(poisonBubbleAnimation);
+            fx.anim.changeAnimation("poisonBubble", -1);
+            fx.rect.Width = drawR.Width;
+            fx.rect.Height = drawR.Height;
+            fx.setOffset(0, 30);
+            fx.followPlayer = true;
+            vfxes.Add(fx);
+        }
+
 
     }
 
@@ -4154,6 +4316,105 @@ namespace General
             g.DrawImage(frames[currFrame], R.X - camX, R.Y - camY, R.Width, R.Height);
 
             updateAnimation();
+        }
+    }
+
+    public class DroppedPotion
+    {
+        public rectF R = new rectF();
+        public float velocityY = 0f;
+        public float gravity = 1.2f;
+        public float maxFallSpeed = 20f;
+        public float prevBottom = 0f;
+
+        public List<Bitmap> frames = new List<Bitmap>();
+        public int currFrame = 0;
+        public int frameDelay = 3;
+        public int frameDelayCount = 0;
+        public string potionType = "";
+
+        public DroppedPotion(string type, float x, float y)
+        {
+            potionType = type;
+            R.X = x;
+            R.Y = y;
+            R.Width = 24;
+            R.Height = 24;
+
+            string file = "";
+            if (type == "health") file = "Collectables/Potions/S_HP.png";
+            else if (type == "mana") file = "Collectables/Potions/S-MP.png";
+            else if (type == "golden") file = "Collectables/Potions/GoldenP.png";
+            else if (type == "suspicious") file = "Collectables/Potions/Suspiciousp.png";
+            else if (type == "largeHealth") file = "Collectables/Potions/L-HP.png";
+            else if (type == "largeMana") file = "Collectables/Potions/L-MP.png";
+
+            if (System.IO.File.Exists(file))
+            {
+                frames.Add(new Bitmap(file));
+            }
+        }
+
+        public void update(List<tile> tiles)
+        {
+            prevBottom = R.Y + R.Height;
+            velocityY += gravity;
+            if (velocityY > maxFallSpeed) velocityY = maxFallSpeed;
+
+            R.Y += velocityY;
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                tile t = tiles[i];
+                if (t.R.X + t.R.Width > R.X && t.R.X < R.X + R.Width)
+                {
+                    if (t.jumpThrough == true)
+                    {
+                        if (velocityY >= 0 &&
+                            prevBottom <= t.R.Y &&
+                            R.Y + R.Height >= t.R.Y)
+                        {
+                            R.Y = t.R.Y - R.Height;
+                            velocityY = 0;
+                        }
+                    }
+                    else
+                    {
+                        bool overlappingY = R.Y + R.Height > t.R.Y && R.Y < t.R.Y + t.R.Height;
+                        if (overlappingY)
+                        {
+                            if (velocityY > 0)
+                            {
+                                R.Y = t.R.Y - R.Height;
+                                velocityY = 0;
+                            }
+                            else if (velocityY < 0)
+                            {
+                                R.Y = t.R.Y + t.R.Height;
+                                velocityY = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public bool isOutOfMap(float worldWidth, float worldHeight)
+        {
+            return R.X + R.Width < 0f || R.X > worldWidth || R.Y + R.Height < 0f || R.Y > worldHeight;
+        }
+
+        public void draw(Graphics g, float camX, float camY)
+        {
+            if (frames.Count == 0) return;
+            g.DrawImage(frames[currFrame], R.X - camX, R.Y - camY, R.Width, R.Height);
+            frameDelayCount++;
+            if (frameDelayCount >= frameDelay)
+            {
+                frameDelayCount = 0;
+                currFrame++;
+                if (currFrame >= frames.Count) currFrame = 0;
+            }
         }
     }
 
@@ -4435,6 +4696,7 @@ namespace General
 
         public int spawnTime = 600;
         public int spawnrange = 600;
+        public int originalMaxHP = 50;
 
         public bool coindropped = false;
 
@@ -4520,6 +4782,7 @@ namespace General
                 spawnTime = 600;
 
                 HP = new Health(50, 50);
+                originalMaxHP = 50;
 
                 string[] mushroomFolders = { "attack", "die", "hit", "idle", "run", "stun-attack" };
                 int[] mushroomFrames = { 10, 15, 5, 7, 8, 24 };
@@ -4558,6 +4821,7 @@ namespace General
                 spawnTime = 500;
 
                 HP = new Health(30, 30);
+                originalMaxHP = 30;
                 string[] batFolders = { "attack1", "attack2", "die", "hit", "idle", "run", "sleep", "wakeup" };
                 int[] batFrames = { 8, 11, 12, 5, 9, 8, 3, 16 };
 
@@ -4598,6 +4862,7 @@ namespace General
 
                 
                 HP = new Health(10, 10);
+                originalMaxHP = 10;
                 string[] batFolders = { "summonAppear", "summonDeath" , "summonIdle" };
                 int[] batFrames = { 6 , 5 , 4};
 
@@ -4632,6 +4897,7 @@ namespace General
                 spawnTime = 600;
 
                 HP = new Health(30, 30);
+                originalMaxHP = 30;
 
                 string[] sproutFolders = { "attack", "hit", "idle", "move" };
                 int[] sproutFrames = { 6, 5, 4, 5 };
@@ -4668,6 +4934,7 @@ namespace General
                 spawnTime = 600;
 
                 HP = new Health(150, 150);
+                originalMaxHP = 150;
 
                 string[] sproutFolders = { "Run" , "idle" };
                 int[] sproutFrames = { 3,4 };
@@ -4703,6 +4970,7 @@ namespace General
                 spawnTime = 600;
 
                 HP = new Health(150, 150);
+                originalMaxHP = 150;
 
                 string[] MagicianFolders = { "Attack_1", "Attack_2" , "Magic_arrow" , "Magic_sphere",
                 "Dead" , "hit" , "idle" , "Jump" , "Walk" , "Run"};
@@ -5327,7 +5595,7 @@ namespace General
             return slot;
         }
 
-        public void dropCoin(List<DroppedCoin> droppedCoins)
+        public void dropCollectables(List<DroppedCoin> droppedCoins, List<DroppedPotion> droppedPotions)
         {
             if (coindropped == true)
             {
@@ -5343,6 +5611,22 @@ namespace General
             {
                 slot = addValueCoins(droppedCoins, baseX, baseY, totalValue, 1, 3, slot);
                 coindropped = true;
+
+                int[] weights = { 50, 25, 15, 10 };
+                string[] potionNames = { "health", "mana", "golden", "suspicious" };
+                int totalWeight = 0;
+                for (int i = 0; i < weights.Length; i++) totalWeight += weights[i];
+                int roll = rr.Next(0, totalWeight);
+                string chosen = "";
+                int cumulative = 0;
+                for (int i = 0; i < weights.Length; i++)
+                {
+                    cumulative += weights[i];
+                    if (roll < cumulative) { chosen = potionNames[i]; break; }
+                }
+
+                DroppedPotion potion = new DroppedPotion(chosen, baseX, baseY - 20);
+                droppedPotions.Add(potion);
             }
         }
 
@@ -5383,7 +5667,7 @@ namespace General
 
                 coindropped = false;
 
-                HP.maxHP = 50;
+                HP.maxHP = originalMaxHP;
                 HP.HP = HP.maxHP;
 
                 anim.changeAnimation("idle", -1);
@@ -5397,25 +5681,30 @@ namespace General
     {
         public List<Enemy> enemies = new List<Enemy>();
 
-        public void Update(List<tile> tiles, Hero hero, List<DroppedCoin> droppedCoins)
+        public void Update(List<tile> tiles, Hero hero, List<DroppedCoin> droppedCoins, List<DroppedPotion> droppedPotions)
         {
             for (int i = 0; i < enemies.Count; i++)
             {
                 Enemy e = enemies[i];
 
-                float distance;
+                float distanceX;
                 if (hero.R.X > e.R.X)
-                    distance = hero.R.X - e.R.X;
+                    distanceX = hero.R.X - e.R.X;
                 else
-                    distance = e.R.X - hero.R.X;
+                    distanceX = e.R.X - hero.R.X;
 
-                if (e.spawnrange >= distance)
+                float distanceY;
+                if (hero.R.Y > e.R.Y)
+                    distanceY = hero.R.Y - e.R.Y;
+                else
+                    distanceY = e.R.Y - hero.R.Y;
+
+                if (e.spawnrange >= distanceX && e.spawnrange >= distanceY)
                     e.spawn = true;
 
                 if (e.isDead)
                 {
-                    e.dropCoin(droppedCoins);
-
+                    e.dropCollectables(droppedCoins, droppedPotions);
                     Animation currDead = e.anim.getCurrentAnimation();
                     if (currDead != null)
                     {
@@ -7604,8 +7893,13 @@ namespace General
                 movingPlatforms.Add(temp);
             }
         }
-        public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins)
+        public void removeAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions)
         {
+            while (potions.Count > 0)
+            {
+                potions.RemoveAt(0);
+            }
+
             while (coins.Count > 0)
             {
                 coins.RemoveAt(0);
@@ -7662,7 +7956,7 @@ namespace General
                 tiles.Add(temp);
             }
         }
-        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<MovingPlatform> movingPlatforms)
+        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms)
         {
             if (currentLevel < levels.Count - 1)
             {
@@ -7671,7 +7965,7 @@ namespace General
                 {
                     hero.stopLaserCast();
                 }
-                removeAll(enemies, ladders, tiles, coins);
+                removeAll(enemies, ladders, tiles, coins, potions);
                 assignAll(enemies, ladders, tiles);
                 loadPlatforms(movingPlatforms);
             }
@@ -8380,6 +8674,7 @@ namespace General
             addDamagePopup(amount, isCritical);
             isAttacking = false;
             attackFrameTimer = 0;
+            attackCooldown = 40;
 
             if (HP.getHP() <= 0)
             {
@@ -8532,6 +8827,7 @@ namespace General
             }
 
             float distanceX = 0;
+            float distanceY = 0;
             if (hero.R.X > R.X)
             {
                 distanceX = hero.R.X - R.X;
@@ -8545,7 +8841,18 @@ namespace General
                 facing = 'l';
             }
 
-            if (distanceX <= attackDistance)
+            if (hero.R.Y > R.Y)
+            {
+                distanceY = hero.R.Y - R.Y;
+            }
+            else
+            {
+                distanceY = R.Y - hero.R.Y;
+            }
+
+            bool inRange = distanceX <= attackDistance && distanceY <= attackDistance;
+
+            if (inRange)
             {
                 if (attackCooldown <= 0)
                 {
@@ -8562,26 +8869,33 @@ namespace General
                 return;
             }
 
-            if (moving == 'l')
+            if (distanceX > attackDistance)
             {
-                R.X -= speed;
-
-                if (R.X < 0)
+                if (moving == 'l')
                 {
-                    R.X = 0;
+                    R.X -= speed;
+
+                    if (R.X < 0)
+                    {
+                        R.X = 0;
+                    }
                 }
+                else
+                {
+                    R.X += speed;
+
+                    if (R.X + R.Width > worldWidth)
+                    {
+                        R.X = worldWidth - R.Width;
+                    }
+                }
+
+                anim.changeAnimation("walk", -1);
             }
             else
             {
-                R.X += speed;
-
-                if (R.X + R.Width > worldWidth)
-                {
-                    R.X = worldWidth - R.Width;
-                }
+                anim.changeAnimation("idle", -1);
             }
-
-            anim.changeAnimation("walk", -1);
         }
 
         void updateReaper(Hero hero, float worldWidth, float worldHeight, List<Enemy> enemies)
@@ -9350,7 +9664,7 @@ namespace General
             return slot;
         }
 
-        public void dropCoin(List<DroppedCoin> droppedCoins)
+        public void dropCollectables(List<DroppedCoin> droppedCoins, List<DroppedPotion> droppedPotions)
         {
             if (coindropped == true)
             {
@@ -9365,6 +9679,47 @@ namespace General
             slot = addValueCoins(droppedCoins, baseX, baseY, totalValue, 2, 4, slot);
 
             coindropped = true;
+
+            if (name == "Minatour")
+            {
+                int healthCount = rr.Next(1, 3);
+                int manaCount = rr.Next(1, 3);
+
+                for (int i = 0; i < healthCount; i++)
+                {
+                    DroppedPotion potion = new DroppedPotion("largeHealth", baseX + (i * 25) - 12, baseY - 20);
+                    droppedPotions.Add(potion);
+                }
+
+                for (int i = 0; i < manaCount; i++)
+                {
+                    DroppedPotion potion = new DroppedPotion("largeMana", baseX + (i * 25) - 12, baseY - 40);
+                    droppedPotions.Add(potion);
+                }
+
+                if (rr.Next(0, 100) < 20)
+                {
+                    DroppedPotion potion = new DroppedPotion("golden", baseX, baseY - 60);
+                    droppedPotions.Add(potion);
+                }
+            }
+            else
+            {
+                int[] rate = { 50, 25, 15, 10 };
+                string[] potionNames = { "health", "mana", "golden", "suspicious" };
+                int totalrate = 0;
+                for (int i = 0; i < rate.Length; i++)
+                {
+                    totalrate += rate[i];
+                }
+                int roll = rr.Next(0, totalrate);
+                int cumulative = 0;
+                for (int i = 0; i < rate.Length; i++)
+                {
+                    cumulative += rate[i];
+                    if (roll < cumulative) { string chosen = potionNames[i]; DroppedPotion potion = new DroppedPotion(chosen, baseX, baseY - 20); droppedPotions.Add(potion); break; }
+                }
+            }
         }
 
         public void Draw(Graphics g, bool showRanges, float camX, float camY)
@@ -9532,6 +9887,7 @@ namespace General
         List<tile> tiles = new List<tile>();
         List<Ladder> ladders = new List<Ladder>();
         List<DroppedCoin> droppedCoins = new List<DroppedCoin>();
+        List<DroppedPotion> droppedPotions = new List<DroppedPotion>();
         List<MovingPlatform> movingPlatforms = new List<MovingPlatform>();
         Timer timer = new Timer();
 
@@ -9967,12 +10323,12 @@ namespace General
                         {
                             if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                             {
-                                if (e.KeyCode == Keys.Q && !IsBossGateActive())
-                                {
-                                    int oldLevel = levels.currentLevel;
-                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                 if (e.KeyCode == Keys.Q && !IsBossGateActive())
+                                 {
+                                     int oldLevel = levels.currentLevel;
+                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms);
 
-                                    if (levels.currentLevel != oldLevel)
+                                     if (levels.currentLevel != oldLevel)
                                     {
                                         hero.R.X = levels.getNewHeroX();
                                         hero.R.Y = levels.getNewHeroY();
@@ -10129,9 +10485,31 @@ namespace General
                         }
                     }
 
-                    if(e.KeyCode == Keys.H)
+                    if(e.KeyCode == Keys.H && hero.inventory.healthPotions > 0)
                     {
-                        hero.heal(10);
+                        if (hero.HP.HP < hero.HP.maxHP)
+                        {
+                            hero.restoreHealth(30);
+                            hero.inventory.healthPotions--;
+                        }
+                    }
+                    if(e.KeyCode == Keys.M && hero.inventory.manaPotions > 0)
+                    {
+                        if (hero.mana.mana < hero.mana.maxMana)
+                        {
+                            hero.restoreMana(30);
+                            hero.inventory.manaPotions--;
+                        }
+                    }
+                    if(e.KeyCode == Keys.D4 && hero.inventory.goldenPotions > 0)
+                    {
+                        hero.useGoldenPotion();
+                        hero.inventory.goldenPotions--;
+                    }
+                    if(e.KeyCode == Keys.D5 && hero.inventory.suspiciousPotions > 0)
+                    {
+                        hero.useSuspiciousPotion();
+                        hero.inventory.suspiciousPotions--;
                     }
                     if (levels.currentLevel < levels.levels.Count - 1)
                     {
@@ -10147,12 +10525,12 @@ namespace General
                                         hero.coins -= levels.levels[levels.currentLevel].teleporter.requiredCoins;
                                     }
                                 }
-                                else
-                                {
-                                    int oldLevel = levels.currentLevel;
-                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, movingPlatforms);
+                                 else
+                                 {
+                                     int oldLevel = levels.currentLevel;
+                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms);
 
-                                    if (levels.currentLevel != oldLevel)
+                                     if (levels.currentLevel != oldLevel)
                                     {
                                         hero.R.X = levels.getNewHeroX();
                                         hero.R.Y = levels.getNewHeroY();
@@ -10225,7 +10603,20 @@ namespace General
                                 hero.coins += droppedCoins[i].coinvalue;
                                 droppedCoins.RemoveAt(i);
                                 i--;
-                                continue;
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < droppedPotions.Count; i++)
+                    {
+                        droppedPotions[i].update(tiles);
+
+                        if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
+                        {
+                            if (droppedPotions[i].isOutOfMap(levels.levels[levels.currentLevel].worldWidth, levels.levels[levels.currentLevel].worldHeight))
+                            {
+                                droppedPotions.RemoveAt(i);
+                                i--;
                             }
                         }
                     }
@@ -10259,6 +10650,7 @@ namespace General
 
                     hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
                     hero.collectDroppedCoins(droppedCoins);
+                    hero.collectDroppedPotions(droppedPotions);
 
                     hero.updateFireballCast(enemyController.enemies, currentBoss, tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
@@ -10275,7 +10667,7 @@ namespace General
 
                         if (currentBoss.isDead == true && currentBoss.coindropped == false)
                         {
-                            currentBoss.dropCoin(droppedCoins);
+                            currentBoss.dropCollectables(droppedCoins, droppedPotions);
                         }
 
                         if (currentBoss.name == "Aegis" && currentBoss.isDead && isVictory == false)
@@ -10289,7 +10681,7 @@ namespace General
                             return;
                         }
                     }
-                    enemyController.Update(tiles, hero, droppedCoins);
+                    enemyController.Update(tiles, hero, droppedCoins, droppedPotions);
                     UpdateCamera();
                 }
             }
@@ -10382,6 +10774,10 @@ namespace General
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
                         droppedCoins[i].draw(g , camX, camY);
+                    }
+                    for (int i = 0; i < droppedPotions.Count; i++)
+                    {
+                        droppedPotions[i].draw(g, camX, camY);
                     }
                     for (int i = 0; i < movingPlatforms.Count; i++)
                     {
