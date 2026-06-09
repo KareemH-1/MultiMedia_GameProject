@@ -7643,12 +7643,12 @@ namespace General
             levels.Add(lvl);
 
 
-            background = new Bitmap("Backgrounds/BossRoom.png");
+            background = new Bitmap("Backgrounds/BossArena.png");
             worldWidth = background.Width * 2;
             worldHeight = background.Height * 2;
 
             startHeroX = 100;
-            startHeroY = 1065;
+            startHeroY = 808 - 100;
 
             lvl = new level(background, worldWidth, worldHeight, startHeroX, startHeroY, false, "Boss Room");
             levels.Add(lvl);
@@ -7693,7 +7693,6 @@ namespace General
         {
             float ground0 = height - 30 - 150;
             float ground2 = levels[2].worldHeight - 112 - 170;
-            float ground4 = 1065 - 180;
 
             int minW = 288, minH = 160;
 
@@ -7701,7 +7700,7 @@ namespace General
             levels[1].Boss = null;
             levels[2].addBoss(new boss("Reaper", levels[2].worldWidth - 850, ground2, 190, 170, 520, clientWidth));
             levels[3].Boss = null;
-            levels[4].addBoss(new boss("Aegis", levels[4].worldWidth / 2f - 140, ground4, 220, 250, 900, clientWidth));
+            levels[4].addBoss(new boss("Aegis", levels[4].worldWidth / 2 - 140, 808 - 250 , 220, 250, 900, clientWidth));
         }
 
         void removeAllFromLevels()
@@ -7839,7 +7838,7 @@ namespace General
         {
             tile pnn = new tile();
             pnn.interact = true;
-            pnn.init(0, 1065, levels[4].worldWidth, 30, false);
+            pnn.init(0, 806, levels[4].worldWidth, 30, false);
             levels[4].tiles.Add(pnn);
         }
         void initTilesLevel1(int height)
@@ -8582,6 +8581,51 @@ namespace General
         }
     }
 
+
+    public class AegisAbility
+    {
+        public string type;
+        public rectF R = new rectF();
+
+        public Bitmap img;
+
+        public bool isDone = false;
+
+        public float fullHeight = 0f;
+        public float revealAmount = 0f;
+        public float riseSpeed = 12f;
+
+        // 0 = rising, 1:staying, 2 :sinking
+        public int phase = 0;
+
+        public int stayTimer = 0;
+        public int stayDuration = 90;
+
+        public float voidSpeed = 8f;
+        public int escapeTimer = 0;
+        public int escapeMax = 180;
+
+        public int pulseTimer = 0;
+        public int pulseDirection = 1;
+        public float pulseSize = 0f;
+
+        public int hitCooldown = 0;
+        public AegisAbility(string type, float x, float groundY, Bitmap img)
+        {
+            this.type = type;
+
+            this.img = new Bitmap(img);
+            this.img.MakeTransparent(this.img.GetPixel(0, 0));
+
+            fullHeight = img.Height;
+
+            R.Width = img.Width;
+            R.Height = img.Height;
+            R.X = x;
+            R.Y = groundY - R.Height;
+        }
+    }
+
     public class boss {
         public string name;
         public bool startFight = false;
@@ -8644,6 +8688,18 @@ namespace General
 
         public AnimationController anim = new AnimationController();
 
+
+        Bitmap aegisHand1 = null;
+        Bitmap aegisHand2 = null;
+        Bitmap aegisHand3 = null;
+        Bitmap aegisHand4 = null;
+        Bitmap aegisTentacle = null;
+        Bitmap aegisVoidCircle = null;
+
+        int aegisAbilityCooldown = 0;
+        int aegisAbilityCooldownMax = 120;
+        public List<AegisAbility> aegisAbilities = new List<AegisAbility>();
+
         public boss(string name, float x , float y , float width , float height , int maxHP , int clientWidth)
         {
             R.X = x;
@@ -8689,6 +8745,22 @@ namespace General
             updateDrawR();
         }
 
+        void loadAegisImgs()
+        {
+            if (aegisHand1 != null)
+            {
+                return;
+            }
+
+            string folder = "Characters/Bosses/Aegis/abilities/";
+
+            aegisHand1 = new Bitmap(folder + "Hand1.png");
+            aegisHand2 = new Bitmap(folder + "Hand2.png");
+            aegisHand3 = new Bitmap(folder + "Hand3.png");
+            aegisHand4 = new Bitmap(folder + "Hand4.png");
+            aegisTentacle = new Bitmap(folder + "Tenticle.png");
+            aegisVoidCircle = new Bitmap(folder + "voidCircle.png");
+        }
         void initAnimations(string name)
         {
             string folder = "Characters/Bosses/" + name;
@@ -8883,6 +8955,367 @@ namespace General
             anim.restart();
         }
 
+        void spawnAegisAbility(Hero hero, float worldWidth)
+        {
+            loadAegisImgs();
+
+            int rand = rr.Next(0, 3);
+
+            if (rand == 0)
+            {
+                int count = rr.Next(2, 5);
+
+                for (int i = 0; i < count; i++)
+                {
+                    int handRoll = rr.Next(0, 4);
+                    Bitmap src = aegisHand1;
+
+                    if (handRoll == 1)
+                    {
+                        src = aegisHand2;
+                    }
+                    else if (handRoll == 2)
+                    {
+                        src = aegisHand3;
+                    }
+                    else if (handRoll == 3)
+                    {
+                        src = aegisHand4;
+                    }
+
+                    float spawnX = rr.Next(0, (int)(worldWidth - src.Width));
+                    float groundY = hero.R.Y + hero.R.Height;
+
+                    AegisAbility ability = new AegisAbility("hand", spawnX, groundY, src);
+                    ability.stayDuration = 90;
+                    ability.riseSpeed = 9f;
+                    aegisAbilities.Add(ability);
+                }
+            }
+            else if (rand == 1)
+            {
+                float spawnX = hero.R.X + hero.R.Width / 2f - aegisTentacle.Width / 2f;
+                float groundY = hero.R.Y + hero.R.Height;
+
+                AegisAbility ability = new AegisAbility("tentacle", spawnX, groundY, aegisTentacle);
+                ability.stayDuration = 120;
+                ability.riseSpeed = 12f;
+                aegisAbilities.Add(ability);
+            }
+            else if (rand == 2)
+            {
+                float spawnX = R.X + R.Width / 2f - aegisVoidCircle.Width / 2f;
+                float spawnY = R.Y + R.Height / 2f - aegisVoidCircle.Height / 2f;
+
+                AegisAbility ability = new AegisAbility("voidCircle", spawnX, spawnY + aegisVoidCircle.Height, aegisVoidCircle);
+                ability.R.Y = spawnY;
+                ability.escapeMax = 260;
+                ability.voidSpeed = 18f;
+                aegisAbilities.Add(ability);
+            }
+        }
+
+        void updateAegisAbilities(Hero hero)
+        {
+            for (int i = aegisAbilities.Count - 1; i >= 0; i--)
+            {
+                AegisAbility a = aegisAbilities[i];
+
+                if (a.isDone == true)
+                {
+                    aegisAbilities.RemoveAt(i);
+                }
+                else
+                {
+
+                    if (a.type == "voidCircle")
+                    {
+                        updateVoidCircle(a, hero);
+                    }
+                    else
+                    {
+                        updateRisingAbility(a, hero);
+                    }
+                }
+                
+            }
+        }
+
+        void updateRisingAbility(AegisAbility a, Hero hero)
+        {
+            if (a.hitCooldown > 0)
+            {
+                a.hitCooldown--;
+            }
+
+            if (a.revealAmount > 0f)
+            {
+                float visibleTop = (a.R.Y + a.R.Height) - a.revealAmount;
+                float visibleBottom = a.R.Y + a.R.Height;
+
+                if (a.R.X < hero.R.X + hero.R.Width)
+                {
+                    if (a.R.X + a.R.Width > hero.R.X)
+                    {
+                        if (visibleTop < hero.R.Y + hero.R.Height)
+                        {
+                            if (visibleBottom > hero.R.Y)
+                            {
+                                if (a.hitCooldown <= 0)
+                                {
+                                    if (hero.isDead == false)
+                                    {
+                                        if (a.revealAmount >= a.fullHeight / 4)
+                                        {
+                                            hero.takeDamage(10);
+                                            a.hitCooldown = 30;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (a.phase == 0)
+            {
+                a.revealAmount += a.riseSpeed;
+
+                if (a.revealAmount >= a.fullHeight)
+                {
+                    a.revealAmount = a.fullHeight;
+                    a.phase = 1;
+                    a.stayTimer = 0;
+                }
+            }
+            else if (a.phase == 1)
+            {
+                a.stayTimer++;
+
+                if (a.stayTimer >= a.stayDuration)
+                {
+                    a.phase = 2;
+                }
+            }
+            else if (a.phase == 2)
+            {
+                a.revealAmount -= a.riseSpeed;
+
+                if (a.revealAmount <= 0f)
+                {
+                    a.revealAmount = 0f;
+                    a.isDone = true;
+                }
+            }
+        }
+
+        void updateVoidCircle(AegisAbility a, Hero hero)
+        {
+            a.pulseTimer += a.pulseDirection;
+
+            if (a.pulseTimer >= 12)
+            {
+                a.pulseTimer = 12;
+                a.pulseDirection = -1;
+            }
+            else if (a.pulseTimer <= -12)
+            {
+                a.pulseTimer = -12;
+                a.pulseDirection = 1;
+            }
+
+            a.pulseSize = a.pulseTimer;
+
+            float heroCX = hero.R.X + hero.R.Width / 2f;
+            float heroCY = hero.R.Y + hero.R.Height / 2f;
+            float myCX = a.R.X + a.R.Width / 2f;
+            float myCY = a.R.Y + a.R.Height / 2f;
+
+            float diffX = heroCX - myCX;
+            float diffY = heroCY - myCY;
+
+            float diffXnew = diffX;
+            float diffYnew = diffY;
+
+            if (diffXnew < 0f)
+            {
+                diffXnew = -diffX;
+            }
+
+            if (diffYnew < 0f)
+            {
+                diffYnew = -diffY;
+            }
+
+            float dist = diffXnew + diffYnew;
+
+            if (dist > 800f)
+            {
+                a.escapeTimer++;
+
+                if (a.escapeTimer >= a.escapeMax)
+                {
+                    a.isDone = true;
+                    return;
+                }
+            }
+            else
+            {
+                a.escapeTimer = 0;
+            }
+
+            if (dist > 0f)
+            {
+                float stepX = 0f;
+                float stepY = 0f;
+
+                if (diffXnew > 0f)
+                {
+                    stepX = (diffX / dist) * a.voidSpeed;
+                }
+
+                if (diffYnew > 0f)
+                {
+                    stepY = (diffY / dist) * a.voidSpeed;
+                }
+
+                a.R.X += stepX;
+                a.R.Y += stepY;
+            }
+
+            bool overlapX = false;
+            bool overlapY = false;
+
+            if (a.R.X < hero.R.X + hero.R.Width)
+            {
+                if (a.R.X + a.R.Width > hero.R.X)
+                {
+                    overlapX = true;
+                }
+            }
+
+            if (a.R.Y < hero.R.Y + hero.R.Height)
+            {
+                if (a.R.Y + a.R.Height > hero.R.Y)
+                {
+                    overlapY = true;
+                }
+            }
+
+            if (overlapX == true)
+            {
+                if (overlapY == true)
+                {
+                    if (hero.isDead == false)
+                    {
+                        hero.takeDamage(8);
+                        a.isDone = true;
+                    }
+                }
+            }
+        }
+
+        void drawAegisAbilities(Graphics g, float camX, float camY, bool showRanges)
+        {
+            for (int i = 0; i < aegisAbilities.Count; i++)
+            {
+                AegisAbility a = aegisAbilities[i];
+
+                if (a.type == "voidCircle")
+                {
+                    float pulse = a.pulseSize;
+
+                    float size = 120f;
+                    float drawW = size + pulse;
+                    float drawH = size + pulse;
+                    float drawX = a.R.X + a.R.Width / 2f - drawW / 2f;
+                    float drawY = a.R.Y + a.R.Height / 2f - drawH / 2f;
+
+                    g.DrawImage(
+                        a.img,
+                        new Rectangle((int)(drawX - camX), (int)(drawY - camY), (int)drawW, (int)drawH),
+                        new Rectangle(0, 0, a.img.Width, a.img.Height),
+                        GraphicsUnit.Pixel
+                    );
+
+                    if (showRanges)
+                    {
+                        Pen pn = new Pen(Color.Cyan, 2);
+
+                        g.DrawRectangle(pn, drawX - camX, drawY - camY, drawW, drawH);
+                    }
+                }
+                else
+                {
+                    float revealAmount = a.revealAmount;
+
+                    if (revealAmount > 0f)
+                    {
+                        int srcH = (int)revealAmount;
+                        float dstH = revealAmount;
+                        float dstY = (a.R.Y + a.R.Height) - dstH;
+
+                        g.DrawImage(
+                            a.img,
+                            new Rectangle((int)(a.R.X - camX), (int)(dstY - camY), (int)a.R.Width, (int)dstH),
+                            new Rectangle(0, 0, a.img.Width, srcH),
+                            GraphicsUnit.Pixel
+                        );
+
+                        if (showRanges)
+                        {
+                            Pen lime = new Pen(Color.Lime, 2);
+                            Pen red = new Pen(Color.Red, 2);
+
+                            float visibleTop = (a.R.Y + a.R.Height) - revealAmount;
+                            g.DrawRectangle(lime, a.R.X - camX, visibleTop - camY, a.R.Width, revealAmount);
+
+                            g.DrawRectangle(red, a.R.X - camX, a.R.Y - camY, a.R.Width, a.R.Height);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        void updateAegis(Hero hero, float worldWidth)
+        {
+            if (startFight == false)
+            {
+                anim.changeAnimation("idle", -1);
+                return;
+            }
+
+            updateAegisAbilities(hero);
+
+            if (aegisAbilityCooldown > 0)
+            {
+                aegisAbilityCooldown--;
+            }
+            else
+            {
+                int spawnOneOrMore = rr.Next(0, 4);
+
+                int ctSpawn= -1;
+                if(spawnOneOrMore < 3)
+                {
+                    ctSpawn = 1;
+                }
+                else
+                {
+                    ctSpawn = rr.Next(1, 6);
+                }
+
+                for (int i = 0; i < ctSpawn; i++)
+                {
+                    spawnAegisAbility(hero, worldWidth);
+                }
+                aegisAbilityCooldown = aegisAbilityCooldownMax;
+            }
+
+            anim.changeAnimation("idle", -1);
+        }
         public void Update(Hero hero, float worldWidth, float worldHeight, List<Enemy> enemies)
         {
             updateDrawR();
@@ -8919,7 +9352,7 @@ namespace General
 
             if (name == "Aegis")
             {
-                updateAegis(hero);
+                updateAegis(hero , worldWidth);
                 return;
             }
 
@@ -8975,11 +9408,6 @@ namespace General
         }
 
         void updateIdleAnimation()
-        {
-            anim.changeAnimation("idle", -1);
-        }
-
-        void updateAegis(Hero hero)
         {
             anim.changeAnimation("idle", -1);
         }
@@ -10012,6 +10440,10 @@ namespace General
                 g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
 
 
+            }
+            if (name == "Aegis")
+            {
+                drawAegisAbilities(g, camX, camY , showRanges);
             }
 
             if (startFight == true && !isDead)
