@@ -135,6 +135,12 @@ namespace General
             sw.WriteLine("abilityKeyDown:" + boolToText(hero.abilityKeyDown));
             sw.WriteLine("isAbilityUnlocked:" + boolToText(hero.isAbilityUnlocked));
 
+
+            for(int i =0; i< hero.inventory.potions.Count; i++)
+            {
+                string potion = "potion_" + hero.inventory.potions[i].type + ":" + hero.inventory.potions[i].count.ToString();
+                sw.WriteLine(potion);
+            }
             sw.Close();
         }
 
@@ -313,173 +319,205 @@ namespace General
         {
             StreamReader sr = new StreamReader("Saves/hero.txt");
 
+
             while (sr.EndOfStream == false)
             {
                 string line = sr.ReadLine();
 
                 if (line != null)
                 {
-                    string[] data = splitLine(line);
-                    string variable = data[0];
-                    string val = data[1];
-
-                    if (variable == "hero_color")
+                    if (line[0] == 'p' && line[1] == 'o' && line[2] == 't' && line[3] == 'i' && line[4] == 'o'
+                        && line[5] == 'n')
                     {
-                        if (hero == null)
+                        string type = "";
+                        int count = 0;
+
+                        int countidx = -1;
+                        for (int i = 7; i < line.Length; i++)
                         {
-                            hero = new Hero(30, clientHeight - 150 - 30, 150, 150, changeToInt(val));
+                            if (line[i] == ':')
+                            {
+                                countidx = i + 1;
+                                break;
+                            }
+
+                            type += line[i];
+
                         }
+
+                        string ct = "";
+                        for (int i = countidx; i < line.Length; i++)
+                        {
+                            ct += line[i];
+                        }
+                        count = Convert.ToInt32(ct);
+
+                        hero.inventory.addPotionNum(type, count);
                     }
-
-                    if (hero != null)
+                    else
                     {
-                        if (variable == "X,Y")
-                        {
-                            string sx = "";
-                            string sy = "";
-                            bool foundComma = false;
+                        string[] data = splitLine(line);
+                        string variable = data[0];
+                        string val = data[1];
 
-                            for (int i = 0; i < val.Length; i++)
+                        if (variable == "hero_color")
+                        {
+                            if (hero == null)
                             {
-                                if (val[i] == ',')
-                                {
-                                    foundComma = true;
-                                }
-                                else if (foundComma == false)
-                                {
-                                    sx += val[i];
-                                }
-                                else
-                                {
-                                    sy += val[i];
-                                }
+                                hero = new Hero(30, clientHeight - 150 - 30, 150, 150, changeToInt(val));
                             }
+                        }
 
-                            hero.R.X = changeToInt(sx);
-                            hero.R.Y = changeToInt(sy);
-                        }
-                        else if (variable == "isAbilityUnlocked")
+                        if (hero != null)
                         {
-                            hero.isAbilityUnlocked = changeBool(val);
-                        }
-                        else if (variable == "Moving")
-                        {
-                            if (val.Length > 0)
+                            if (variable == "X,Y")
                             {
-                                hero.moving = val[0];
+                                string sx = "";
+                                string sy = "";
+                                bool foundComma = false;
+
+                                for (int i = 0; i < val.Length; i++)
+                                {
+                                    if (val[i] == ',')
+                                    {
+                                        foundComma = true;
+                                    }
+                                    else if (foundComma == false)
+                                    {
+                                        sx += val[i];
+                                    }
+                                    else
+                                    {
+                                        sy += val[i];
+                                    }
+                                }
+
+                                hero.R.X = changeToInt(sx);
+                                hero.R.Y = changeToInt(sy);
                             }
-                        }
-                        else if (variable == "ySpeed")
-                        {
-                            hero.ySpeed = changeToInt(val);
-                        }
-                        else if (variable == "jumpsUsed")
-                        {
-                            hero.jumpsUsed = changeToInt(val);
-                        }
-                        else if (variable == "isTakingDamage")
-                        {
-                            hero.isTakingDamage = changeBool(val);
-                        }
-                        else if (variable == "takingDamageTimer")
-                        {
-                            hero.takingDamageTimer = changeToInt(val);
-                        }
-                        else if (variable == "coins")
-                        {
-                            hero.coins = changeToInt(val);
-                        }
-                        else if (variable == "isAttacking")
-                        {
-                            hero.isAttacking = changeBool(val);
-                        }
-                        else if (variable == "attackHasHit")
-                        {
-                            hero.attackHasHit = changeBool(val);
-                        }
-                        else if (variable == "maxHP")
-                        {
-                            hero.HP.maxHP = changeToInt(val);
-                        }
-                        else if (variable == "HP")
-                        {
-                            hero.HP.HP = changeToInt(val);
-                        }
-                        else if (variable == "maxMana")
-                        {
-                            hero.mana.maxMana = changeToInt(val);
-                        }
-                        else if (variable == "mana")
-                        {
-                            hero.mana.mana = changeToInt(val);
-                        }
-                        else if (variable == "regenRate")
-                        {
-                            hero.mana.regenRate = changeToInt(val);
-                        }
-                        else if (variable == "facing")
-                        {
-                            if (val.Length > 0)
+                            else if (variable == "isAbilityUnlocked")
                             {
-                                hero.facing = val[0];
+                                hero.isAbilityUnlocked = changeBool(val);
                             }
-                        }
-                        else if (variable == "Weapon0_Damage")
-                        {
-                            if (hero.Weapons.Count > 0)
+                            else if (variable == "Moving")
                             {
-                                hero.Weapons[0].damage = changeToInt(val);
+                                if (val.Length > 0)
+                                {
+                                    hero.moving = val[0];
+                                }
                             }
-                        }
-                        else if (variable == "Weapon1_Damage")
-                        {
-                            if (hero.Weapons.Count > 1)
+                            else if (variable == "ySpeed")
                             {
-                                hero.Weapons[1].damage = changeToInt(val);
+                                hero.ySpeed = changeToInt(val);
                             }
-                        }
-                        else if (variable == "Weapon2_Damage")
-                        {
-                            if (hero.Weapons.Count > 2)
+                            else if (variable == "jumpsUsed")
                             {
-                                hero.Weapons[2].damage = changeToInt(val);
+                                hero.jumpsUsed = changeToInt(val);
                             }
-                        }
-                        else if (variable == "currentWeapon")
-                        {
-                            hero.currentWeapon = changeToInt(val);
-                        }
-                        else if (variable == "isSpellCasting")
-                        {
-                            hero.isSpellCasting = changeBool(val);
-                        }
-                        else if (variable == "isShooting")
-                        {
-                            hero.isShooting = changeBool(val);
-                        }
-                        else if (variable == "spellCastPaused")
-                        {
-                            hero.spellCastPaused = changeBool(val);
-                        }
-                        else if (variable == "manaRegenRate")
-                        {
-                            hero.mana.regenRate = changeToInt(val);
-                        }
-                        else if (variable == "isCastingAbility")
-                        {
-                            hero.isCastingAbility = changeBool(val);
-                        }
-                        else if (variable == "abilityFireballSpawned")
-                        {
-                            hero.abilityFireballSpawned = changeBool(val);
-                        }
-                        else if (variable == "abilityManaCost")
-                        {
-                            hero.abilityManaCost = changeToInt(val);
-                        }
-                        else if (variable == "abilityKeyDown")
-                        {
-                            hero.abilityKeyDown = changeBool(val);
+                            else if (variable == "isTakingDamage")
+                            {
+                                hero.isTakingDamage = changeBool(val);
+                            }
+                            else if (variable == "takingDamageTimer")
+                            {
+                                hero.takingDamageTimer = changeToInt(val);
+                            }
+                            else if (variable == "coins")
+                            {
+                                hero.coins = changeToInt(val);
+                            }
+                            else if (variable == "isAttacking")
+                            {
+                                hero.isAttacking = changeBool(val);
+                            }
+                            else if (variable == "attackHasHit")
+                            {
+                                hero.attackHasHit = changeBool(val);
+                            }
+                            else if (variable == "maxHP")
+                            {
+                                hero.HP.maxHP = changeToInt(val);
+                            }
+                            else if (variable == "HP")
+                            {
+                                hero.HP.HP = changeToInt(val);
+                            }
+                            else if (variable == "maxMana")
+                            {
+                                hero.mana.maxMana = changeToInt(val);
+                            }
+                            else if (variable == "mana")
+                            {
+                                hero.mana.mana = changeToInt(val);
+                            }
+                            else if (variable == "regenRate")
+                            {
+                                hero.mana.regenRate = changeToInt(val);
+                            }
+                            else if (variable == "facing")
+                            {
+                                if (val.Length > 0)
+                                {
+                                    hero.facing = val[0];
+                                }
+                            }
+                            else if (variable == "Weapon0_Damage")
+                            {
+                                if (hero.Weapons.Count > 0)
+                                {
+                                    hero.Weapons[0].damage = changeToInt(val);
+                                }
+                            }
+                            else if (variable == "Weapon1_Damage")
+                            {
+                                if (hero.Weapons.Count > 1)
+                                {
+                                    hero.Weapons[1].damage = changeToInt(val);
+                                }
+                            }
+                            else if (variable == "Weapon2_Damage")
+                            {
+                                if (hero.Weapons.Count > 2)
+                                {
+                                    hero.Weapons[2].damage = changeToInt(val);
+                                }
+                            }
+                            else if (variable == "currentWeapon")
+                            {
+                                hero.currentWeapon = changeToInt(val);
+                            }
+                            else if (variable == "isSpellCasting")
+                            {
+                                hero.isSpellCasting = changeBool(val);
+                            }
+                            else if (variable == "isShooting")
+                            {
+                                hero.isShooting = changeBool(val);
+                            }
+                            else if (variable == "spellCastPaused")
+                            {
+                                hero.spellCastPaused = changeBool(val);
+                            }
+                            else if (variable == "manaRegenRate")
+                            {
+                                hero.mana.regenRate = changeToInt(val);
+                            }
+                            else if (variable == "isCastingAbility")
+                            {
+                                hero.isCastingAbility = changeBool(val);
+                            }
+                            else if (variable == "abilityFireballSpawned")
+                            {
+                                hero.abilityFireballSpawned = changeBool(val);
+                            }
+                            else if (variable == "abilityManaCost")
+                            {
+                                hero.abilityManaCost = changeToInt(val);
+                            }
+                            else if (variable == "abilityKeyDown")
+                            {
+                                hero.abilityKeyDown = changeBool(val);
+                            }
                         }
                     }
                 }
@@ -2308,14 +2346,16 @@ namespace General
         }
     }
 
+    public class PotionStack
+    {
+        public string type;
+        public int count;
+        public PotionStack(string t, int c) { type = t; count = c; }
+    }
+
     public class Inventory
     {
-        public class PotionStack
-        {
-            public string type;
-            public int count;
-            public PotionStack(string t, int c) { type = t; count = c; }
-        }
+        
 
         public List<PotionStack> potions = new List<PotionStack>();
 
@@ -2339,6 +2379,19 @@ namespace General
             potions.Add(new PotionStack(type, 1));
         }
 
+
+        public void addPotionNum(string type , int num)
+        {
+            for (int i = 0; i < potions.Count; i++)
+            {
+                if (potions[i].type == type)
+                {
+                    potions[i].count += num;
+                    return;
+                }
+            }
+            potions.Add(new PotionStack(type, num));
+        }
         public void removePotion(string type)
         {
             for (int i = 0; i < potions.Count; i++)
@@ -2506,7 +2559,7 @@ namespace General
         public bool isShooting = false;
         public bool spellCastPaused = false;
 
-        public float fireballManaCost = 10f;
+        public float fireballManaCost = 7f;
 
         public int fireballSpawnDelay = 5;
         public int fireballSpawnTimer = 5;
@@ -2516,7 +2569,7 @@ namespace General
 
         public bool isCastingAbility = false;
         public bool abilityFireballSpawned = false;
-        public float abilityManaCost = 50f;
+        public float abilityManaCost = 20f;
         public bool abilityKeyDown = false;
         public bool isDead = false;
         public int abilityCastTimer = 0;
@@ -4813,7 +4866,7 @@ namespace General
 
         public bool isCharging = false;
 
-        public float chargeSpeed = 26f;
+        public float chargeSpeed = 22f;
         public AnimationController anim = new AnimationController();
 
         public string chargeType;
@@ -5029,9 +5082,9 @@ namespace General
                 moveAnimName = "Run";
                 dieAnimName = "Idle";
 
-                speed = 16f;
+                speed = 14f;
                 gravity = 1.2f;
-                max_speed = 25f;
+                max_speed = 22f;
 
                 patrolDistance = 200f;
                 attackrange = 55f;
@@ -5274,8 +5327,9 @@ namespace General
                     anim.changeAnimation("summonIdle", -1);
                 }
                 else
-                {
-                    anim.changeAnimation("hit", -1);
+                {   
+                    if(enemyType != "horse")
+                        anim.changeAnimation("hit", -1);
                 }
                 damageTimer--;
 
@@ -5410,13 +5464,14 @@ namespace General
 
             if (HP.getHP() <= 0)
             {
-                if(enemyName == "magician")
+                if (enemyName == "magician")
                 {
-                    while(charges.Count > 0)
+                    while (charges.Count > 0)
                     {
                         charges.RemoveAt(0);
                     }
                 }
+
                 isDead = true;
                 isTakingDamage = false;
 
@@ -5428,30 +5483,34 @@ namespace General
                 }
                 else
                 {
-                    if(enemyName != "horse")
+                    if (enemyName != "horse")
+                    {
                         anim.changeAnimation(dieAnimName, -1);
+                    }
                 }
+
                 anim.restart();
             }
             else
             {
                 if (amount > 0)
                 {
-                    isTakingDamage = true;
-
-                    damageTimer = 15;
-
-                    if (enemyName == "summon")
+                    if (enemyName != "horse")
                     {
-                        anim.changeAnimation("summonIdle", -1);
-                    }
-                    else
-                    {
+                        isTakingDamage = true;
+                        damageTimer = 15;
 
-                        if (enemyName != "horse")
+                        if (enemyName == "summon")
+                        {
+                            anim.changeAnimation("summonIdle", -1);
+                        }
+                        else
+                        {
                             anim.changeAnimation("hit", -1);
+                        }
+
+                        anim.restart();
                     }
-                    anim.restart();
                 }
             }
         }
@@ -5812,10 +5871,20 @@ namespace General
                 if (e.spawnrange >= distanceX && e.spawnrange >= distanceY)
                     e.spawn = true;
 
+                if(e.enemyType == "horse" && e.HP.HP <= 0)
+                {
+                    enemies.RemoveAt(i);
+                    i--;
+                }
                 if (e.isDead)
                 {
                     e.dropCollectables(droppedCoins, droppedPotions);
                     Animation currDead = e.anim.getCurrentAnimation();
+                    if(e.CanSpawn == false)
+                    {
+                        enemies.RemoveAt(i);
+                        i--;
+                    }
                     if (currDead != null)
                     {
                         bool dirFacingL = e.facing == 'l';
@@ -6201,6 +6270,12 @@ namespace General
         {
             if (e.enemyType == "horse")
             {
+                if (e.isDead == true)
+                {
+                    e.applyPhysics(tiles);
+                    return;
+                }
+
                 bool overlapX = false;
                 bool overlapY = false;
 
@@ -6354,7 +6429,7 @@ namespace General
 
                                         if (t.R.Y >= e.R.Y + e.R.Height - 4)
                                         {
-                                            if (t.R.Y <= e.R.Y + e.R.Height + 12)
+                                            if (t.R.Y <= e.R.Y + e.R.Height + 4)
                                             {
                                                 groundOverlapY = true;
                                             }
@@ -6402,6 +6477,8 @@ namespace General
                     {
                         e.isCharging = true;
                         e.isWaiting = false;
+                        e.anim.changeAnimation("Run", -1);
+                        e.anim.restart();
 
                         if (hero.R.X > e.R.X)
                         {
@@ -6418,8 +6495,6 @@ namespace General
 
                 if (e.isCharging == true)
                 {
-                    e.anim.changeAnimation("Run", -1);
-
                     float nextX = 0f;
 
                     if (e.facing == 'r')
@@ -6470,9 +6545,6 @@ namespace General
                                 }
                             }
 
-                            bool groundCheckX = false;
-                            bool groundCheckY = false;
-
                             float groundCheckLeft = 0f;
                             float groundCheckRight = 0f;
 
@@ -6487,6 +6559,9 @@ namespace General
                                 groundCheckRight = nextX + e.R.Width / 2f;
                             }
 
+                            bool groundCheckX = false;
+                            bool groundCheckY = false;
+
                             if (groundCheckRight > t.R.X)
                             {
                                 if (groundCheckLeft < t.R.X + t.R.Width)
@@ -6497,7 +6572,7 @@ namespace General
 
                             if (t.R.Y >= e.R.Y + e.R.Height - 4)
                             {
-                                if (t.R.Y <= e.R.Y + e.R.Height + 12)
+                                if (t.R.Y <= e.R.Y + e.R.Height + 4)
                                 {
                                     groundCheckY = true;
                                 }
@@ -6545,7 +6620,6 @@ namespace General
                 if (e.isWaiting == true)
                 {
                     e.waitTime++;
-                    e.anim.changeAnimation("idle", -1);
 
                     if (e.waitTime >= 30)
                     {
@@ -6565,6 +6639,10 @@ namespace General
 
                         e.anim.changeAnimation("Run", -1);
                         e.anim.restart();
+                    }
+                    else
+                    {
+                        e.anim.changeAnimation("idle", -1);
                     }
 
                     e.applyPhysics(tiles);
@@ -7714,18 +7792,18 @@ namespace General
             int sproutY = getAboveGroundLoc(sproutH, height);
 
             en = new Enemy(1400, sproutY, sproutW, sproutH, "sprout");
-            en.CanSpawn = true;
+            en.CanSpawn = false;
             en.spawn = true;
             levels[0].enemies.Add(en);
 
 
             en = new Enemy(205, 646 - 120, 200, 120, "horse");
-            en.CanSpawn = true;
+            en.CanSpawn = false;
             en.spawn = true;
             levels[2].enemies.Add(en);
 
             en = new Enemy(3490, 319 - 120, 200, 120, "horse");
-            en.CanSpawn = true;
+            en.CanSpawn = false;
             en.spawn = true;
             levels[2].enemies.Add(en);
 
