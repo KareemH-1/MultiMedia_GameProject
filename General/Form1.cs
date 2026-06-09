@@ -9902,6 +9902,19 @@ namespace General
 
         float[] lastPos = { 0, 0 };
 
+        // --- Inventory fields ---
+        bool isInventoryOpen = false;
+        Bitmap[] panelImages;
+        Bitmap slotImg;
+        Bitmap slotSelectedImg;
+        string[] quickSlots = new string[4]; // "wN" weapon or "pN" potion
+        int hoveredCol = -1;
+        int hoveredRow = -1;
+        // Cell grid: 5 columns × 5 rows (source 110×105 coordinates)
+        static readonly float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
+        static readonly float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
+        const float slotRenderSize = 40f;
+
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -9999,6 +10012,13 @@ namespace General
                     return;
                 }
 
+                if (isInventoryOpen)
+                {
+                    if (e.Button == MouseButtons.Left)
+                        handleInventoryClick(e.X, e.Y);
+                    return;
+                }
+
                 if (e.Button == MouseButtons.Left)
                 {
                     bool isClicked = CheckIfWeaponUIClicked(e.X, e.Y);
@@ -10072,6 +10092,12 @@ namespace General
             {
                 if (levels != null && levels.isVoidLevel() == true)
                 {
+                    return;
+                }
+
+                if (isInventoryOpen)
+                {
+                    updateInventoryHover(e.X, e.Y);
                     return;
                 }
 
@@ -10355,6 +10381,20 @@ namespace General
                         }
                     }
 
+                    if (e.KeyCode == Keys.I)
+                    {
+                        isInventoryOpen = !isInventoryOpen;
+                        return;
+                    }
+                    if (isInventoryOpen)
+                    {
+                        if (e.KeyCode == Keys.Escape)
+                        {
+                            isInventoryOpen = false;
+                        }
+                        return;
+                    }
+
                     if (e.KeyCode == Keys.Escape)
                     {
                         isGamePaused = true;
@@ -10574,6 +10614,12 @@ namespace General
                     return;
                 }
 
+                if (isInventoryOpen)
+                {
+                    drawDubb(this.CreateGraphics());
+                    return;
+                }
+
                 if (hero.isDead && !isGameOverScreenShown)
                 {
                     if (gameOverScreenDelay == 0)
@@ -10698,6 +10744,13 @@ namespace General
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
 
+            panelImages = new Bitmap[4];
+            panelImages[0] = new Bitmap("ui/Inventory/BLUE.png");
+            panelImages[1] = new Bitmap("ui/Inventory/GREEN.png");
+            panelImages[2] = new Bitmap("ui/Inventory/PURPLE.png");
+            panelImages[3] = new Bitmap("ui/Inventory/RED.png");
+            slotImg = new Bitmap("ui/menu/slot.png");
+            slotSelectedImg = new Bitmap("ui/menu/slotSelected.png");
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
 
@@ -10792,7 +10845,11 @@ namespace General
 
                     hero.Draw(g, showRanges, camX, camY);
 
-                    
+                    if (isInventoryOpen)
+                    {
+                        drawInventory(g);
+                    }
+
                     save.autoSave(hero, enemyController.enemies, levels, levels.currentLevel, g, this.ClientSize.Height);
                     
                 }
@@ -10806,6 +10863,143 @@ namespace General
             else
             {
                 displayMenu(g);
+            }
+        }
+
+        // --- Inventory methods ---
+        float getPanX() { return (this.ClientSize.Width - 330f) / 2f; }
+        float getPanY() { return (this.ClientSize.Height - 315f) / 2f; }
+
+        void drawInventory(Graphics g)
+        {
+            float panX = getPanX();
+            float panY = getPanY();
+
+            SolidBrush overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0));
+            g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+
+            Bitmap panel = panelImages[hero.ColorIdx];
+            g.DrawImage(panel, panX, panY, 330f, 315f);
+
+            for (int col = 0; col < 5; col++)
+            {
+                for (int row = 0; row < 5; row++)
+                {
+                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
+                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
+
+                    bool isHovered = (col == hoveredCol && row == hoveredRow);
+                    bool isCurrentWeapon = (col == 0 && row < hero.Weapons.Count && row == hero.currentWeapon);
+                    bool isSelected = isHovered || isCurrentWeapon;
+
+                    g.DrawImage(isSelected ? slotSelectedImg : slotImg, sx, sy, slotRenderSize, slotRenderSize);
+
+                    if (col == 0 && row < 4)
+                    {
+                        if (row < hero.Weapons.Count)
+                        {
+                            float imgSize = slotRenderSize - 8f;
+                            float ix = sx + (slotRenderSize - imgSize) / 2f;
+                            float iy = sy + (slotRenderSize - imgSize) / 2f;
+                            g.DrawImage(hero.Weapons[row].UIImage, ix, iy, imgSize, imgSize);
+                        }
+                    }
+                    else if (col >= 1 && row == 0)
+                    {
+                    }
+                    else if (row == 4)
+                    {
+                        if (col == 0)
+                        {
+                            if (hero.Weapons.Count > 0)
+                            {
+                                float imgSize = slotRenderSize - 8f;
+                                float ix = sx + (slotRenderSize - imgSize) / 2f;
+                                float iy = sy + (slotRenderSize - imgSize) / 2f;
+                                g.DrawImage(hero.Weapons[hero.currentWeapon].UIImage, ix, iy, imgSize, imgSize);
+                            }
+                        }
+                        else
+                        {
+                            int qi = col - 1;
+                            if (qi < quickSlots.Length && !string.IsNullOrEmpty(quickSlots[qi]))
+                            {
+                                string key = quickSlots[qi];
+                                if (key.StartsWith("w"))
+                                {
+                                    int wi = int.Parse(key.Substring(1));
+                                    if (wi < hero.Weapons.Count)
+                                    {
+                                        float imgSize = slotRenderSize - 8f;
+                                        float ix = sx + (slotRenderSize - imgSize) / 2f;
+                                        float iy = sy + (slotRenderSize - imgSize) / 2f;
+                                        g.DrawImage(hero.Weapons[wi].UIImage, ix, iy, imgSize, imgSize);
+                                    }
+                                }
+                                else if (key == "p0") { }
+                                else if (key == "p1") { }
+                                else if (key == "p2") { }
+                                else if (key == "p3") { }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        void updateInventoryHover(int mx, int my)
+        {
+            hoveredCol = -1;
+            hoveredRow = -1;
+            float panX = getPanX();
+            float panY = getPanY();
+            for (int col = 0; col < 5; col++)
+            {
+                for (int row = 0; row < 5; row++)
+                {
+                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
+                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
+                    if (mx >= sx && mx <= sx + slotRenderSize && my >= sy && my <= sy + slotRenderSize)
+                    {
+                        hoveredCol = col;
+                        hoveredRow = row;
+                        return;
+                    }
+                }
+            }
+        }
+
+        void handleInventoryClick(int mx, int my)
+        {
+            updateInventoryHover(mx, my);
+            int col = hoveredCol;
+            int row = hoveredRow;
+            if (col < 0 || row < 0) return;
+
+            if (col == 0 && row >= 0 && row < 4)
+            {
+                if (row < hero.Weapons.Count)
+                {
+                    hero.currentWeapon = row;
+                    hero.ManageWeapon();
+                }
+            }
+            else if (row == 4 && col >= 1)
+            {
+                int qi = col - 1;
+                if (qi < quickSlots.Length && !string.IsNullOrEmpty(quickSlots[qi]))
+                {
+                    string key = quickSlots[qi];
+                    if (key.StartsWith("w"))
+                    {
+                        int wi = int.Parse(key.Substring(1));
+                        if (wi < hero.Weapons.Count)
+                        {
+                            hero.currentWeapon = wi;
+                            hero.ManageWeapon();
+                        }
+                    }
+                }
             }
         }
 
