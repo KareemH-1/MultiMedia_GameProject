@@ -19,7 +19,7 @@ namespace General
 
         int idx = 0;
 
-        Font f = new Font("Palatino Linotype", 8f, FontStyle.Bold);
+        Font f = new Font("System", 8f, FontStyle.Bold);
 
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
@@ -1072,9 +1072,9 @@ namespace General
         Bitmap heroSelectedSlot = new Bitmap("ui/menu/slot.png");
 
 
-        Font heroFont = new Font("Palatino Linotype", 9f, FontStyle.Bold);
-        Font manaFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
-        Font normalFont = new Font("Palatino Linotype", 8f, FontStyle.Bold);
+        Font heroFont = new Font("System", 9f, FontStyle.Bold);
+        Font manaFont = new Font("System", 8f, FontStyle.Bold);
+        Font normalFont = new Font("System", 8f, FontStyle.Bold);
 
         SolidBrush textBrush = new SolidBrush(Color.White);
         SolidBrush bigoutline = new SolidBrush(Color.Black);
@@ -8336,7 +8336,7 @@ namespace General
                 Pen blackPen = new Pen(Color.Black, 3);
                 g.DrawRectangle(blackPen, positionButtonX, positionButtonY, w, h);
 
-                Font font = new Font("Arial", 12, FontStyle.Bold);
+                Font font = new Font("System", 12, FontStyle.Bold);
                 SolidBrush textBrush = new SolidBrush(Color.Black);
 
                 string text = "Press Q to unlock!";
@@ -8489,11 +8489,11 @@ namespace General
 
             if (isCritical)
             {
-                font = new Font("Arial", 10, FontStyle.Bold);
+                font = new Font("System", 10, FontStyle.Bold);
             }
             else
             {
-                font = new Font("Arial", 9, FontStyle.Bold);
+                font = new Font("System", 9, FontStyle.Bold);
             }
 
             SolidBrush outlineBrush = new SolidBrush(Color.Black);
@@ -11008,7 +11008,7 @@ namespace General
                                 g.DrawImage(pImg, ix, iy, imgSize, imgSize);
 
                                 string countStr = count.ToString();
-                                Font cntFont = new Font("Arial", 10, FontStyle.Bold);
+                                Font cntFont = new Font("System", 10, FontStyle.Bold);
                                 Brush cntBrush = new SolidBrush(Color.White);
                                 float tx = sx + hero.inventory.slotRenderSize - g.MeasureString(countStr, cntFont).Width - 2f;
                                 float ty = sy + hero.inventory.slotRenderSize - g.MeasureString(countStr, cntFont).Height - 1f;
@@ -11295,7 +11295,7 @@ namespace General
             G.DrawString("Credits", titleFont, gold, x + 20, y + 10);
 
 
-            G.DrawString("Arcane", new Font("Comic Sans MS", 28, FontStyle.Bold), gold, x + 50, y + 110);
+            G.DrawString("Arcane", new Font("System", 28, FontStyle.Bold), gold, x + 50, y + 110);
 
             G.DrawString("Developed By:", normalFont, white, x + 50, y + 190);
 
@@ -11303,7 +11303,7 @@ namespace General
 
             G.DrawString("Mostafa Mohamed Saeed - 254595", normalFont, gold, x + 70, y + 300);
 
-            Font smallFont = new Font("Comic Sans MS", 9, FontStyle.Italic);
+            Font smallFont = new Font("System", 9, FontStyle.Italic);
             G.DrawString("Developed as part of the multimedia project at MSA University", smallFont, white, x + 70, y + 340);
         }
 
@@ -11489,9 +11489,9 @@ namespace General
 
         void PauseScreen(Graphics g)
         {
-            Font titleFont = new Font("Comic Sans MS", 22, FontStyle.Bold);
-            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
-            Font smallFont = new Font("Comic Sans MS", 11, FontStyle.Bold);
+            Font titleFont = new Font("System", 22, FontStyle.Bold);
+            Font normalFont = new Font("System", 14, FontStyle.Bold);
+            Font smallFont = new Font("System", 11, FontStyle.Bold);
 
             SolidBrush white = new SolidBrush(Color.White);
 
@@ -11576,8 +11576,8 @@ namespace General
 
         void GameOverScreen(Graphics g)
         {
-            Font titleFont = new Font("Comic Sans MS", 28, FontStyle.Bold);
-            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+            Font titleFont = new Font("System", 28, FontStyle.Bold);
+            Font normalFont = new Font("System", 14, FontStyle.Bold);
 
             SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
             g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
@@ -11604,8 +11604,8 @@ namespace General
 
         void WinScreen(Graphics g)
         {
-            Font titleFont = new Font("Comic Sans MS", 28, FontStyle.Bold);
-            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
+            Font titleFont = new Font("System", 28, FontStyle.Bold);
+            Font normalFont = new Font("System", 14, FontStyle.Bold);
 
             SolidBrush background = new SolidBrush(Color.FromArgb(0, 0, 0));
             g.FillRectangle(background, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
@@ -11826,72 +11826,92 @@ namespace General
 
         }
         
-        void displayMenu(Graphics G)
+void displayMenu(Graphics G)
+{
+    int spacing = 20;
+    int pad = 20;
+
+    G.DrawImage(menuImgs[0],
+        new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height),
+        new Rectangle(0, 0, menuImgs[0].Width, menuImgs[0].Height),
+        GraphicsUnit.Pixel);
+
+    G.DrawImage(menuImgs[1],
+        new Rectangle(spacing, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
+        new Rectangle(0, 0, menuImgs[1].Width, menuImgs[1].Height),
+        GraphicsUnit.Pixel);
+
+    G.DrawImage(menuImgs[2],
+        new Rectangle(this.ClientSize.Width / 2, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
+        new Rectangle(0, 0, menuImgs[2].Width, menuImgs[2].Height),
+        GraphicsUnit.Pixel);
+
+    int borderW = this.ClientSize.Width / 2 - pad * 2;
+    int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
+
+    G.DrawImage(menuImgs[4],
+        new Rectangle(pad + 5, spacing + pad / 2, borderW, borderHeight),
+        new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
+        GraphicsUnit.Pixel);
+
+    G.DrawImage(menuImgs[3],
+        new Rectangle(spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400),
+        new Rectangle(0, 0, menuImgs[3].Width, menuImgs[3].Height),
+        GraphicsUnit.Pixel);
+
+    int borderX = this.ClientSize.Width / 2 + pad;
+    int borderY = spacing + pad / 2;
+
+    G.DrawImage(menuImgs[4],
+        new Rectangle(borderX, borderY, borderW, borderHeight),
+        new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
+        GraphicsUnit.Pixel);
+
+    int iconW = 100;
+
+    G.DrawImage(menuImgs[5],
+        new Rectangle(borderX + 60, borderY + 60, iconW, iconW),
+        new Rectangle(0, 0, menuImgs[5].Width, menuImgs[5].Height),
+        GraphicsUnit.Pixel);
+
+    Font f = new Font("System", 18, FontStyle.Bold);
+    SolidBrush bsh = new SolidBrush(Color.White);
+
+    for (int i = 0; i < btns.Count; i++)
+    {
+        bool isIt = false;
+
+        if (i == currentButton) isIt = true;
+
+        Button btn = btns[i];
+
+        if (i != btns.Count - 1)
         {
-            G.DrawImage(menuImgs[0], 0, 0, this.ClientSize.Width, this.ClientSize.Height);
-            int spacing = 20;
-            G.DrawImage(menuImgs[1], spacing, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2);
-            G.DrawImage(menuImgs[2], this.ClientSize.Width / 2, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2);
-
-            int pad = 20;
-            int borderW = this.ClientSize.Width / 2 - pad * 2;
-            int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
-            G.DrawImage(menuImgs[4], pad + 5, spacing + pad / 2, borderW, borderHeight);
-
-
-            G.DrawImage(menuImgs[3], spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400);
-
-            //1/2   1/2
-            //|  |  |  |  |
-            int borderX = this.ClientSize.Width / 2 + pad;
-            int borderY = spacing + pad / 2;
-            G.DrawImage(menuImgs[4], borderX, borderY, borderW, borderHeight);
-
-
-
-            int iconW = 100;
-            G.DrawImage(menuImgs[5], borderX + 60, borderY + 60, iconW, iconW);
-
-
-            Font f = new Font("Comic Sans MS", 18, FontStyle.Bold);
-            SolidBrush bsh = new SolidBrush(Color.White);
-
-            for (int i = 0; i < btns.Count; i++)
-            {
-                bool isIt = false;
-
-                if (i == currentButton) isIt = true;
-
-                Button btn = btns[i];
-
-                if (i != btns.Count - 1)
-                {
-                    btn.draw(button, G, f, bsh, isIt);
-                }
-            }
-
-            Button startBtn = btns[btns.Count - 1];
-
-            bool startSelected = false;
-
-            if (currentButton == btns.Count - 1) startSelected = true;
-
-            if (currentButton == 0 || currentButton == btns.Count - 1)
-            {
-                startBtn.draw(button, G, f, bsh, startSelected);
-            }
-
-            if (currentButton == 1)
-            {
-                if (IsSaveAvailable() == true)
-                {
-                    startBtn.draw(button, G, f, bsh, startSelected);
-                }
-            }
-
-            loadScreen(G, borderX + 60, borderY + 160, borderW - (100), borderHeight - 60);
+            btn.draw(button, G, f, bsh, isIt);
         }
+    }
 
+    Button startBtn = btns[btns.Count - 1];
+
+    bool startSelected = false;
+
+    if (currentButton == btns.Count - 1) startSelected = true;
+
+    if (currentButton == 0 || currentButton == btns.Count - 1)
+    {
+        startBtn.draw(button, G, f, bsh, startSelected);
+    }
+
+    if (currentButton == 1)
+    {
+        if (IsSaveAvailable() == true)
+        {
+            startBtn.draw(button, G, f, bsh, startSelected);
+        }
+    }
+
+    loadScreen(G, borderX + 60, borderY + 160, borderW - (100), borderHeight - 60);
+}
         void loadScreen(Graphics G, int x, int y, int width, int height)
         {
             int screen = currentButton;
@@ -11901,9 +11921,9 @@ namespace General
                 screen = lastMenuScreen;
             }
 
-            Font titleFont = new Font("Comic Sans MS", 22, FontStyle.Bold);
-            Font normalFont = new Font("Comic Sans MS", 14, FontStyle.Bold);
-            Font smallFont = new Font("Comic Sans MS", 11, FontStyle.Bold);
+            Font titleFont = new Font("System", 22, FontStyle.Bold);
+            Font normalFont = new Font("System", 14, FontStyle.Bold);
+            Font smallFont = new Font("System", 11, FontStyle.Bold);
 
             SolidBrush white = new SolidBrush(Color.White);
             SolidBrush gold = new SolidBrush(Color.FromArgb(255, 220, 120));
