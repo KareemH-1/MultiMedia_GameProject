@@ -2310,10 +2310,111 @@ namespace General
 
     public class Inventory
     {
-        public int healthPotions = 0;
-        public int manaPotions = 0;
-        public int goldenPotions = 0;
-        public int suspiciousPotions = 0;
+        public class PotionStack
+        {
+            public string type;
+            public int count;
+            public PotionStack(string t, int c) { type = t; count = c; }
+        }
+
+        public List<PotionStack> potions = new List<PotionStack>();
+
+        public int getPotionCount(string type)
+        {
+            for (int i = 0; i < potions.Count; i++)
+                if (potions[i].type == type) return potions[i].count;
+            return 0;
+        }
+
+        public void addPotion(string type)
+        {
+            for (int i = 0; i < potions.Count; i++)
+            {
+                if (potions[i].type == type)
+                {
+                    potions[i].count++;
+                    return;
+                }
+            }
+            potions.Add(new PotionStack(type, 1));
+        }
+
+        public void removePotion(string type)
+        {
+            for (int i = 0; i < potions.Count; i++)
+            {
+                if (potions[i].type == type)
+                {
+                    potions[i].count--;
+                    if (potions[i].count <= 0) potions.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+
+        public Bitmap getPotionImage(string type)
+        {
+            if (type == "health") return potionImages[0];
+            if (type == "mana") return potionImages[1];
+            if (type == "golden") return potionImages[2];
+            if (type == "suspicious") return potionImages[3];
+            if (type == "largeHealth") return potionImages[4];
+            if (type == "largeMana") return potionImages[5];
+            return null;
+        }
+
+        public bool isOpen = false;
+        public Bitmap[] panelImages;
+        public Bitmap slotImg;
+        public Bitmap slotSelectedImg;
+        public Bitmap[] potionImages;
+        public int[] quickSlotIndices = { -1, -1, -1, -1 };
+        public int hoveredCol = -1;
+        public int hoveredRow = -1;
+        public float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
+        public float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
+        public float slotRenderSize = 40f;
+
+        public void loadImages()
+        {
+            panelImages = new Bitmap[4];
+            panelImages[0] = new Bitmap("ui/Inventory/BLUE.png");
+            panelImages[1] = new Bitmap("ui/Inventory/GREEN.png");
+            panelImages[2] = new Bitmap("ui/Inventory/PURPLE.png");
+            panelImages[3] = new Bitmap("ui/Inventory/RED.png");
+            slotImg = new Bitmap("ui/menu/slot.png");
+            slotSelectedImg = new Bitmap("ui/menu/slotSelected.png");
+
+            potionImages = new Bitmap[6];
+            potionImages[0] = new Bitmap("Collectables/Potions/S_HP.png");
+            potionImages[1] = new Bitmap("Collectables/Potions/S-MP.png");
+            potionImages[2] = new Bitmap("Collectables/Potions/GoldenP.png");
+            potionImages[3] = new Bitmap("Collectables/Potions/Suspiciousp.png");
+            potionImages[4] = new Bitmap("Collectables/Potions/L-HP.png");
+            potionImages[5] = new Bitmap("Collectables/Potions/L-MP.png");
+        }
+
+        public void updateHover(int mx, int my, Hero h, Form1 f)
+        {
+            hoveredCol = -1;
+            hoveredRow = -1;
+            float panX = f.getPanX();
+            float panY = f.getPanY();
+            for (int col = 0; col < 5; col++)
+            {
+                for (int row = 0; row < 5; row++)
+                {
+                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
+                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
+                    if (mx >= sx && mx <= sx + slotRenderSize && my >= sy && my <= sy + slotRenderSize)
+                    {
+                        hoveredCol = col;
+                        hoveredRow = row;
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     public class Hero
@@ -2364,7 +2465,7 @@ namespace General
         Animation blessedAnimation;
         Animation poisonBubbleAnimation;
         public int coins = 0;
-        public int goldenEffectTimer = 0;
+        public float goldenEffectTimer = 0f;
 
         public AnimationController anim = new AnimationController();
 
@@ -2575,7 +2676,7 @@ namespace General
 
             if (goldenEffectTimer > 0)
             {
-                goldenEffectTimer--;
+                goldenEffectTimer -= 1f;
                 if (goldenEffectTimer <= 0)
                 {
                     for (int i = vfxes.Count - 1; i >= 0; i--)
@@ -2833,12 +2934,11 @@ namespace General
                     R.Y < potion.R.Y + potion.R.Height &&
                     R.Y + R.Height > potion.R.Y)
                 {
-                    if (potion.potionType == "health") inventory.healthPotions++;
-                    else if (potion.potionType == "mana") inventory.manaPotions++;
-                    else if (potion.potionType == "golden") inventory.goldenPotions++;
-                    else if (potion.potionType == "suspicious") inventory.suspiciousPotions++;
-
-                    droppedPotions.RemoveAt(i);
+                    if (potion.potionType == "health" || potion.potionType == "mana" || potion.potionType == "golden" || potion.potionType == "suspicious" || potion.potionType == "largeHealth" || potion.potionType == "largeMana")
+                    {
+                        inventory.addPotion(potion.potionType);
+                        droppedPotions.RemoveAt(i);
+                    }
                     i--;
                 }
             }
@@ -3104,6 +3204,8 @@ namespace General
                 amount = applyShieldDamage(amount);
                 if (amount <= 0) return;
             }
+
+            if (goldenEffectTimer > 0) amount = amount / 2;
 
             HP.damage(amount);
 
@@ -3523,6 +3625,7 @@ namespace General
             {
                 rectF hitBox = getAttackHitBox();
                 int attackDamage = Weapons[currentWeapon].damage;
+                if (goldenEffectTimer > 0) attackDamage = (attackDamage * 150) / 100;
 
                 if (isDoingCombo)
                 {
@@ -3608,6 +3711,7 @@ namespace General
                 return;
             }
             float moveSpeed = speed;
+            if (goldenEffectTimer > 0) moveSpeed *= 1.3f;
 
             if (isShielding)
             {moveSpeed = 0;
@@ -4002,7 +4106,10 @@ namespace General
 
             if (isGrounded == true)
             {
-                ySpeed = jumpPower;
+                if (goldenEffectTimer > 0)
+                    ySpeed = jumpPower * 1.2f;
+                else
+                    ySpeed = jumpPower;
                 jumpsUsed = 1;
                 isGrounded = false;
                 isLanding = false;
@@ -4013,7 +4120,10 @@ namespace General
             {
                 if (jumpsUsed < maxJumps)
                 {
-                    ySpeed = doubleJumpPower;
+                    if (goldenEffectTimer > 0)
+                        ySpeed = doubleJumpPower * 1.4f;
+                    else
+                        ySpeed = doubleJumpPower;
                     jumpsUsed++;
 
                     isLanding = false;
@@ -4086,7 +4196,7 @@ namespace General
 
         public void useGoldenPotion()
         {
-            goldenEffectTimer = 300;
+            goldenEffectTimer = rnd.Next(1200, 2401);
             vfx fx = new vfx();
             fx.name = "goldenEffect";
             fx.repeat = true;
@@ -9836,7 +9946,7 @@ namespace General
 
     }
 
-
+        
     public partial class Form1 : Form
     {
         Save save = new Save();
@@ -9901,19 +10011,6 @@ namespace General
 
 
         float[] lastPos = { 0, 0 };
-
-        // --- Inventory fields ---
-        bool isInventoryOpen = false;
-        Bitmap[] panelImages;
-        Bitmap slotImg;
-        Bitmap slotSelectedImg;
-        string[] quickSlots = new string[4]; // "wN" weapon or "pN" potion
-        int hoveredCol = -1;
-        int hoveredRow = -1;
-        // Cell grid: 5 columns × 5 rows (source 110×105 coordinates)
-        static readonly float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
-        static readonly float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
-        const float slotRenderSize = 40f;
 
         public Form1()
         {
@@ -10012,10 +10109,8 @@ namespace General
                     return;
                 }
 
-                if (isInventoryOpen)
+                if (hero.inventory.isOpen)
                 {
-                    if (e.Button == MouseButtons.Left)
-                        handleInventoryClick(e.X, e.Y);
                     return;
                 }
 
@@ -10095,9 +10190,9 @@ namespace General
                     return;
                 }
 
-                if (isInventoryOpen)
+                if (hero.inventory.isOpen)
                 {
-                    updateInventoryHover(e.X, e.Y);
+                    hero.inventory.updateHover(e.X, e.Y, hero, this);
                     return;
                 }
 
@@ -10383,14 +10478,14 @@ namespace General
 
                     if (e.KeyCode == Keys.I)
                     {
-                        isInventoryOpen = !isInventoryOpen;
+                        hero.inventory.isOpen = !hero.inventory.isOpen;
                         return;
                     }
-                    if (isInventoryOpen)
+                    if (hero.inventory.isOpen)
                     {
                         if (e.KeyCode == Keys.Escape)
                         {
-                            isInventoryOpen = false;
+                            hero.inventory.isOpen = false;
                         }
                         return;
                     }
@@ -10525,31 +10620,31 @@ namespace General
                         }
                     }
 
-                    if(e.KeyCode == Keys.H && hero.inventory.healthPotions > 0)
+                    if(e.KeyCode == Keys.H && hero.inventory.getPotionCount("health") > 0)
                     {
                         if (hero.HP.HP < hero.HP.maxHP)
                         {
                             hero.restoreHealth(30);
-                            hero.inventory.healthPotions--;
+                            hero.inventory.removePotion("health");
                         }
                     }
-                    if(e.KeyCode == Keys.M && hero.inventory.manaPotions > 0)
+                    if(e.KeyCode == Keys.M && hero.inventory.getPotionCount("mana") > 0)
                     {
                         if (hero.mana.mana < hero.mana.maxMana)
                         {
                             hero.restoreMana(30);
-                            hero.inventory.manaPotions--;
+                            hero.inventory.removePotion("mana");
                         }
                     }
-                    if(e.KeyCode == Keys.D4 && hero.inventory.goldenPotions > 0)
+                    if(e.KeyCode == Keys.D4 && hero.inventory.getPotionCount("golden") > 0)
                     {
                         hero.useGoldenPotion();
-                        hero.inventory.goldenPotions--;
+                        hero.inventory.removePotion("golden");
                     }
-                    if(e.KeyCode == Keys.D5 && hero.inventory.suspiciousPotions > 0)
+                    if(e.KeyCode == Keys.D5 && hero.inventory.getPotionCount("suspicious") > 0)
                     {
                         hero.useSuspiciousPotion();
-                        hero.inventory.suspiciousPotions--;
+                        hero.inventory.removePotion("suspicious");
                     }
                     if (levels.currentLevel < levels.levels.Count - 1)
                     {
@@ -10614,7 +10709,7 @@ namespace General
                     return;
                 }
 
-                if (isInventoryOpen)
+                if (hero.inventory.isOpen)
                 {
                     drawDubb(this.CreateGraphics());
                     return;
@@ -10744,18 +10839,12 @@ namespace General
 
             levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
 
-            panelImages = new Bitmap[4];
-            panelImages[0] = new Bitmap("ui/Inventory/BLUE.png");
-            panelImages[1] = new Bitmap("ui/Inventory/GREEN.png");
-            panelImages[2] = new Bitmap("ui/Inventory/PURPLE.png");
-            panelImages[3] = new Bitmap("ui/Inventory/RED.png");
-            slotImg = new Bitmap("ui/menu/slot.png");
-            slotSelectedImg = new Bitmap("ui/menu/slotSelected.png");
-
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
 
 
             loadData();
+
+            hero.inventory.loadImages();
 
             drawDubb(this.CreateGraphics());
 
@@ -10845,7 +10934,7 @@ namespace General
 
                     hero.Draw(g, showRanges, camX, camY);
 
-                    if (isInventoryOpen)
+                    if (hero.inventory.isOpen)
                     {
                         drawInventory(g);
                     }
@@ -10866,9 +10955,8 @@ namespace General
             }
         }
 
-        // --- Inventory methods ---
-        float getPanX() { return (this.ClientSize.Width - 330f) / 2f; }
-        float getPanY() { return (this.ClientSize.Height - 315f) / 2f; }
+        public float getPanX() { return (this.ClientSize.Width - 330f) / 2f; }
+        public float getPanY() { return (this.ClientSize.Height - 315f) / 2f; }
 
         void drawInventory(Graphics g)
         {
@@ -10878,34 +10966,55 @@ namespace General
             SolidBrush overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0));
             g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
 
-            Bitmap panel = panelImages[hero.ColorIdx];
+            Bitmap panel = hero.inventory.panelImages[hero.ColorIdx];
             g.DrawImage(panel, panX, panY, 330f, 315f);
 
             for (int col = 0; col < 5; col++)
             {
                 for (int row = 0; row < 5; row++)
                 {
-                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
-                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
+                    float sx = panX + hero.inventory.cellCX[col] * 3f - hero.inventory.slotRenderSize / 2f;
+                    float sy = panY + hero.inventory.cellCY[row] * 3f - hero.inventory.slotRenderSize / 2f;
 
-                    bool isHovered = (col == hoveredCol && row == hoveredRow);
-                    bool isCurrentWeapon = (col == 0 && row < hero.Weapons.Count && row == hero.currentWeapon);
-                    bool isSelected = isHovered || isCurrentWeapon;
+                    Image slotToDraw = hero.inventory.slotImg;
+                    if ((col == hero.inventory.hoveredCol && row == hero.inventory.hoveredRow) || (col == 0 && row < hero.Weapons.Count && row == hero.currentWeapon))
+                        slotToDraw = hero.inventory.slotSelectedImg;
 
-                    g.DrawImage(isSelected ? slotSelectedImg : slotImg, sx, sy, slotRenderSize, slotRenderSize);
+                    g.DrawImage(slotToDraw, sx, sy, hero.inventory.slotRenderSize, hero.inventory.slotRenderSize);
 
                     if (col == 0 && row < 4)
                     {
                         if (row < hero.Weapons.Count)
                         {
-                            float imgSize = slotRenderSize - 8f;
-                            float ix = sx + (slotRenderSize - imgSize) / 2f;
-                            float iy = sy + (slotRenderSize - imgSize) / 2f;
+                            float imgSize = hero.inventory.slotRenderSize - 8f;
+                            float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                            float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
                             g.DrawImage(hero.Weapons[row].UIImage, ix, iy, imgSize, imgSize);
                         }
                     }
-                    else if (col >= 1 && row == 0)
+                    else if (col >= 1 && row <= 1)
                     {
+                        int pi = (row * 4) + (col - 1);
+                        if (pi < hero.inventory.potions.Count)
+                        {
+                            string ptype = hero.inventory.potions[pi].type;
+                            int count = hero.inventory.potions[pi].count;
+                            Bitmap pImg = hero.inventory.getPotionImage(ptype);
+                            if (pImg != null && count > 0)
+                            {
+                                float imgSize = hero.inventory.slotRenderSize - 6f;
+                                float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                g.DrawImage(pImg, ix, iy, imgSize, imgSize);
+
+                                string countStr = count.ToString();
+                                Font cntFont = new Font("Arial", 10, FontStyle.Bold);
+                                Brush cntBrush = new SolidBrush(Color.White);
+                                float tx = sx + hero.inventory.slotRenderSize - g.MeasureString(countStr, cntFont).Width - 2f;
+                                float ty = sy + hero.inventory.slotRenderSize - g.MeasureString(countStr, cntFont).Height - 1f;
+                                g.DrawString(countStr, cntFont, cntBrush, tx, ty);
+                            }
+                        }
                     }
                     else if (row == 4)
                     {
@@ -10913,90 +11022,26 @@ namespace General
                         {
                             if (hero.Weapons.Count > 0)
                             {
-                                float imgSize = slotRenderSize - 8f;
-                                float ix = sx + (slotRenderSize - imgSize) / 2f;
-                                float iy = sy + (slotRenderSize - imgSize) / 2f;
+                                float imgSize = hero.inventory.slotRenderSize - 8f;
+                                float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
                                 g.DrawImage(hero.Weapons[hero.currentWeapon].UIImage, ix, iy, imgSize, imgSize);
                             }
                         }
                         else
                         {
                             int qi = col - 1;
-                            if (qi < quickSlots.Length && !string.IsNullOrEmpty(quickSlots[qi]))
+                            if (qi < hero.inventory.quickSlotIndices.Length)
                             {
-                                string key = quickSlots[qi];
-                                if (key.StartsWith("w"))
+                                int wi = hero.inventory.quickSlotIndices[qi];
+                                if (wi >= 0 && wi < hero.Weapons.Count)
                                 {
-                                    int wi = int.Parse(key.Substring(1));
-                                    if (wi < hero.Weapons.Count)
-                                    {
-                                        float imgSize = slotRenderSize - 8f;
-                                        float ix = sx + (slotRenderSize - imgSize) / 2f;
-                                        float iy = sy + (slotRenderSize - imgSize) / 2f;
-                                        g.DrawImage(hero.Weapons[wi].UIImage, ix, iy, imgSize, imgSize);
-                                    }
+                                    float imgSize = hero.inventory.slotRenderSize - 8f;
+                                    float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                    float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                    g.DrawImage(hero.Weapons[wi].UIImage, ix, iy, imgSize, imgSize);
                                 }
-                                else if (key == "p0") { }
-                                else if (key == "p1") { }
-                                else if (key == "p2") { }
-                                else if (key == "p3") { }
                             }
-                        }
-                    }
-                }
-            }
-        }
-
-        void updateInventoryHover(int mx, int my)
-        {
-            hoveredCol = -1;
-            hoveredRow = -1;
-            float panX = getPanX();
-            float panY = getPanY();
-            for (int col = 0; col < 5; col++)
-            {
-                for (int row = 0; row < 5; row++)
-                {
-                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
-                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
-                    if (mx >= sx && mx <= sx + slotRenderSize && my >= sy && my <= sy + slotRenderSize)
-                    {
-                        hoveredCol = col;
-                        hoveredRow = row;
-                        return;
-                    }
-                }
-            }
-        }
-
-        void handleInventoryClick(int mx, int my)
-        {
-            updateInventoryHover(mx, my);
-            int col = hoveredCol;
-            int row = hoveredRow;
-            if (col < 0 || row < 0) return;
-
-            if (col == 0 && row >= 0 && row < 4)
-            {
-                if (row < hero.Weapons.Count)
-                {
-                    hero.currentWeapon = row;
-                    hero.ManageWeapon();
-                }
-            }
-            else if (row == 4 && col >= 1)
-            {
-                int qi = col - 1;
-                if (qi < quickSlots.Length && !string.IsNullOrEmpty(quickSlots[qi]))
-                {
-                    string key = quickSlots[qi];
-                    if (key.StartsWith("w"))
-                    {
-                        int wi = int.Parse(key.Substring(1));
-                        if (wi < hero.Weapons.Count)
-                        {
-                            hero.currentWeapon = wi;
-                            hero.ManageWeapon();
                         }
                     }
                 }
@@ -11919,6 +11964,8 @@ namespace General
             isVictory = false;
             isWinScreenShown = false;
             hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150, ChoiceIdx);
+
+            hero.inventory.loadImages();
 
             levels.initAll(this.ClientSize.Height, this.ClientSize.Width);
 
