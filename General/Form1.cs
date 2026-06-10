@@ -7590,7 +7590,7 @@ namespace General
     {
         public List<level> levels = new List<level>();
         public int currentLevel = -1;
-
+        public shop shop = null;
         public levelController(int height, int width)
         {
             initLevelData(height, width);
@@ -7686,6 +7686,8 @@ namespace General
             initEnemies(height);
             initPlatforms();
             initBosses(width, height);
+
+            addShop(height, width);
 
         }
 
@@ -8108,7 +8110,7 @@ namespace General
             }
         }
 
-        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles)
+        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles , int width , int height)
         {
             level curLvl = levels[currentLevel];
 
@@ -8142,8 +8144,10 @@ namespace General
                 tile temp = curLvl.tiles[i];
                 tiles.Add(temp);
             }
+
+            addShop(height, width);
         }
-        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms)
+        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms , int height , int width)
         {
             if (currentLevel < levels.Count - 1)
             {
@@ -8153,8 +8157,22 @@ namespace General
                     hero.stopLaserCast();
                 }
                 removeAll(enemies, ladders, tiles, coins, potions);
-                assignAll(enemies, ladders, tiles);
+                assignAll(enemies, ladders, tiles, width, height);
                 loadPlatforms(movingPlatforms);
+            }
+        }
+
+        public void addShop(int height , int width)
+        {
+            if (currentLevel != -1)
+            {
+                if (levels[currentLevel].displayName == "Rest")
+                {
+                    int shopW = 118 * 3;
+                    int shopH = 128 * 3;
+                    shop = new shop(width / 2 - shopW / 2, height - 30 - shopH, shopW, shopH);
+                }
+                else shop = null;
             }
         }
         public bool isVoidLevel()
@@ -10456,6 +10474,75 @@ namespace General
 
     }
 
+
+    public class shop
+    {
+        public rect r = new rect();
+        public Animation anim = new Animation();
+        int frameI = 0;
+
+        public bool heroAround = false;
+        public shop(int x , int y , int width , int height)
+        {
+            r.X = x;
+            r.Y = y;
+            r.Width = width;
+            r.Height = height;
+
+            for(int i = 1; i <= 6; i++)
+            {
+                string path = "Tiles/Shop/" + i.ToString() + ".png";
+                Bitmap frame = new Bitmap(path);
+
+                anim.addFrame(frame , false , false);
+            }
+        }
+
+        public void shopCheck(Hero hero)
+        {
+            if (hero.R.X <= r.X + r.Width && hero.R.X + hero.R.Width >= r.X &&
+                hero.R.Y <= r.Y + r.Height && hero.R.Y + hero.R.Height >= r.Y)
+            {
+                heroAround = true;
+            }
+            else heroAround = false;
+        }
+
+        public void draw(Graphics G, bool showRange)
+        {
+            Bitmap frame = anim.frames[frameI];
+            if (frameI < anim.frames.Count - 1)
+            {
+                frameI++;
+            }
+            else frameI = 0;
+
+            Rectangle src = new Rectangle(0, 0, frame.Width, frame.Height);
+            Rectangle dst = new Rectangle(r.X, r.Y, r.Width, r.Height);
+
+            G.DrawImage(frame, dst, src, GraphicsUnit.Pixel);
+
+            Pen pn = new Pen(Color.Fuchsia, 1);
+            if (showRange == true)
+            {
+                G.DrawRectangle(pn, r.X, r.Y, r.Width, r.Height);
+            }
+
+            if (heroAround)
+            {
+                Font font = new Font("system", 16);
+                int rectangleWidth = 240;
+                int height = 40;
+                int x = r.X + r.Width / 2 - rectangleWidth/2;
+                G.FillRectangle(Brushes.Black, x - 3, r.Y - height + 10 - 3, rectangleWidth + 6, height + 6);
+                G.FillRectangle(Brushes.Gray, x, r.Y - height + 10, rectangleWidth, height);
+
+                G.DrawString("Press Q to open shop", font, Brushes.Black, x + 7, r.Y - height + 10);
+
+            }
+        }
+
+    }
         
     public partial class Form1 : Form
     {
@@ -10521,7 +10608,6 @@ namespace General
 
 
         float[] lastPos = { 0, 0 };
-
         public Form1()
         {
             this.Paint += Form1_Paint;
@@ -10957,7 +11043,7 @@ namespace General
                                  if (e.KeyCode == Keys.Q && !IsBossGateActive())
                                  {
                                      int oldLevel = levels.currentLevel;
-                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms);
+                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms, this.ClientSize.Height, this.ClientSize.Width);
 
                                      if (levels.currentLevel != oldLevel)
                                     {
@@ -11173,7 +11259,7 @@ namespace General
                                  else
                                  {
                                      int oldLevel = levels.currentLevel;
-                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms);
+                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms , this.ClientSize.Height , this.ClientSize.Width);
 
                                      if (levels.currentLevel != oldLevel)
                                     {
@@ -11308,7 +11394,10 @@ namespace General
                     hero.kamehameha.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
 
                     hero.mana.tick();
-
+                    if(levels.shop != null)
+                    {
+                        levels.shop.shopCheck(hero);
+                    }
                     if (currentBoss != null)
                     {
                         if (levels.currentLevel >= 0 && levels.currentLevel < levels.levels.Count)
@@ -11440,6 +11529,11 @@ namespace General
                     if (currentBoss != null)
                     {
                         currentBoss.Draw(g, showRanges, camX, camY);
+                    }
+
+                    if(levels.shop != null)
+                    {
+                        levels.shop.draw(g , showRanges);
                     }
 
                     hero.Draw(g, showRanges, camX, camY);
