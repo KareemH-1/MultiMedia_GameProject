@@ -1121,6 +1121,8 @@ namespace General
         Bitmap silverCoinIcon;
         Bitmap bronzeCoinIcon;
 
+        public Inventory inv;
+
 
         public UIEntity(float x, float y, float w, float h, bool isHero, bool showHPText)
         {
@@ -1269,27 +1271,34 @@ namespace General
 
             float wh = 70f;
 
-
-            for (int i = 0; i < weapons.Count; i++)
+            for (int qi = 0; qi < 4; qi++)
             {
-                Weapon wpn = weapons[i];
-                int number = i + 1;
-                if (currentWeapon != i)
-                {
-                    g.DrawImage(heroSelectedSlot, x, y, wh, wh);
-                }
-                else
+                int wi = inv.quickSlotWeaponIdx[qi];
+                string pt = inv.quickSlotPotionType[qi];
+                if (wi >= 0 || pt != null)
                 {
                     g.DrawImage(heroWeaponSlot, x, y, wh, wh);
 
+                    float imgWh = wh - 10;
+                    float iX = x + wh / 2f - imgWh / 2f;
+                    float iY = y + wh / 2f - imgWh / 2f;
+
+                    if (wi >= 0 && wi < weapons.Count)
+                    {
+                        g.DrawImage(weapons[wi].UIImage, iX, iY, imgWh, imgWh);
+                    }
+                    else if (pt != null)
+                    {
+                        Bitmap pImg = inv.getPotionImage(pt);
+                        if (pImg != null) g.DrawImage(pImg, iX, iY, imgWh, imgWh);
+                    }
+
+                    drawTextWithShadow(g, (qi + 1).ToString(), normalFont, x + 5, y + 5);
                 }
-
-                float weaponImgWh = wh - 10;
-                float wX = x + wh / 2 - weaponImgWh / 2;
-                float wY = y + wh / 2 - weaponImgWh / 2;
-                g.DrawImage(wpn.UIImage, wX, wY, weaponImgWh, weaponImgWh);
-
-                drawTextWithShadow(g, number.ToString(), normalFont, x + 5, y + 5);
+                else
+                {
+                    g.DrawImage(heroSelectedSlot, x, y, wh, wh);
+                }
 
                 x += (wh + spacing);
             }
@@ -1404,7 +1413,6 @@ namespace General
 
             if (newAnim == -1)
             {
-                MessageBox.Show("Animation not found " + name);
                 return;
             }
 
@@ -2355,8 +2363,6 @@ namespace General
 
     public class Inventory
     {
-        
-
         public List<PotionStack> potions = new List<PotionStack>();
 
         public int getPotionCount(string type)
@@ -2399,7 +2405,17 @@ namespace General
                 if (potions[i].type == type)
                 {
                     potions[i].count--;
-                    if (potions[i].count <= 0) potions.RemoveAt(i);
+                    if (potions[i].count <= 0)
+                    {
+                        potions.RemoveAt(i);
+                        for (int qi = 0; qi < 4; qi++)
+                        {
+                            if (quickSlotPotionType[qi] == type)
+                            {
+                                quickSlotPotionType[qi] = null;
+                            }
+                        }
+                    }
                     return;
                 }
             }
@@ -2421,9 +2437,14 @@ namespace General
         public Bitmap slotImg;
         public Bitmap slotSelectedImg;
         public Bitmap[] potionImages;
-        public int[] quickSlotIndices = { -1, -1, -1, -1 };
+        public int[] quickSlotWeaponIdx = { -1, -1, -1, -1 };
+        public string[] quickSlotPotionType = { null, null, null, null };
         public int hoveredCol = -1;
         public int hoveredRow = -1;
+        public int dragCol = -1;
+        public int dragRow = -1;
+        public float dragMouseX = 0f;
+        public float dragMouseY = 0f;
         public float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
         public float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
         public float slotRenderSize = 40f;
@@ -2451,18 +2472,28 @@ namespace General
         {
             hoveredCol = -1;
             hoveredRow = -1;
+            int c, r;
+            getCellAt(mx, my, h, f, out c, out r);
+            hoveredCol = c;
+            hoveredRow = r;
+        }
+
+        public void getCellAt(int mx, int my, Hero h, Form1 f, out int col, out int row)
+        {
+            col = -1;
+            row = -1;
             float panX = f.getPanX();
             float panY = f.getPanY();
-            for (int col = 0; col < 5; col++)
+            for (int c = 0; c < 5; c++)
             {
-                for (int row = 0; row < 5; row++)
+                for (int r = 0; r < 5; r++)
                 {
-                    float sx = panX + cellCX[col] * 3f - slotRenderSize / 2f;
-                    float sy = panY + cellCY[row] * 3f - slotRenderSize / 2f;
+                    float sx = panX + cellCX[c] * 3f - slotRenderSize / 2f;
+                    float sy = panY + cellCY[r] * 3f - slotRenderSize / 2f;
                     if (mx >= sx && mx <= sx + slotRenderSize && my >= sy && my <= sy + slotRenderSize)
                     {
-                        hoveredCol = col;
-                        hoveredRow = row;
+                        col = c;
+                        row = r;
                         return;
                     }
                 }
@@ -2629,6 +2660,8 @@ namespace General
             Weapons.Add(sword);
 
             addFireballWeapon();
+
+            UI.inv = inventory;
         }
 
         public void Draw(Graphics g, bool showRanges, float camX, float camY)
@@ -5449,7 +5482,7 @@ namespace General
 
         public void takeHit(int amount, bool isCritical = false)
         {
-            if (isDead == true)
+            if (isDead == true || isSleeping == true)
             {
                 return;
             }
@@ -5571,7 +5604,15 @@ namespace General
 
                 Bitmap frame;
 
-                if (isDead || isTakingDamage || isAttacking || isWakingUp)
+                if (isSleeping)
+                {
+                    List<Bitmap> frames = anim.animations[anim.currAnim].getFrames(facing == 'l');
+                    if (frames.Count > 0)
+                        frame = frames[0];
+                    else
+                        frame = null;
+                }
+                else if (isDead || isTakingDamage || isAttacking || isWakingUp)
                 {
                     if (facing == 'l')
                     {
@@ -5605,7 +5646,7 @@ namespace General
                     g.DrawRectangle(p, R.X - camX, R.Y - camY, R.Width, R.Height);
                 }
 
-                if (isDead == false)
+                if (isDead == false && !isSleeping)
                 {
                     rectF screenR = new rectF();
                     screenR.X = R.X - camX;
@@ -6268,6 +6309,24 @@ namespace General
 
         void moveGround(Enemy e, List<tile> tiles, Hero hero)
         {
+            if (e.isSleeping)
+            {
+                float d = getDist(e, hero);
+                if (d <= e.wakeupDistance)
+                {
+                    e.isSleeping = false;
+                    e.attackCooldown = 0;
+                    e.isAttacking = true;
+                    e.attackFrameTimer = 20;
+                    e.attackDamageDone = false;
+                    e.attackanimname = "attack";
+                    e.anim.changeAnimation(e.attackanimname, -1);
+                    e.anim.restart();
+                }
+                e.applyPhysics(tiles);
+                return;
+            }
+
             if (e.enemyType == "horse")
             {
                 if (e.isDead == true)
@@ -7590,7 +7649,7 @@ namespace General
     {
         public List<level> levels = new List<level>();
         public int currentLevel = -1;
-        public shop shop = null;
+        public shops shop = null;
         public levelController(int height, int width)
         {
             initLevelData(height, width);
@@ -7747,11 +7806,6 @@ namespace General
         }
         void initLadders0(int height)
         {
-            Ladder ladder;
-
-            ladder = new Ladder(800 - 75, height - 250 - 400, 400, false);
-            levels[0].ladders.Add(ladder);
-
         }
 
         int getAboveGroundLoc(int enemyH, int Height)
@@ -7776,9 +7830,13 @@ namespace General
 
             int batW = 50;
             int batH = 34;
-            int batY = getAboveGroundLoc(batH + 300, height);
 
-            en = new Enemy(1000, batY, batW, batH, "bat");
+            en = new Enemy(1600, height - 170, batW, batH, "bat");
+            en.CanSpawn = true;
+            en.spawn = true;
+            levels[0].enemies.Add(en);
+
+            en = new Enemy(925, height - 370, batW, batH, "bat");
             en.CanSpawn = true;
             en.spawn = true;
             levels[0].enemies.Add(en);
@@ -7795,8 +7853,16 @@ namespace General
             en = new Enemy(1400, sproutY, sproutW, sproutH, "sprout");
             en.CanSpawn = false;
             en.spawn = true;
+            en.isSleeping = true;
+            en.wakeupDistance = 80;
             levels[0].enemies.Add(en);
 
+            en = new Enemy(levels[0].worldWidth - 1100, sproutY, sproutW, sproutH, "sprout");
+            en.CanSpawn = false;
+            en.spawn = true;
+            en.isSleeping = true;
+            en.wakeupDistance = 80;
+            levels[0].enemies.Add(en);
 
             en = new Enemy(205, 646 - 120, 200, 120, "horse");
             en.CanSpawn = false;
@@ -7824,7 +7890,6 @@ namespace General
 
         void initPlatforms()
         {
-            levels[0].addMovingPlatform(new MovingPlatform(600, 500, 150, 30, 200, 3));
         }
 
         void initTiles(int height)
@@ -7980,20 +8045,37 @@ namespace General
             pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
+            Bitmap tile2 = new Bitmap("Tile2.png");
+            tile2.MakeTransparent(tile2.GetPixel(0, 0));
+
             pnn = new tile();
             pnn.interact = true;
-            pnn.jumpThrough = true;
-            pnn.init(300, height - 150, 200, 20, true);
-            pnn.changeColor(Color.Black);
+            pnn.init(200, height - 230, 250, 30, false);
+            pnn.AddImg(tile2);
             levels[0].tiles.Add(pnn);
 
             pnn = new tile();
             pnn.interact = true;
-            pnn.jumpThrough = false;
-            pnn.clr = Color.DarkRed;
-            pnn.init(600, height - 250, 200, 30, true);
-            pnn.changeColor(Color.Red);
+            pnn.init(1500, height - 200, 250, 30, false);
+            pnn.AddImg(tile2);
+            levels[0].tiles.Add(pnn);
 
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(800, height - 400, 300, 30, false);
+            pnn.AddImg(tile2);
+            levels[0].tiles.Add(pnn);
+            /*
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(levels[0].worldWidth - 600, height - 150, 200, 30, false);
+            pnn.AddImg(tile2);
+            levels[0].tiles.Add(pnn);
+            */
+            pnn = new tile();
+            pnn.interact = true;
+            pnn.init(levels[0].worldWidth - 350, height - 270, 200, 30, false);
+            pnn.AddImg(tile2);
             levels[0].tiles.Add(pnn);
         }
 
@@ -8170,7 +8252,7 @@ namespace General
                 {
                     int shopW = 118 * 3;
                     int shopH = 128 * 3;
-                    shop = new shop(width / 2 - shopW / 2, height - 30 - shopH, shopW, shopH);
+                    shop = new shops(width / 2 - shopW / 2, height - 30 - shopH, shopW, shopH);
                 }
                 else shop = null;
             }
@@ -8934,17 +9016,11 @@ namespace General
 
         public void takeHit(int amount, bool isCritical = false)
         {
-            if (isDead)
+            if (isDead || !startFight)
             {
                 return;
             }
 
-            /*if (isTakingDamage)
-            {
-                return;
-            }*/
-
-            startFight = true;
             hasTarget = false;
             movingDir = "none";
 
@@ -10475,14 +10551,51 @@ namespace General
     }
 
 
-    public class shop
+    public class ShopSlot
+    {
+        public int x;
+        public int y;
+        public int w;
+        public int h;
+        public Bitmap itemImg;
+        public string label;
+        public string priceLabel;
+        public string type;
+        public int price;
+        public int amount;
+        public bool bought;
+        public bool selected;
+    }
+
+    public class shops
     {
         public rect r = new rect();
         public Animation anim = new Animation();
         int frameI = 0;
 
         public bool heroAround = false;
-        public shop(int x , int y , int width , int height)
+        public bool isOpen = false;
+
+        Bitmap leftPage;
+        Bitmap rightPage;
+        Bitmap slotImage;
+        Bitmap selectImg;
+        Bitmap tickIcon;
+        Bitmap heartFull;
+        Bitmap heartHalf;
+        Bitmap starFull;
+        Bitmap starHalf;
+
+        public ShopSlot[,] shop = new ShopSlot[2, 4];
+
+        int slotW = 70;
+        int slotH = 70;
+        int gapX = 15;
+        int gapY = 35;
+        int potionStartOffX = 78;
+        int potionStartOffY = 90;
+
+        public shops(int x , int y , int width , int height)
         {
             r.X = x;
             r.Y = y;
@@ -10495,6 +10608,67 @@ namespace General
                 Bitmap frame = new Bitmap(path);
 
                 anim.addFrame(frame , false , false);
+            }
+
+            leftPage = new Bitmap("ui/shop/UI_TravelBook_BookPageLeft01a.png");
+            rightPage = new Bitmap("ui/shop/UI_TravelBook_BookPageRight01a.png");
+            slotImage = new Bitmap("ui/shop/UI_TravelBook_Slot01b.png");
+            selectImg = new Bitmap("ui/shop/UI_TravelBook_Select01a.png");
+            tickIcon = new Bitmap("ui/shop/UI_TravelBook_IconTick01a.png");
+            heartFull = new Bitmap("ui/shop/UI_TravelBook_IconHeart01a.png");
+            heartHalf = new Bitmap("ui/shop/UI_TravelBook_IconHeart01e.png");
+            starFull = new Bitmap("ui/shop/UI_TravelBook_IconStar01a.png");
+            starHalf = new Bitmap("ui/shop/UI_TravelBook_IconStar01c.png");
+
+            Random rnd = new Random();
+
+            string[] potionTypes = { "health", "mana", "largeHealth", "largeMana" };
+            string[] potionNames = { "S-HP", "S-MP", "L-HP", "L-MP" };
+            int[] potionPrices = new int[4];
+            potionPrices[0] = rnd.Next(20, 31);
+            potionPrices[1] = rnd.Next(20, 31);
+            potionPrices[2] = rnd.Next(60, 81);
+            potionPrices[3] = rnd.Next(60, 81);
+
+            string[] upgradeTypes = { "maxHealthFull", "maxHealthHalf", "maxManaFull", "maxManaHalf" };
+            string[] upgradeNames = { "Vitality Heart", "Minor Heart", "Mana Star", "Minor Star" };
+            int[] upgradePrices = { 150, 100, 150, 100 };
+            int[] upgradeAmounts = { 100, 50, 100, 50 };
+            Bitmap[] upgradeIcons = { heartFull, heartHalf, starFull, starHalf };
+
+            for (int ri = 0; ri < 2; ri++)
+            {
+                for (int ci = 0; ci < 4; ci++)
+                {
+                    ShopSlot sl = new ShopSlot();
+                    sl.w = slotW;
+                    sl.h = slotH;
+                    sl.bought = false;
+                    sl.selected = false;
+
+                    if (ci < 2)
+                    {
+                        int idx = ri * 2 + ci;
+                        sl.type = potionTypes[idx];
+                        sl.label = potionNames[idx];
+                        sl.price = potionPrices[idx];
+                        sl.priceLabel = potionPrices[idx].ToString() + "c";
+                        sl.amount = 0;
+                        sl.itemImg = null;
+                    }
+                    else
+                    {
+                        int idx = ri * 2 + (ci - 2);
+                        sl.type = upgradeTypes[idx];
+                        sl.label = upgradeNames[idx];
+                        sl.price = upgradePrices[idx];
+                        sl.priceLabel = upgradePrices[idx].ToString() + "c";
+                        sl.amount = upgradeAmounts[idx];
+                        sl.itemImg = upgradeIcons[idx];
+                    }
+
+                    shop[ri, ci] = sl;
+                }
             }
         }
 
@@ -10528,7 +10702,7 @@ namespace General
                 G.DrawRectangle(pn, r.X, r.Y, r.Width, r.Height);
             }
 
-            if (heroAround)
+            if (heroAround && isOpen == false)
             {
                 Font font = new Font("system", 16);
                 int rectangleWidth = 240;
@@ -10542,6 +10716,196 @@ namespace General
             }
         }
 
+        int getPageW() { return leftPage.Width * 3; }
+        int getPageH() { return leftPage.Height * 3; }
+
+        void computePositions(int clientW, int clientH)
+        {
+            int pw = getPageW();
+            int ph = getPageH();
+            int totalW = pw * 2;
+            int leftX = (clientW - totalW) / 2;
+            int leftY = (clientH - ph) / 2;
+            int rightX = leftX + pw;
+
+            for (int ri = 0; ri < 2; ri++)
+            {
+                for (int ci = 0; ci < 4; ci++)
+                {
+                    ShopSlot trav = shop[ri, ci];
+                    if (ci < 2)
+                    {
+                        trav.x = leftX + potionStartOffX + ci * (slotW + gapX);
+                        trav.y = leftY + potionStartOffY + ri * (slotH + gapY);
+                    }
+                    else
+                    {
+                        trav.x = rightX + potionStartOffX + (ci - 2) * (slotW + gapX);
+                        trav.y = leftY + potionStartOffY + ri * (slotH + gapY);
+                    }
+                }
+            }
+        }
+
+        void clearSelection()
+        {
+            for (int ri = 0; ri < 2; ri++)
+            {
+                for (int ci = 0; ci < 4; ci++)
+                {
+                    shop[ri, ci].selected = false;
+                }
+            }
+        }
+
+        public void drawInterface(Graphics g, int clientW, int clientH, Hero hero)
+        {
+            int pw = getPageW();
+            int ph = getPageH();
+            int totalW = pw * 2;
+            int leftX = (clientW - totalW) / 2;
+            int leftY = (clientH - ph) / 2;
+            int rightX = leftX + pw;
+
+            g.DrawImage(leftPage, leftX, leftY, pw, ph);
+            g.DrawImage(rightPage, rightX, leftY, pw, ph);
+
+            computePositions(clientW, clientH);
+
+            Font titleFont = new Font("System", 9, FontStyle.Bold);
+            Font statsFont = new Font("System", 7, FontStyle.Bold);
+            SolidBrush black = new SolidBrush(Color.Black);
+
+            string potionTitle = "Potions";
+            float potionTitleX = leftX + (pw - potionTitle.Length * 5.5f) / 2f;
+            float potionTitleY = leftY + 22;
+            g.DrawString(potionTitle, titleFont, black, potionTitleX, potionTitleY);
+
+            string upgradeTitle = "Upgrades";
+            float upgradeTitleX = rightX + (pw - upgradeTitle.Length * 5.5f) / 2f;
+            float upgradeTitleY = leftY + 22;
+            g.DrawString(upgradeTitle, titleFont, black, upgradeTitleX, upgradeTitleY);
+
+            for (int ri = 0; ri < 2; ri++)
+            {
+                for (int ci = 0; ci < 4; ci++)
+                {
+                    ShopSlot sl = shop[ri, ci];
+                    Bitmap drawIcon = sl.itemImg;
+
+                    if (ci < 2)
+                    {
+                        drawIcon = hero.inventory.getPotionImage(sl.type);
+                    }
+
+                    if (sl.bought)
+                    {
+                        SolidBrush darkOverlay = new SolidBrush(Color.FromArgb(140, 80, 60, 50));
+                        g.FillRectangle(darkOverlay, sl.x, sl.y, sl.w, sl.h);
+                    }
+                    else
+                    {
+                        g.DrawImage(slotImage, sl.x, sl.y, sl.w, sl.h);
+                    }
+
+                    if (drawIcon != null && sl.bought == false)
+                    {
+                        float inset = 10f;
+                        g.DrawImage(drawIcon, sl.x + inset, sl.y + inset, sl.w - inset * 2f, sl.h - inset * 2f);
+                    }
+
+                    if (sl.bought)
+                    {
+                        float tSize = 30f;
+                        g.DrawImage(tickIcon, sl.x + (sl.w - tSize) / 2f, sl.y + (sl.h - tSize) / 2f, tSize, tSize);
+                    }
+
+                    if (sl.selected)
+                    {
+                        g.DrawImage(selectImg, sl.x, sl.y, sl.w, sl.h);
+                    }
+
+                    Font font = new Font("System", 7, FontStyle.Bold);
+                    g.DrawString(sl.label, font, black, sl.x - 2, sl.y + sl.h + 2);
+
+                    if (sl.bought == false)
+                    {
+                        g.DrawString(sl.priceLabel, font, black, sl.x - 2, sl.y + sl.h + 13);
+                    }
+                    else
+                    {
+                        g.DrawString("Owned", font, black, sl.x - 2, sl.y + sl.h + 13);
+                    }
+                }
+            }
+
+            string stats = "HP: " + hero.HP.maxHP.ToString() + "  MP: " + hero.mana.maxMana.ToString();
+            float statsX = rightX + (pw - stats.Length * 4.5f) / 2f;
+            float statsY = leftY + ph - 38;
+            g.DrawString(stats, statsFont, black, statsX, statsY);
+
+            string coinInfo = "Coins: " + hero.coins.ToString() + "c";
+            Font coinFont = new Font("System", 8, FontStyle.Bold);
+            float coinX = leftX + totalW - coinInfo.Length * 5f - 18;
+            float coinY = leftY + ph - 22;
+            g.DrawString(coinInfo, coinFont, black, coinX, coinY);
+        }
+
+        public int handleClick(int mx, int my, int clientW, int clientH, Hero hero)
+        {
+            computePositions(clientW, clientH);
+
+            for (int ri = 0; ri < 2; ri++)
+            {
+                for (int ci = 0; ci < 4; ci++)
+                {
+                    ShopSlot sl = shop[ri, ci];
+
+                    if (mx >= sl.x && mx <= sl.x + sl.w && my >= sl.y && my <= sl.y + sl.h)
+                    {
+                        if (sl.bought) return -1;
+
+                        if (sl.selected)
+                        {
+                            if (hero.coins >= sl.price)
+                            {
+                                hero.coins -= sl.price;
+
+                                if (ci < 2)
+                                {
+                                    hero.inventory.addPotion(sl.type);
+                                }
+                                else
+                                {
+                                    if (sl.type == "maxHealthFull" || sl.type == "maxHealthHalf")
+                                    {
+                                        hero.HP.maxHP += sl.amount;
+                                        hero.HP.HP = hero.HP.maxHP;
+                                    }
+                                    else if (sl.type == "maxManaFull" || sl.type == "maxManaHalf")
+                                    {
+                                        hero.mana.maxMana += (float)sl.amount;
+                                        hero.mana.mana = hero.mana.maxMana;
+                                    }
+                                }
+
+                                sl.bought = true;
+                                sl.selected = false;
+                                clearSelection();
+                                return 1;
+                            }
+                            return -1;
+                        }
+
+                        clearSelection();
+                        sl.selected = true;
+                        return 0;
+                    }
+                }
+            }
+
+            return 0;
+        }
     }
         
     public partial class Form1 : Form
@@ -10631,6 +10995,64 @@ namespace General
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
             if (!hasStarted || isGamePaused == true || isLevelIntroVisible) return;
+
+            if (hero.inventory.isOpen)
+            {
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        int dragC = hero.inventory.dragCol;
+                        int dragR = hero.inventory.dragRow;
+                        hero.inventory.dragCol = -1;
+                        hero.inventory.dragRow = -1;
+
+                        if (dragC >= 0 && dragR >= 0)
+                        {
+                            int dropC, dropR;
+                            hero.inventory.getCellAt(e.X, e.Y, hero, this, out dropC, out dropR);
+                        if (dropC >= 1 && dropC <= 4 && dropR == 4)
+                        {
+                            int qi = dropC - 1;
+                            hero.inventory.quickSlotWeaponIdx[qi] = -1;
+                            hero.inventory.quickSlotPotionType[qi] = null;
+
+                            if (dragC == 0)
+                            {
+                                int wi = dragR;
+                                if (wi < hero.Weapons.Count)
+                                {
+                                    hero.inventory.quickSlotWeaponIdx[qi] = wi;
+                                }
+                            }
+                            else if (dragR <= 1 && dragC >= 1 && dragC <= 4)
+                            {
+                                int pi = (dragR * 4) + (dragC - 1);
+                                if (pi < hero.inventory.potions.Count)
+                                {
+                                    hero.inventory.quickSlotPotionType[qi] = hero.inventory.potions[pi].type;
+                                }
+                            }
+                            else if (dragR == 4 && dragC >= 1 && dragC <= 4)
+                            {
+                                int si = dragC - 1;
+                                int sw = hero.inventory.quickSlotWeaponIdx[si];
+                                string sp = hero.inventory.quickSlotPotionType[si];
+                                if (sw >= 0)
+                                {
+                                    hero.inventory.quickSlotWeaponIdx[qi] = sw;
+                                }
+                                else if (sp != null)
+                                {
+                                    hero.inventory.quickSlotPotionType[qi] = sp;
+                                }
+                                hero.inventory.quickSlotWeaponIdx[si] = -1;
+                                hero.inventory.quickSlotPotionType[si] = null;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
             if (levels != null && levels.isVoidLevel() == true) return;
 
             if (e.Button == MouseButtons.Left)
@@ -10700,6 +11122,15 @@ namespace General
             }
             else if (isGamePaused == false && hero.isDead == false && isLevelIntroVisible == false)
             {
+                if (levels.shop != null && levels.shop.isOpen)
+                {
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        levels.shop.handleClick(e.X, e.Y, this.ClientSize.Width, this.ClientSize.Height, hero);
+                    }
+                    return;
+                }
+
                 if (levels != null && levels.isVoidLevel() == true)
                 {
                     return;
@@ -10707,6 +11138,29 @@ namespace General
 
                 if (hero.inventory.isOpen)
                 {
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        int c, r;
+                        hero.inventory.getCellAt(e.X, e.Y, hero, this, out c, out r);
+                        if (c >= 0 && r >= 0)
+                        {
+                            hero.inventory.dragCol = c;
+                            hero.inventory.dragRow = r;
+                            hero.inventory.dragMouseX = e.X;
+                            hero.inventory.dragMouseY = e.Y;
+                        }
+                    }
+                    else if (e.Button == MouseButtons.Right)
+                    {
+                        int c, r;
+                        hero.inventory.getCellAt(e.X, e.Y, hero, this, out c, out r);
+                        if (r == 4 && c >= 1 && c <= 4)
+                        {
+                            int qi = c - 1;
+                            hero.inventory.quickSlotWeaponIdx[qi] = -1;
+                            hero.inventory.quickSlotPotionType[qi] = null;
+                        }
+                    }
                     return;
                 }
 
@@ -10789,6 +11243,11 @@ namespace General
                 if (hero.inventory.isOpen)
                 {
                     hero.inventory.updateHover(e.X, e.Y, hero, this);
+                    if (hero.inventory.dragCol >= 0)
+                    {
+                        hero.inventory.dragMouseX = e.X;
+                        hero.inventory.dragMouseY = e.Y;
+                    }
                     return;
                 }
 
@@ -11072,6 +11531,12 @@ namespace General
                         }
                     }
 
+                    if (levels.shop != null && levels.shop.heroAround && e.KeyCode == Keys.Q)
+                    {
+                        levels.shop.isOpen = !levels.shop.isOpen;
+                        return;
+                    }
+
                     if (e.KeyCode == Keys.I)
                     {
                         hero.inventory.isOpen = !hero.inventory.isOpen;
@@ -11088,6 +11553,11 @@ namespace General
 
                     if (e.KeyCode == Keys.Escape)
                     {
+                        if (levels.shop != null && levels.shop.isOpen)
+                        {
+                            levels.shop.isOpen = false;
+                            return;
+                        }
                         isGamePaused = true;
                         pauseGame();
                     }
@@ -11193,26 +11663,18 @@ namespace General
                         }
                     }
 
-                    if (hero.Weapons.Count > 1)
+                    if (e.KeyCode == Keys.D1) useQuickSlot(0);
+                    else if (e.KeyCode == Keys.D2) useQuickSlot(1);
+                    else if (e.KeyCode == Keys.D3) useQuickSlot(2);
+                    else if (e.KeyCode == Keys.D4)
                     {
-                        if (e.KeyCode == Keys.D1)
+                        if (!useQuickSlot(3))
                         {
-                            hero.coins += 20;
-                            hero.currentWeapon = 0;
-                            hero.ManageWeapon();
-                        }
-                        else if (e.KeyCode == Keys.D2)
-                        {
-                            hero.currentWeapon = 1;
-                            hero.ManageWeapon();
-
-                        }
-                        else if (hero.Weapons.Count > 2 && e.KeyCode == Keys.D3)
-                        {
-                            hero.currentWeapon = 2;
-                            hero.ManageWeapon();
-
-
+                            if (hero.inventory.getPotionCount("golden") > 0)
+                            {
+                                hero.useGoldenPotion();
+                                hero.inventory.removePotion("golden");
+                            }
                         }
                     }
 
@@ -11231,11 +11693,6 @@ namespace General
                             hero.restoreMana(30);
                             hero.inventory.removePotion("mana");
                         }
-                    }
-                    if(e.KeyCode == Keys.D4 && hero.inventory.getPotionCount("golden") > 0)
-                    {
-                        hero.useGoldenPotion();
-                        hero.inventory.removePotion("golden");
                     }
                     if(e.KeyCode == Keys.D5 && hero.inventory.getPotionCount("suspicious") > 0)
                     {
@@ -11543,6 +12000,55 @@ namespace General
                         drawInventory(g);
                     }
 
+                    if (levels.shop != null && levels.shop.isOpen)
+                    {
+                        SolidBrush shopBg = new SolidBrush(Color.FromArgb(100, 0, 0, 0));
+                        g.FillRectangle(shopBg, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+                        levels.shop.drawInterface(g, this.ClientSize.Width, this.ClientSize.Height, hero);
+                    }
+
+                    if (hero.inventory.dragCol >= 0 && hero.inventory.dragRow >= 0)
+                    {
+                        int dc = hero.inventory.dragCol;
+                        int dr = hero.inventory.dragRow;
+                        Bitmap dragImg = null;
+                        if (dc == 0 && dr >= 0 && dr < hero.Weapons.Count)
+                        {
+                            dragImg = hero.Weapons[dr].UIImage;
+                        }
+                        else if (dr <= 3 && dc >= 1 && dc <= 4)
+                        {
+                            int pIdx = dr * 4 + dc - 1;
+                            if (pIdx < hero.inventory.potions.Count)
+                            {
+                                dragImg = hero.inventory.getPotionImage(hero.inventory.potions[pIdx].type);
+                            }
+                        }
+                        else if (dr == 4 && dc >= 1 && dc <= 4)
+                        {
+                            int qi = dc - 1;
+                            int wi = hero.inventory.quickSlotWeaponIdx[qi];
+                            string pt = hero.inventory.quickSlotPotionType[qi];
+                            if (wi >= 0 && wi < hero.Weapons.Count)
+                            {
+                                dragImg = hero.Weapons[wi].UIImage;
+                            }
+                            else if (pt != null)
+                            {
+                                dragImg = hero.inventory.getPotionImage(pt);
+                            }
+                        }
+                        if (dragImg != null)
+                        {
+                            float dSize = 50f;
+                            g.DrawImage(dragImg, hero.inventory.dragMouseX - dSize / 2f, hero.inventory.dragMouseY - dSize / 2f, dSize, dSize);
+                        }
+                    }
+                    if (levels.currentLevel == 0 && levels.levels[0].tiles.Count > 2)
+                    {
+                        tile redPlatform = levels.levels[0].tiles[2];
+                    }
+
                     save.autoSave(hero, enemyController.enemies, levels, levels.currentLevel, g, this.ClientSize.Height);
                     
                 }
@@ -11561,6 +12067,58 @@ namespace General
 
         public float getPanX() { return (this.ClientSize.Width - 330f) / 2f; }
         public float getPanY() { return (this.ClientSize.Height - 315f) / 2f; }
+
+        bool useQuickSlot(int qi)
+        {
+            int wi = hero.inventory.quickSlotWeaponIdx[qi];
+            string pt = hero.inventory.quickSlotPotionType[qi];
+            if (wi >= 0)
+            {
+                hero.currentWeapon = wi;
+                hero.ManageWeapon();
+                return true;
+            }
+            else if (pt != null)
+            {
+                if (pt == "health" && hero.HP.HP < hero.HP.maxHP)
+                {
+                    hero.restoreHealth(30);
+                    hero.inventory.removePotion("health");
+                    return true;
+                }
+                else if (pt == "mana" && hero.mana.mana < hero.mana.maxMana)
+                {
+                    hero.restoreMana(30);
+                    hero.inventory.removePotion("mana");
+                    return true;
+                }
+                else if (pt == "golden")
+                {
+                    hero.useGoldenPotion();
+                    hero.inventory.removePotion("golden");
+                    return true;
+                }
+                else if (pt == "suspicious")
+                {
+                    hero.useSuspiciousPotion();
+                    hero.inventory.removePotion("suspicious");
+                    return true;
+                }
+                else if (pt == "largeHealth" && hero.HP.HP < hero.HP.maxHP)
+                {
+                    hero.restoreHealth(60);
+                    hero.inventory.removePotion("largeHealth");
+                    return true;
+                }
+                else if (pt == "largeMana" && hero.mana.mana < hero.mana.maxMana)
+                {
+                    hero.restoreMana(60);
+                    hero.inventory.removePotion("largeMana");
+                    return true;
+                }
+            }
+            return false;
+        }
 
         void drawInventory(Graphics g)
         {
@@ -11635,15 +12193,30 @@ namespace General
                         else
                         {
                             int qi = col - 1;
-                            if (qi < hero.inventory.quickSlotIndices.Length)
+                            if (qi < 4)
                             {
-                                int wi = hero.inventory.quickSlotIndices[qi];
+                                int wi = hero.inventory.quickSlotWeaponIdx[qi];
                                 if (wi >= 0 && wi < hero.Weapons.Count)
                                 {
                                     float imgSize = hero.inventory.slotRenderSize - 8f;
                                     float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
                                     float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
                                     g.DrawImage(hero.Weapons[wi].UIImage, ix, iy, imgSize, imgSize);
+                                }
+                                else
+                                {
+                                    string ptype = hero.inventory.quickSlotPotionType[qi];
+                                    if (ptype != null)
+                                    {
+                                        Bitmap pImg = hero.inventory.getPotionImage(ptype);
+                                        if (pImg != null)
+                                        {
+                                            float imgSize = hero.inventory.slotRenderSize - 6f;
+                                            float ix = sx + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                            float iy = sy + (hero.inventory.slotRenderSize - imgSize) / 2f;
+                                            g.DrawImage(pImg, ix, iy, imgSize, imgSize);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -12430,7 +13003,7 @@ namespace General
 
         }
         
-void displayMenu(Graphics G)
+        void displayMenu(Graphics G)
 {
     int spacing = 20;
     int pad = 20;
@@ -12591,9 +13164,9 @@ void displayMenu(Graphics G)
 
             hero.inventory.loadImages();
 
+            levels.currentLevel = 0;
             levels.initAll(this.ClientSize.Height, this.ClientSize.Width);
 
-            levels.currentLevel = 0;
             levels.loadLadders(ladders);
             levels.loadTiles(tiles);
             levels.loadEnemies(enemyController.enemies);
