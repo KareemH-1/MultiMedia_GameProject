@@ -5,11 +5,11 @@ Boss0_Y:651
 Boss0_HP:0
 Boss0_isDead:True
 Boss0_startFight:True
-Boss2_X:3054
-Boss2_Y:806
-Boss2_HP:520
-Boss2_isDead:False
-Boss2_startFight:False
+Boss2_X:2917.2
+Boss2_Y:792.25
+Boss2_HP:0
+Boss2_isDead:True
+Boss2_startFight:True
 Boss4_X:1812
 Boss4_Y:558
 Boss4_HP:900

@@ -2363,6 +2363,23 @@ namespace General
 
     public class Inventory
     {
+        public bool isOpen = false;
+        public Bitmap[] panelImages;
+        public Bitmap slotImg;
+        public Bitmap slotSelectedImg;
+        public Bitmap[] potionImages;
+        public int[] quickSlotWeaponIdx = { -1, -1, -1, -1 };
+        public string[] quickSlotPotionType = { null, null, null, null };
+        public int hoveredCol = -1;
+        public int hoveredRow = -1;
+        public int dragCol = -1;
+        public int dragRow = -1;
+        public float dragMouseX = 0f;
+        public float dragMouseY = 0f;
+        public float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
+        public float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
+        public float slotRenderSize = 40f;
+
         public List<PotionStack> potions = new List<PotionStack>();
 
         public int getPotionCount(string type)
@@ -2432,23 +2449,6 @@ namespace General
             return null;
         }
 
-        public bool isOpen = false;
-        public Bitmap[] panelImages;
-        public Bitmap slotImg;
-        public Bitmap slotSelectedImg;
-        public Bitmap[] potionImages;
-        public int[] quickSlotWeaponIdx = { -1, -1, -1, -1 };
-        public string[] quickSlotPotionType = { null, null, null, null };
-        public int hoveredCol = -1;
-        public int hoveredRow = -1;
-        public int dragCol = -1;
-        public int dragRow = -1;
-        public float dragMouseX = 0f;
-        public float dragMouseY = 0f;
-        public float[] cellCX = { 14f, 41.5f, 58.5f, 75.5f, 93f };
-        public float[] cellCY = { 14f, 31f, 48f, 65f, 93f };
-        public float slotRenderSize = 40f;
-
         public void loadImages()
         {
             panelImages = new Bitmap[4];
@@ -2468,22 +2468,12 @@ namespace General
             potionImages[5] = new Bitmap("Collectables/Potions/L-MP.png");
         }
 
-        public void updateHover(int mx, int my, Hero h, Form1 f)
+        public void updateHover(int mx, int my, float clientWidth, float clientHeight)
         {
             hoveredCol = -1;
             hoveredRow = -1;
-            int c, r;
-            getCellAt(mx, my, h, f, out c, out r);
-            hoveredCol = c;
-            hoveredRow = r;
-        }
-
-        public void getCellAt(int mx, int my, Hero h, Form1 f, out int col, out int row)
-        {
-            col = -1;
-            row = -1;
-            float panX = f.getPanX();
-            float panY = f.getPanY();
+            float panX = (clientWidth - 330f) / 2f;
+            float panY = (clientHeight - 315f) / 2f;
             for (int c = 0; c < 5; c++)
             {
                 for (int r = 0; r < 5; r++)
@@ -2492,13 +2482,17 @@ namespace General
                     float sy = panY + cellCY[r] * 3f - slotRenderSize / 2f;
                     if (mx >= sx && mx <= sx + slotRenderSize && my >= sy && my <= sy + slotRenderSize)
                     {
-                        col = c;
-                        row = r;
+                        hoveredCol = c;
+                        hoveredRow = r;
                         return;
                     }
                 }
             }
         }
+
+        public float getPanX(float clientWidth) { return (clientWidth - 330f) / 2f; }
+
+        public float getPanY(float clientHeight) { return (clientHeight - 315f) / 2f; }
     }
 
     public class Hero
@@ -5914,10 +5908,11 @@ namespace General
 
                 if(e.enemyType == "horse" && e.HP.HP <= 0)
                 {
+                    e.dropCollectables(droppedCoins, droppedPotions);
                     enemies.RemoveAt(i);
                     i--;
                 }
-                if (e.isDead)
+                else if (e.isDead)
                 {
                     e.dropCollectables(droppedCoins, droppedPotions);
                     Animation currDead = e.anim.getCurrentAnimation();
@@ -8250,9 +8245,11 @@ namespace General
             {
                 if (levels[currentLevel].displayName == "Rest")
                 {
+                    int shopLevel = (currentLevel - 1) / 2;
+                    bool beforeFinalBoss = currentLevel < levels.Count - 1 && levels[currentLevel + 1].displayName == "Boss Room";
                     int shopW = 118 * 3;
                     int shopH = 128 * 3;
-                    shop = new shops(width / 2 - shopW / 2, height - 30 - shopH, shopW, shopH);
+                    shop = new shops(width / 2 - shopW / 2, height - 30 - shopH, shopW, shopH, shopLevel, beforeFinalBoss);
                 }
                 else shop = null;
             }
@@ -10595,7 +10592,16 @@ namespace General
         int potionStartOffX = 78;
         int potionStartOffY = 90;
 
-        public shops(int x , int y , int width , int height)
+        string formatPrice(int price)
+        {
+            int silver = price / 100;
+            int bronze = price % 100;
+            if (silver > 0 && bronze > 0) return silver + " silver " + bronze + "c";
+            if (silver > 0) return silver + " silver";
+            return price + "c";
+        }
+
+        public shops(int x , int y , int width , int height , int shopLevel , bool beforeFinalBoss)
         {
             r.X = x;
             r.Y = y;
@@ -10622,17 +10628,19 @@ namespace General
 
             Random rnd = new Random();
 
+            float priceMult = (float)Math.Pow(1.6, shopLevel);
+
             string[] potionTypes = { "health", "mana", "largeHealth", "largeMana" };
             string[] potionNames = { "S-HP", "S-MP", "L-HP", "L-MP" };
             int[] potionPrices = new int[4];
-            potionPrices[0] = rnd.Next(20, 31);
-            potionPrices[1] = rnd.Next(20, 31);
-            potionPrices[2] = rnd.Next(60, 81);
-            potionPrices[3] = rnd.Next(60, 81);
+            potionPrices[0] = (int)(rnd.Next(20, 31) * priceMult);
+            potionPrices[1] = (int)(rnd.Next(20, 31) * priceMult);
+            potionPrices[2] = (int)(rnd.Next(60, 81) * priceMult);
+            potionPrices[3] = (int)(rnd.Next(60, 81) * priceMult);
 
             string[] upgradeTypes = { "maxHealthFull", "maxHealthHalf", "maxManaFull", "maxManaHalf" };
             string[] upgradeNames = { "Vitality Heart", "Minor Heart", "Mana Star", "Minor Star" };
-            int[] upgradePrices = { 150, 100, 150, 100 };
+            int[] upgradePrices = { (int)(150 * priceMult), (int)(100 * priceMult), (int)(150 * priceMult), (int)(100 * priceMult) };
             int[] upgradeAmounts = { 100, 50, 100, 50 };
             Bitmap[] upgradeIcons = { heartFull, heartHalf, starFull, starHalf };
 
@@ -10652,7 +10660,7 @@ namespace General
                         sl.type = potionTypes[idx];
                         sl.label = potionNames[idx];
                         sl.price = potionPrices[idx];
-                        sl.priceLabel = potionPrices[idx].ToString() + "c";
+                        sl.priceLabel = formatPrice(potionPrices[idx]);
                         sl.amount = 0;
                         sl.itemImg = null;
                     }
@@ -10662,13 +10670,24 @@ namespace General
                         sl.type = upgradeTypes[idx];
                         sl.label = upgradeNames[idx];
                         sl.price = upgradePrices[idx];
-                        sl.priceLabel = upgradePrices[idx].ToString() + "c";
+                        sl.priceLabel = formatPrice(upgradePrices[idx]);
                         sl.amount = upgradeAmounts[idx];
                         sl.itemImg = upgradeIcons[idx];
                     }
 
                     shop[ri, ci] = sl;
                 }
+            }
+
+            if (beforeFinalBoss)
+            {
+                ShopSlot golden = shop[1, 0];
+                golden.type = "golden";
+                golden.label = "Golden Potion";
+                golden.price = 1300;
+                golden.priceLabel = formatPrice(golden.price);
+                golden.amount = 0;
+                golden.itemImg = null;
             }
         }
 
@@ -11007,8 +11026,24 @@ namespace General
 
                         if (dragC >= 0 && dragR >= 0)
                         {
-                            int dropC, dropR;
-                            hero.inventory.getCellAt(e.X, e.Y, hero, this, out dropC, out dropR);
+                            int dropC = -1, dropR = -1;
+                            float panX = hero.inventory.getPanX(this.ClientSize.Width);
+                            float panY = hero.inventory.getPanY(this.ClientSize.Height);
+                            for (int c = 0; c < 5; c++)
+                            {
+                                for (int r = 0; r < 5; r++)
+                                {
+                                    float sx = panX + hero.inventory.cellCX[c] * 3f - hero.inventory.slotRenderSize / 2f;
+                                    float sy = panY + hero.inventory.cellCY[r] * 3f - hero.inventory.slotRenderSize / 2f;
+                                    if (e.X >= sx && e.X <= sx + hero.inventory.slotRenderSize && e.Y >= sy && e.Y <= sy + hero.inventory.slotRenderSize)
+                                    {
+                                        dropC = c;
+                                        dropR = r;
+                                        goto foundDrop;
+                                    }
+                                }
+                            }
+                            foundDrop:
                         if (dropC >= 1 && dropC <= 4 && dropR == 4)
                         {
                             int qi = dropC - 1;
@@ -11140,8 +11175,24 @@ namespace General
                 {
                     if (e.Button == MouseButtons.Left)
                     {
-                        int c, r;
-                        hero.inventory.getCellAt(e.X, e.Y, hero, this, out c, out r);
+                        int c = -1, r = -1;
+                        float panX = hero.inventory.getPanX(this.ClientSize.Width);
+                        float panY = hero.inventory.getPanY(this.ClientSize.Height);
+                        for (int ci = 0; ci < 5; ci++)
+                        {
+                            for (int ri = 0; ri < 5; ri++)
+                            {
+                                float sx = panX + hero.inventory.cellCX[ci] * 3f - hero.inventory.slotRenderSize / 2f;
+                                float sy = panY + hero.inventory.cellCY[ri] * 3f - hero.inventory.slotRenderSize / 2f;
+                                if (e.X >= sx && e.X <= sx + hero.inventory.slotRenderSize && e.Y >= sy && e.Y <= sy + hero.inventory.slotRenderSize)
+                                {
+                                    c = ci;
+                                    r = ri;
+                                    goto foundCell;
+                                }
+                            }
+                        }
+                        foundCell:
                         if (c >= 0 && r >= 0)
                         {
                             hero.inventory.dragCol = c;
@@ -11152,8 +11203,24 @@ namespace General
                     }
                     else if (e.Button == MouseButtons.Right)
                     {
-                        int c, r;
-                        hero.inventory.getCellAt(e.X, e.Y, hero, this, out c, out r);
+                        int c = -1, r = -1;
+                        float panX = hero.inventory.getPanX(this.ClientSize.Width);
+                        float panY = hero.inventory.getPanY(this.ClientSize.Height);
+                        for (int ci = 0; ci < 5; ci++)
+                        {
+                            for (int ri = 0; ri < 5; ri++)
+                            {
+                                float sx = panX + hero.inventory.cellCX[ci] * 3f - hero.inventory.slotRenderSize / 2f;
+                                float sy = panY + hero.inventory.cellCY[ri] * 3f - hero.inventory.slotRenderSize / 2f;
+                                if (e.X >= sx && e.X <= sx + hero.inventory.slotRenderSize && e.Y >= sy && e.Y <= sy + hero.inventory.slotRenderSize)
+                                {
+                                    c = ci;
+                                    r = ri;
+                                    goto foundRightCell;
+                                }
+                            }
+                        }
+                        foundRightCell:
                         if (r == 4 && c >= 1 && c <= 4)
                         {
                             int qi = c - 1;
@@ -11242,7 +11309,7 @@ namespace General
 
                 if (hero.inventory.isOpen)
                 {
-                    hero.inventory.updateHover(e.X, e.Y, hero, this);
+                    hero.inventory.updateHover(e.X, e.Y, this.ClientSize.Width, this.ClientSize.Height);
                     if (hero.inventory.dragCol >= 0)
                     {
                         hero.inventory.dragMouseX = e.X;
