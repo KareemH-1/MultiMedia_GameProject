@@ -1,6 +1,6 @@
 EnemiesCount:6
 Enemy0_X:600
-Enemy0_Y:741
+Enemy0_Y:693
 Enemy0_speed:4
 Enemy0_moving:l
 Enemy0_facing:l
@@ -25,7 +25,7 @@ Enemy0_patrolDistance:200
 Enemy0_leftLimit:400
 Enemy0_rightLimit:800
 Enemy0_spawnX:600
-Enemy0_spawnY:741
+Enemy0_spawnY:693
 Enemy0_CanSpawn:True
 Enemy0_spawnTime:600
 Enemy0_isWaiting:True
@@ -41,7 +41,7 @@ Enemy0_enemyName:mushroom
 Enemy0_maxHP:50
 Enemy0_HP:50
 Enemy1_X:1600
-Enemy1_Y:671
+Enemy1_Y:623
 Enemy1_speed:6
 Enemy1_moving:l
 Enemy1_facing:l
@@ -66,7 +66,7 @@ Enemy1_patrolDistance:300
 Enemy1_leftLimit:1300
 Enemy1_rightLimit:1900
 Enemy1_spawnX:1600
-Enemy1_spawnY:671
+Enemy1_spawnY:623
 Enemy1_CanSpawn:True
 Enemy1_spawnTime:500
 Enemy1_isWaiting:True
@@ -82,7 +82,7 @@ Enemy1_enemyName:bat
 Enemy1_maxHP:30
 Enemy1_HP:30
 Enemy2_X:925
-Enemy2_Y:471
+Enemy2_Y:423
 Enemy2_speed:6
 Enemy2_moving:l
 Enemy2_facing:l
@@ -107,7 +107,7 @@ Enemy2_patrolDistance:300
 Enemy2_leftLimit:625
 Enemy2_rightLimit:1225
 Enemy2_spawnX:925
-Enemy2_spawnY:471
+Enemy2_spawnY:423
 Enemy2_CanSpawn:True
 Enemy2_spawnTime:500
 Enemy2_isWaiting:True
@@ -123,7 +123,7 @@ Enemy2_enemyName:bat
 Enemy2_maxHP:30
 Enemy2_HP:30
 Enemy3_X:3828
-Enemy3_Y:661
+Enemy3_Y:613
 Enemy3_speed:4
 Enemy3_moving:l
 Enemy3_facing:l
@@ -148,7 +148,7 @@ Enemy3_patrolDistance:200
 Enemy3_leftLimit:3628
 Enemy3_rightLimit:4028
 Enemy3_spawnX:3828
-Enemy3_spawnY:661
+Enemy3_spawnY:613
 Enemy3_CanSpawn:True
 Enemy3_spawnTime:600
 Enemy3_isWaiting:True
@@ -164,7 +164,7 @@ Enemy3_enemyName:mushroom
 Enemy3_maxHP:50
 Enemy3_HP:50
 Enemy4_X:1400
-Enemy4_Y:741
+Enemy4_Y:693
 Enemy4_speed:3
 Enemy4_moving:l
 Enemy4_facing:l
@@ -189,7 +189,7 @@ Enemy4_patrolDistance:200
 Enemy4_leftLimit:1200
 Enemy4_rightLimit:1600
 Enemy4_spawnX:1400
-Enemy4_spawnY:741
+Enemy4_spawnY:693
 Enemy4_CanSpawn:False
 Enemy4_spawnTime:600
 Enemy4_isWaiting:True
@@ -205,7 +205,7 @@ Enemy4_enemyName:sprout
 Enemy4_maxHP:30
 Enemy4_HP:30
 Enemy5_X:3028
-Enemy5_Y:741
+Enemy5_Y:693
 Enemy5_speed:3
 Enemy5_moving:l
 Enemy5_facing:l
@@ -230,7 +230,7 @@ Enemy5_patrolDistance:200
 Enemy5_leftLimit:2828
 Enemy5_rightLimit:3228
 Enemy5_spawnX:3028
-Enemy5_spawnY:741
+Enemy5_spawnY:693
 Enemy5_CanSpawn:False
 Enemy5_spawnTime:600
 Enemy5_isWaiting:True
@@ -247,7 +247,7 @@ Enemy5_maxHP:30
 Enemy5_HP:30
 BossCount:5
 Boss0_X:3328
-Boss0_Y:651
+Boss0_Y:603
 Boss0_HP:420
 Boss0_isDead:False
 Boss0_startFight:False
