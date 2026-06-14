@@ -136,7 +136,7 @@ namespace General
             sw.WriteLine("isAbilityUnlocked:" + boolToText(hero.isAbilityUnlocked));
 
 
-            for(int i =0; i< hero.inventory.potions.Count; i++)
+            for (int i = 0; i < hero.inventory.potions.Count; i++)
             {
                 string potion = "potion_" + hero.inventory.potions[i].type + ":" + hero.inventory.potions[i].count.ToString();
                 sw.WriteLine(potion);
@@ -589,176 +589,176 @@ namespace General
                                 {
                                     Enemy enemy = enemies[enemyIndex];
 
-                                if (property == "X")
-                                {
-                                    enemy.R.X = changeToInt(val);
-                                }
-                                else if (property == "Y")
-                                {
-                                    enemy.R.Y = changeToInt(val);
-                                }
-                                else if (property == "speed")
-                                {
-                                    enemy.speed = changeToInt(val);
-                                }
-                                else if (property == "moving")
-                                {
-                                    if (val.Length > 0)
+                                    if (property == "X")
                                     {
-                                        enemy.moving = val[0];
+                                        enemy.R.X = changeToInt(val);
                                     }
-                                }
-                                else if (property == "facing")
-                                {
-                                    if (val.Length > 0)
+                                    else if (property == "Y")
                                     {
-                                        enemy.facing = val[0];
+                                        enemy.R.Y = changeToInt(val);
                                     }
-                                }
-                                else if (property == "isRunning")
-                                {
-                                    enemy.isRunning = changeBool(val);
-                                }
-                                else if (property == "velocityY")
-                                {
-                                    enemy.velocityY = changeToInt(val);
-                                }
-                                else if (property == "gravity")
-                                {
-                                    enemy.gravity = changeToInt(val);
-                                }
-                                else if (property == "max_speed")
-                                {
-                                    enemy.max_speed = changeToInt(val);
-                                }
-                                else if (property == "isGrounded")
-                                {
-                                    enemy.isGrounded = changeBool(val);
-                                }
-                                else if (property == "wasGrounded")
-                                {
-                                    enemy.wasGrounded = changeBool(val);
-                                }
-                                else if (property == "prevBottom")
-                                {
-                                    enemy.prevBottom = changeToInt(val);
-                                }
-                                else if (property == "isDead")
-                                {
-                                    enemy.isDead = changeBool(val);
-                                }
-                                else if (property == "isTakingDamage")
-                                {
-                                    enemy.isTakingDamage = changeBool(val);
-                                }
-                                else if (property == "isAttacking")
-                                {
-                                    enemy.isAttacking = changeBool(val);
-                                }
-                                else if (property == "damageTimer")
-                                {
-                                    enemy.damageTimer = changeToInt(val);
-                                }
-                                else if (property == "attackTimer")
-                                {
-                                    enemy.attackTimer = changeToInt(val);
-                                }
-                                else if (property == "deathTimer")
-                                {
-                                    enemy.deathTimer = changeToInt(val);
-                                }
-                                else if (property == "attackFrameTimer")
-                                {
-                                    enemy.attackFrameTimer = changeToInt(val);
-                                }
-                                else if (property == "attackCooldown")
-                                {
-                                    enemy.attackCooldown = changeToInt(val);
-                                }
-                                else if (property == "attackDamageDone")
-                                {
-                                    enemy.attackDamageDone = changeBool(val);
-                                }
-                                else if (property == "startX")
-                                {
-                                    enemy.startX = changeToInt(val);
-                                }
-                                else if (property == "patrolDistance")
-                                {
-                                    enemy.patrolDistance = changeToInt(val);
-                                }
-                                else if (property == "leftLimit")
-                                {
-                                    enemy.leftLimit = changeToInt(val);
-                                }
-                                else if (property == "rightLimit")
-                                {
-                                    enemy.rightLimit = changeToInt(val);
-                                }
-                                else if (property == "spawnX")
-                                {
-                                    enemy.spawnX = changeToInt(val);
-                                }
-                                else if (property == "spawnY")
-                                {
-                                    enemy.spawnY = changeToInt(val);
-                                }
-                                else if (property == "CanSpawn")
-                                {
-                                    enemy.CanSpawn = changeBool(val);
-                                }
-                                else if (property == "spawnTime")
-                                {
-                                    enemy.spawnTime = changeToInt(val);
-                                }
-                                else if (property == "isWaiting")
-                                {
-                                    enemy.isWaiting = changeBool(val);
-                                }
-                                else if (property == "waitTime")
-                                {
-                                    enemy.waitTime = changeToInt(val);
-                                }
-                                else if (property == "waitingTimer")
-                                {
-                                    enemy.waitingTimer = changeToInt(val);
-                                }
-                                else if (property == "spawnrange")
-                                {
-                                    enemy.spawnrange = changeToInt(val);
-                                }
-                                else if (property == "spawn")
-                                {
-                                    enemy.spawn = changeBool(val);
-                                }
-                                else if (property == "attackrange")
-                                {
-                                    enemy.attackrange = changeToInt(val);
-                                }
-                                else if (property == "attackdis")
-                                {
-                                    enemy.attackdis = changeToInt(val);
-                                }
-                                else if (property == "attackmode")
-                                {
-                                    enemy.attackmode = changeBool(val);
-                                }
-                                else if (property == "idle")
-                                {
-                                    enemy.idle = changeBool(val);
-                                }
-                                else if (property == "enemyName")
-                                {
-                                    enemy.enemyName = val;
-                                }
-                                else if (property == "maxHP")
-                                {
-                                    enemy.HP.maxHP = changeToInt(val);
-                                }
-                                else if (property == "HP")
-                                {
-                                    enemy.HP.HP = changeToInt(val);
-                                }
+                                    else if (property == "speed")
+                                    {
+                                        enemy.speed = changeToInt(val);
+                                    }
+                                    else if (property == "moving")
+                                    {
+                                        if (val.Length > 0)
+                                        {
+                                            enemy.moving = val[0];
+                                        }
+                                    }
+                                    else if (property == "facing")
+                                    {
+                                        if (val.Length > 0)
+                                        {
+                                            enemy.facing = val[0];
+                                        }
+                                    }
+                                    else if (property == "isRunning")
+                                    {
+                                        enemy.isRunning = changeBool(val);
+                                    }
+                                    else if (property == "velocityY")
+                                    {
+                                        enemy.velocityY = changeToInt(val);
+                                    }
+                                    else if (property == "gravity")
+                                    {
+                                        enemy.gravity = changeToInt(val);
+                                    }
+                                    else if (property == "max_speed")
+                                    {
+                                        enemy.max_speed = changeToInt(val);
+                                    }
+                                    else if (property == "isGrounded")
+                                    {
+                                        enemy.isGrounded = changeBool(val);
+                                    }
+                                    else if (property == "wasGrounded")
+                                    {
+                                        enemy.wasGrounded = changeBool(val);
+                                    }
+                                    else if (property == "prevBottom")
+                                    {
+                                        enemy.prevBottom = changeToInt(val);
+                                    }
+                                    else if (property == "isDead")
+                                    {
+                                        enemy.isDead = changeBool(val);
+                                    }
+                                    else if (property == "isTakingDamage")
+                                    {
+                                        enemy.isTakingDamage = changeBool(val);
+                                    }
+                                    else if (property == "isAttacking")
+                                    {
+                                        enemy.isAttacking = changeBool(val);
+                                    }
+                                    else if (property == "damageTimer")
+                                    {
+                                        enemy.damageTimer = changeToInt(val);
+                                    }
+                                    else if (property == "attackTimer")
+                                    {
+                                        enemy.attackTimer = changeToInt(val);
+                                    }
+                                    else if (property == "deathTimer")
+                                    {
+                                        enemy.deathTimer = changeToInt(val);
+                                    }
+                                    else if (property == "attackFrameTimer")
+                                    {
+                                        enemy.attackFrameTimer = changeToInt(val);
+                                    }
+                                    else if (property == "attackCooldown")
+                                    {
+                                        enemy.attackCooldown = changeToInt(val);
+                                    }
+                                    else if (property == "attackDamageDone")
+                                    {
+                                        enemy.attackDamageDone = changeBool(val);
+                                    }
+                                    else if (property == "startX")
+                                    {
+                                        enemy.startX = changeToInt(val);
+                                    }
+                                    else if (property == "patrolDistance")
+                                    {
+                                        enemy.patrolDistance = changeToInt(val);
+                                    }
+                                    else if (property == "leftLimit")
+                                    {
+                                        enemy.leftLimit = changeToInt(val);
+                                    }
+                                    else if (property == "rightLimit")
+                                    {
+                                        enemy.rightLimit = changeToInt(val);
+                                    }
+                                    else if (property == "spawnX")
+                                    {
+                                        enemy.spawnX = changeToInt(val);
+                                    }
+                                    else if (property == "spawnY")
+                                    {
+                                        enemy.spawnY = changeToInt(val);
+                                    }
+                                    else if (property == "CanSpawn")
+                                    {
+                                        enemy.CanSpawn = changeBool(val);
+                                    }
+                                    else if (property == "spawnTime")
+                                    {
+                                        enemy.spawnTime = changeToInt(val);
+                                    }
+                                    else if (property == "isWaiting")
+                                    {
+                                        enemy.isWaiting = changeBool(val);
+                                    }
+                                    else if (property == "waitTime")
+                                    {
+                                        enemy.waitTime = changeToInt(val);
+                                    }
+                                    else if (property == "waitingTimer")
+                                    {
+                                        enemy.waitingTimer = changeToInt(val);
+                                    }
+                                    else if (property == "spawnrange")
+                                    {
+                                        enemy.spawnrange = changeToInt(val);
+                                    }
+                                    else if (property == "spawn")
+                                    {
+                                        enemy.spawn = changeBool(val);
+                                    }
+                                    else if (property == "attackrange")
+                                    {
+                                        enemy.attackrange = changeToInt(val);
+                                    }
+                                    else if (property == "attackdis")
+                                    {
+                                        enemy.attackdis = changeToInt(val);
+                                    }
+                                    else if (property == "attackmode")
+                                    {
+                                        enemy.attackmode = changeBool(val);
+                                    }
+                                    else if (property == "idle")
+                                    {
+                                        enemy.idle = changeBool(val);
+                                    }
+                                    else if (property == "enemyName")
+                                    {
+                                        enemy.enemyName = val;
+                                    }
+                                    else if (property == "maxHP")
+                                    {
+                                        enemy.HP.maxHP = changeToInt(val);
+                                    }
+                                    else if (property == "HP")
+                                    {
+                                        enemy.HP.HP = changeToInt(val);
+                                    }
                                 }
                             }
                         }
@@ -1577,7 +1577,7 @@ namespace General
             currIdx = 0;
             frameDelayCount = 0;
         }
-        
+
     }
 
     public class vfx
@@ -1598,7 +1598,7 @@ namespace General
 
         public bool repeat = false;
 
-        public void setOffset(int offsetX , int offsetY)
+        public void setOffset(int offsetX, int offsetY)
         {
             this.offsetX = offsetX;
             this.offsetY = offsetY;
@@ -2427,7 +2427,7 @@ namespace General
         }
 
 
-        public void addPotionNum(string type , int num)
+        public void addPotionNum(string type, int num)
         {
             for (int i = 0; i < potions.Count; i++)
             {
@@ -2638,7 +2638,7 @@ namespace General
 
         public bool isShielding = false;
         public bool shieldKeyHeld = false;
-        public int shieldAnimFrame = 0; 
+        public int shieldAnimFrame = 0;
         public Animation shieldEffectAnimation;
 
         public bool lockmovement()
@@ -2678,7 +2678,7 @@ namespace General
                     {
                         beams.RemoveAt(i);
                     }
-                    else if (beams[i].dir == 'l' && beams[i].startX - beams[i].currentLength < 0f)
+                    else if (beams[i].dir == 'l' && beams[i].startX - beams[i].currentLength < -1200f)
                     {
                         beams.RemoveAt(i);
                     }
@@ -2757,11 +2757,11 @@ namespace General
             {
                 bool dirFacingL = false;
                 if (facing == 'l') dirFacingL = true;
-                
+
                 Animation shieldAnim = anim.getCurrentAnimation();
-                
+
                 List<Bitmap> shieldFrames = shieldAnim.getFrames(dirFacingL);
-                
+
                 int lastFrame = shieldFrames.Count - 1;
 
                 if (anim.currIdx >= lastFrame)
@@ -3355,7 +3355,7 @@ namespace General
         }
 
         public void takeDamage(int amount)
-        {   
+        {
 
             if ((isClimbing || isClimbingMoving)) return;
 
@@ -3576,7 +3576,7 @@ namespace General
 
 
             fx.rect.Width = drawR.Width;
-            fx.rect.Height =drawR.Height;
+            fx.rect.Height = drawR.Height;
 
             fx.setOffset(0, 30);
 
@@ -3802,7 +3802,7 @@ namespace General
 
                 if (isDoingCombo)
                 {
-                    attackDamage = ( attackDamage * 125 ) / 100;
+                    attackDamage = (attackDamage * 125) / 100;
                 }
                 else if (isCriticalAttack)
                 {
@@ -3887,7 +3887,8 @@ namespace General
             if (goldenEffectTimer > 0) moveSpeed *= 1.3f;
 
             if (isShielding)
-            {moveSpeed = 0;
+            {
+                moveSpeed = 0;
             }
 
             if (isRunning == true)
@@ -4722,7 +4723,7 @@ namespace General
         int startRepeatIdx = 0;
 
         public bool hasLeft = false;
-        public MagicianCharge(float x , float y , string type , char direction )
+        public MagicianCharge(float x, float y, string type, char direction)
         {
             dir = direction;
             this.type = type;
@@ -4738,13 +4739,13 @@ namespace General
 
                 damage = 15;
                 speed = 40;
-                for(int i =1; i<= 6; i++)
+                for (int i = 1; i <= 6; i++)
                 {
                     string path = "Characters/Enemies/Magician/Charge_2/" + direc + "/Charge_2_" + i.ToString() + ".png";
-                    anim.addFrame(new Bitmap(path) , false , false);
+                    anim.addFrame(new Bitmap(path), false, false);
                 }
             }
-            else if(type == "sphere")
+            else if (type == "sphere")
             {
                 string direc = "right";
                 if (direction == 'l') direc = "left";
@@ -4838,9 +4839,9 @@ namespace General
             drawR.Width = 68 * 2;
             drawR.Height = 128 * 2;
             drawR.X = r.X - (drawR.Width / 2) + (r.Width / 2);
-            drawR.Y = r.Y - (drawR.Height / 2) + (r.Height / 2) ;
+            drawR.Y = r.Y - (drawR.Height / 2) + (r.Height / 2);
         }
-        public void draw(Graphics g , bool showRange , float camX , float camY)
+        public void draw(Graphics g, bool showRange, float camX, float camY)
         {
             updateDrawR();
 
@@ -4896,7 +4897,7 @@ namespace General
                     }
                 }
 
-                g.DrawImage(frame, drawR.X - camX , drawR.Y - camY, drawR.Width, drawR.Height);
+                g.DrawImage(frame, drawR.X - camX, drawR.Y - camY, drawR.Width, drawR.Height);
             }
         }
     }
@@ -5111,7 +5112,7 @@ namespace General
                 animFolders = batFolders;
                 animFrames = batFrames;
             }
-            else if(type == "summon")
+            else if (type == "summon")
             {
                 // , "summonAppear",
                 //"summonDeath" , "summonIdle"
@@ -5143,11 +5144,11 @@ namespace General
 
                 summonSlot = -1;
 
-                
+
                 HP = new Health(10, 10);
                 originalMaxHP = 10;
-                string[] batFolders = { "summonAppear", "summonDeath" , "summonIdle" };
-                int[] batFrames = { 6 , 5 , 4};
+                string[] batFolders = { "summonAppear", "summonDeath", "summonIdle" };
+                int[] batFrames = { 6, 5, 4 };
 
                 animFolders = batFolders;
                 animFrames = batFrames;
@@ -5219,8 +5220,8 @@ namespace General
                 HP = new Health(150, 150);
                 originalMaxHP = 150;
 
-                string[] sproutFolders = { "Run" , "idle" };
-                int[] sproutFrames = { 3,4 };
+                string[] sproutFolders = { "Run", "idle" };
+                int[] sproutFrames = { 3, 4 };
 
                 animFolders = sproutFolders;
                 animFrames = sproutFrames;
@@ -5237,13 +5238,13 @@ namespace General
                 attackanimname = "Attack_1";
                 moveAnimName = "Walk";
                 dieAnimName = "Dead";
-  
+
                 speed = 5f;
                 gravity = 1.2f;
                 max_speed = 25f;
 
                 patrolDistance = 200f;
-                attackrange = 55f; 
+                attackrange = 55f;
                 attackdis = 1000f;
                 isSleeping = false;
                 isWakingUp = false;
@@ -5258,7 +5259,7 @@ namespace General
                 string[] MagicianFolders = { "Attack_1", "Attack_2" , "Magic_arrow" , "Magic_sphere",
                 "Dead" , "hit" , "idle" , "Jump" , "Walk" , "Run"};
 
-                int[] MagicianFrames = { 7, 9 , 6 , 16 , 4 , 4 , 8 , 8  , 7 , 8 };
+                int[] MagicianFrames = { 7, 9, 6, 16, 4, 4, 8, 8, 7, 8 };
 
                 animFolders = MagicianFolders;
                 animFrames = MagicianFrames;
@@ -5326,7 +5327,7 @@ namespace General
                             a.addFrame(img, true, isLeft);
                         }
                     }
-                    else if(enemyName == "magician")
+                    else if (enemyName == "magician")
                     {
                         string basePath = "Characters/Enemies/" + enemyFolder + "/" + animFolders[i] + "/" + directions[d] + "/";
 
@@ -5447,8 +5448,8 @@ namespace General
                     anim.changeAnimation("summonIdle", -1);
                 }
                 else
-                {   
-                    if(enemyType != "horse")
+                {
+                    if (enemyType != "horse")
                         anim.changeAnimation("hit", -1);
                 }
                 damageTimer--;
@@ -5673,11 +5674,11 @@ namespace General
                     drawR.Y = R.Y - 20;
 
                 }
-                if(enemyType == "magician")
+                if (enemyType == "magician")
                 {
-                    for(int i =0; i< charges.Count; i++)
+                    for (int i = 0; i < charges.Count; i++)
                     {
-                        if(charges[i].hasFinished == true)
+                        if (charges[i].hasFinished == true)
                         {
                             charges.RemoveAt(i);
                             i--;
@@ -5999,7 +6000,7 @@ namespace General
                 if (e.spawnrange >= distanceX && e.spawnrange >= distanceY)
                     e.spawn = true;
 
-                if(e.enemyType == "horse" && e.HP.HP <= 0)
+                if (e.enemyType == "horse" && e.HP.HP <= 0)
                 {
                     e.dropCollectables(droppedCoins, droppedPotions);
                     enemies.RemoveAt(i);
@@ -6009,7 +6010,7 @@ namespace General
                 {
                     e.dropCollectables(droppedCoins, droppedPotions);
                     Animation currDead = e.anim.getCurrentAnimation();
-                    if(e.CanSpawn == false)
+                    if (e.CanSpawn == false)
                     {
                         enemies.RemoveAt(i);
                         i--;
@@ -7535,7 +7536,8 @@ namespace General
                     g.DrawImage(img, rcDst, rcSource, GraphicsUnit.Pixel);
                 }
             }
-            else if (showColor == true) {
+            else if (showColor == true)
+            {
                 SolidBrush bsh = new SolidBrush(clr);
                 g.FillRectangle(bsh, R.X - camX, R.Y - camY, R.Width, R.Height);
             }
@@ -7849,20 +7851,24 @@ namespace General
             levels[1].Boss = null;
             levels[2].addBoss(new boss("Reaper", levels[2].worldWidth - 850, ground2, 190, 170, 520, clientWidth));
             levels[3].Boss = null;
-            levels[4].addBoss(new boss("Aegis", levels[4].worldWidth / 2 - 140, 808 - 250 , 220, 250, 900, clientWidth));
+            levels[4].addBoss(new boss("Aegis", levels[4].worldWidth / 2 - 140, 808 - 250, 220, 250, 900, clientWidth));
         }
 
         void removeAllFromLevels()
         {
-            for (int i = 0; i < levels.Count; i++) {
+            for (int i = 0; i < levels.Count; i++)
+            {
 
-                while (levels[i].enemies.Count > 0) {
+                while (levels[i].enemies.Count > 0)
+                {
                     levels[i].enemies.RemoveAt(0);
                 }
-                while (levels[i].ladders.Count > 0) {
+                while (levels[i].ladders.Count > 0)
+                {
                     levels[i].ladders.RemoveAt(0);
                 }
-                while (levels[i].tiles.Count > 0) {
+                while (levels[i].tiles.Count > 0)
+                {
                     levels[i].tiles.RemoveAt(0);
                 }
                 while (levels[i].movingPlatforms.Count > 0)
@@ -8280,7 +8286,7 @@ namespace General
             }
         }
 
-        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles , int width , int height)
+        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, int width, int height)
         {
             level curLvl = levels[currentLevel];
 
@@ -8317,7 +8323,7 @@ namespace General
 
             addShop(height, width);
         }
-        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms , int height , int width)
+        public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms, int height, int width)
         {
             if (currentLevel < levels.Count - 1)
             {
@@ -8332,7 +8338,7 @@ namespace General
             }
         }
 
-        public void addShop(int height , int width)
+        public void addShop(int height, int width)
         {
             if (currentLevel != -1)
             {
@@ -8470,7 +8476,8 @@ namespace General
         {
             if (level == 0)
             {
-                for (int i = 1; i <= 8; i++) {
+                for (int i = 1; i <= 8; i++)
+                {
                     Bitmap frame = new Bitmap("Teleporters/Green/" + i.ToString() + ".png");
                     Animation.addFrame(frame, false, false);
                 }
@@ -8492,7 +8499,8 @@ namespace General
                 }
                 loopIt = false;
             }
-            else if (level == 2) {
+            else if (level == 2)
+            {
 
                 for (int i = 0; i <= 21; i++)
                 {
@@ -8625,7 +8633,8 @@ namespace General
         }
     }
 
-    public class bossUI{
+    public class bossUI
+    {
         public rect rect = new rect();
         Bitmap bg = new Bitmap("ui/bossHP/health_under.png");
         Bitmap bar = new Bitmap("ui/bossHP/bar.png");
@@ -8633,7 +8642,7 @@ namespace General
 
         public string Bname;
 
-        public bossUI(string bname , int ClientWidth)
+        public bossUI(string bname, int ClientWidth)
         {
             int width = 400;
             int height = 150;
@@ -8649,11 +8658,11 @@ namespace General
             this.name = new Bitmap(path);
         }
 
-        public void draw(Graphics g , int HP , int maxHP)
+        public void draw(Graphics g, int HP, int maxHP)
         {
             g.DrawImage(bg, rect.X, rect.Y, rect.Width, rect.Height);
 
-           
+
 
             int barStart = rect.X + 20;
             int barMaxW = rect.Width - 38;
@@ -8682,9 +8691,9 @@ namespace General
 
             if (name != null)
             {
-                int w = 200 , h = 80;
-               
-                if(Bname == "Minatour")
+                int w = 200, h = 80;
+
+                if (Bname == "Minatour")
                 {
                     w = 300;
                     h = 130;
@@ -8750,7 +8759,7 @@ namespace General
 
         public void Draw(Graphics g, float camX, float camY)
         {
-            float drawX = x - camX - (text.Length*7 / 2);
+            float drawX = x - camX - (text.Length * 7 / 2);
             float drawY = y - camY - 8;
             Font font;
 
@@ -8816,7 +8825,8 @@ namespace General
         }
     }
 
-    public class boss {
+    public class boss
+    {
         public string name;
         public bool startFight = false;
         public rectF R = new rectF();
@@ -8890,7 +8900,7 @@ namespace General
         int aegisAbilityCooldownMax = 120;
         public List<AegisAbility> aegisAbilities = new List<AegisAbility>();
 
-        public boss(string name, float x , float y , float width , float height , int maxHP , int clientWidth)
+        public boss(string name, float x, float y, float width, float height, int maxHP, int clientWidth)
         {
             R.X = x;
             R.Y = y;
@@ -8928,7 +8938,7 @@ namespace General
                 attackRange = 100f;
             }
 
-            bossUI = new bossUI(name , clientWidth);
+            bossUI = new bossUI(name, clientWidth);
 
             initAnimations(name);
             anim.changeAnimation("idle", -1);
@@ -8955,15 +8965,15 @@ namespace General
         {
             string folder = "Characters/Bosses/" + name;
 
-            if(name == "Aegis")
+            if (name == "Aegis")
             {
                 Animation aegis = new Animation();
                 aegis.name = "idle";
-                for(int i =0; i < 15; i++)
+                for (int i = 0; i < 15; i++)
                 {
-                    string curr = folder+ "/" + i.ToString() + ".png";
+                    string curr = folder + "/" + i.ToString() + ".png";
                     aegis.frames.Add(new Bitmap(curr));
-                    
+
                 }
 
                 anim.addAnim(aegis);
@@ -8979,12 +8989,12 @@ namespace General
                     16,16,12
                 };
 
-                for(int i =0; i < folders.Length; i++)
+                for (int i = 0; i < folders.Length; i++)
                 {
                     Animation animation = new Animation();
                     animation.name = folders[i];
 
-                    for(int j = 0; j < numFrames[i]; j++)
+                    for (int j = 0; j < numFrames[i]; j++)
                     {
                         string curr = folder + "/left/" + animation.name + "/" + j.ToString() + ".png";
                         animation.leftFrames.Add(new Bitmap(curr));
@@ -8999,7 +9009,7 @@ namespace General
 
                 }
             }
-            else if(name == "Reaper")
+            else if (name == "Reaper")
             {
                 string[] folders =
                 {
@@ -9043,9 +9053,9 @@ namespace General
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y - 130;
             }
-            else if(name == "Reaper")
+            else if (name == "Reaper")
             {
-                drawR.Width = (R.Width *2);
+                drawR.Width = (R.Width * 2);
                 drawR.Height = (R.Height * 2);
                 drawR.X = R.X + (R.Width - drawR.Width) / 2f;
                 drawR.Y = R.Y - 50;
@@ -9055,7 +9065,7 @@ namespace General
                 }
                 else speed = 18;
             }
-            else if(name == "Aegis")
+            else if (name == "Aegis")
             {
                 drawR.Width = R.Width * 2;
                 drawR.Height = R.Height * 2;
@@ -9221,7 +9231,7 @@ namespace General
                         updateRisingAbility(a, hero);
                     }
                 }
-                
+
             }
         }
 
@@ -9481,8 +9491,8 @@ namespace General
             {
                 int spawnOneOrMore = rr.Next(0, 4);
 
-                int ctSpawn= -1;
-                if(spawnOneOrMore < 3)
+                int ctSpawn = -1;
+                if (spawnOneOrMore < 3)
                 {
                     ctSpawn = 1;
                 }
@@ -9536,7 +9546,7 @@ namespace General
 
             if (name == "Aegis")
             {
-                updateAegis(hero , worldWidth);
+                updateAegis(hero, worldWidth);
                 return;
             }
 
@@ -9812,7 +9822,7 @@ namespace General
             }
 
             bool canHit = false;
-            if(R.X <= hero.R.X + hero.R.Width &&
+            if (R.X <= hero.R.X + hero.R.Width &&
                 R.X + R.Width >= hero.R.X &&
                 R.Y <= hero.R.Y + hero.R.Height &&
                 R.Y + R.Height >= hero.R.Y)
@@ -9822,10 +9832,10 @@ namespace General
 
             bool isClose = false;
             int gap = 200;
-            if (R.X <= hero.R.X + hero.R.Width  + gap &&
+            if (R.X <= hero.R.X + hero.R.Width + gap &&
                 R.X + R.Width + gap >= hero.R.X &&
                 R.Y <= hero.R.Y + hero.R.Height + gap &&
-                R.Y + R.Height + gap  >= hero.R.Y)
+                R.Y + R.Height + gap >= hero.R.Y)
             {
                 isClose = true;
             }
@@ -9833,7 +9843,7 @@ namespace General
             {
                 spinTimer++;
             }
-            if(isClose == true)
+            if (isClose == true)
             {
                 if (spinTimer >= spinCooldown)
                 {
@@ -10612,7 +10622,7 @@ namespace General
             {
                 frame = anim.playFrame(false, true);
             }
-            
+
 
             if (frame != null)
             {
@@ -10628,7 +10638,7 @@ namespace General
             }
             if (name == "Aegis")
             {
-                drawAegisAbilities(g, camX, camY , showRanges);
+                drawAegisAbilities(g, camX, camY, showRanges);
             }
 
             if (startFight == true && !isDead)
@@ -10695,19 +10705,19 @@ namespace General
             return price + "c";
         }
 
-        public shops(int x , int y , int width , int height , int shopLevel , bool beforeFinalBoss)
+        public shops(int x, int y, int width, int height, int shopLevel, bool beforeFinalBoss)
         {
             r.X = x;
             r.Y = y;
             r.Width = width;
             r.Height = height;
 
-            for(int i = 1; i <= 6; i++)
+            for (int i = 1; i <= 6; i++)
             {
                 string path = "Tiles/Shop/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
 
-                anim.addFrame(frame , false , false);
+                anim.addFrame(frame, false, false);
             }
 
             leftPage = new Bitmap("ui/shop/UI_TravelBook_BookPageLeft01a.png");
@@ -10820,7 +10830,7 @@ namespace General
                 Font font = new Font("system", 16);
                 int rectangleWidth = 240;
                 int height = 40;
-                int x = r.X + r.Width / 2 - rectangleWidth/2;
+                int x = r.X + r.Width / 2 - rectangleWidth / 2;
                 G.FillRectangle(Brushes.Black, x - 3, r.Y - height + 10 - 3, rectangleWidth + 6, height + 6);
                 G.FillRectangle(Brushes.Gray, x, r.Y - height + 10, rectangleWidth, height);
 
@@ -11020,7 +11030,7 @@ namespace General
             return 0;
         }
     }
-        
+
     public partial class Form1 : Form
     {
         Save save = new Save();
@@ -11051,7 +11061,7 @@ namespace General
         bool isWinScreenShown = false;
 
         bool showRanges = false;
-        Bitmap off; 
+        Bitmap off;
         Random RR = new Random();
 
         bool isLevelIntroVisible = false;
@@ -11111,33 +11121,33 @@ namespace General
 
             if (hero.inventory.isOpen)
             {
-                    if (e.Button == MouseButtons.Left)
-                    {
-                        int dragC = hero.inventory.dragCol;
-                        int dragR = hero.inventory.dragRow;
-                        hero.inventory.dragCol = -1;
-                        hero.inventory.dragRow = -1;
+                if (e.Button == MouseButtons.Left)
+                {
+                    int dragC = hero.inventory.dragCol;
+                    int dragR = hero.inventory.dragRow;
+                    hero.inventory.dragCol = -1;
+                    hero.inventory.dragRow = -1;
 
-                        if (dragC >= 0 && dragR >= 0)
+                    if (dragC >= 0 && dragR >= 0)
+                    {
+                        int dropC = -1, dropR = -1;
+                        float panX = hero.inventory.getPanX(this.ClientSize.Width);
+                        float panY = hero.inventory.getPanY(this.ClientSize.Height);
+                        for (int c = 0; c < 5; c++)
                         {
-                            int dropC = -1, dropR = -1;
-                            float panX = hero.inventory.getPanX(this.ClientSize.Width);
-                            float panY = hero.inventory.getPanY(this.ClientSize.Height);
-                            for (int c = 0; c < 5; c++)
+                            for (int r = 0; r < 5; r++)
                             {
-                                for (int r = 0; r < 5; r++)
+                                float sx = panX + hero.inventory.cellCX[c] * 3f - hero.inventory.slotRenderSize / 2f;
+                                float sy = panY + hero.inventory.cellCY[r] * 3f - hero.inventory.slotRenderSize / 2f;
+                                if (e.X >= sx && e.X <= sx + hero.inventory.slotRenderSize && e.Y >= sy && e.Y <= sy + hero.inventory.slotRenderSize)
                                 {
-                                    float sx = panX + hero.inventory.cellCX[c] * 3f - hero.inventory.slotRenderSize / 2f;
-                                    float sy = panY + hero.inventory.cellCY[r] * 3f - hero.inventory.slotRenderSize / 2f;
-                                    if (e.X >= sx && e.X <= sx + hero.inventory.slotRenderSize && e.Y >= sy && e.Y <= sy + hero.inventory.slotRenderSize)
-                                    {
-                                        dropC = c;
-                                        dropR = r;
-                                        goto foundDrop;
-                                    }
+                                    dropC = c;
+                                    dropR = r;
+                                    goto foundDrop;
                                 }
                             }
-                            foundDrop:
+                        }
+                    foundDrop:
                         if (dropC >= 1 && dropC <= 4 && dropR == 4)
                         {
                             int qi = dropC - 1;
@@ -11190,7 +11200,7 @@ namespace General
                     hero.stopFireball();
             }
         }
-        
+
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
             lastPos[0] = e.X + camX;
@@ -11215,7 +11225,7 @@ namespace General
                     if (lastMenuScreen == 0)
                     {
                         startNewGame();
-                        save.save(hero, enemyController.enemies , levels, levels.currentLevel);
+                        save.save(hero, enemyController.enemies, levels, levels.currentLevel);
                     }
 
                     startGame();
@@ -11286,7 +11296,7 @@ namespace General
                                 }
                             }
                         }
-                        foundCell:
+                    foundCell:
                         if (c >= 0 && r >= 0)
                         {
                             hero.inventory.dragCol = c;
@@ -11314,7 +11324,7 @@ namespace General
                                 }
                             }
                         }
-                        foundRightCell:
+                    foundRightCell:
                         if (r == 4 && c >= 1 && c <= 4)
                         {
                             int qi = c - 1;
@@ -11351,11 +11361,11 @@ namespace General
                 }
             }
         }
-        
+
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
 
-            this.Text = "X,Y: " + (e.X+camX).ToString() + " , "+ (e.Y+camY).ToString() + " | difference: "+ ((e.X + camX) - lastPos[0]).ToString() + " , " + ((e.Y + camY) - lastPos[1]).ToString();
+            this.Text = "X,Y: " + (e.X + camX).ToString() + " , " + (e.Y + camY).ToString() + " | difference: " + ((e.X + camX) - lastPos[0]).ToString() + " , " + ((e.Y + camY) - lastPos[1]).ToString();
             if (hasStarted == false)
             {
                 for (int i = 0; i < btns.Count; i++)
@@ -11577,7 +11587,7 @@ namespace General
                         if (lastMenuScreen == 0)
                         {
                             startNewGame();
-                            save.save(hero, enemyController.enemies , levels, levels.currentLevel);
+                            save.save(hero, enemyController.enemies, levels, levels.currentLevel);
 
                         }
 
@@ -11664,12 +11674,12 @@ namespace General
                         {
                             if (levels.levels[levels.currentLevel].teleporter.isHeroInRange == true)
                             {
-                                 if (e.KeyCode == Keys.Q && !IsBossGateActive())
-                                 {
-                                     int oldLevel = levels.currentLevel;
-                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms, this.ClientSize.Height, this.ClientSize.Width);
+                                if (e.KeyCode == Keys.Q && !IsBossGateActive())
+                                {
+                                    int oldLevel = levels.currentLevel;
+                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms, this.ClientSize.Height, this.ClientSize.Width);
 
-                                     if (levels.currentLevel != oldLevel)
+                                    if (levels.currentLevel != oldLevel)
                                     {
                                         hero.R.X = levels.getNewHeroX();
                                         hero.R.Y = levels.getNewHeroY();
@@ -11800,7 +11810,7 @@ namespace General
                         else showRanges = true;
                     }
 
-                    if(e.KeyCode == Keys.F)
+                    if (e.KeyCode == Keys.F)
                     {
                         hero.startShield();
                     }
@@ -11838,7 +11848,7 @@ namespace General
                         }
                     }
 
-                    if(e.KeyCode == Keys.H && hero.inventory.getPotionCount("health") > 0)
+                    if (e.KeyCode == Keys.H && hero.inventory.getPotionCount("health") > 0)
                     {
                         if (hero.HP.HP < hero.HP.maxHP)
                         {
@@ -11846,7 +11856,7 @@ namespace General
                             hero.inventory.removePotion("health");
                         }
                     }
-                    if(e.KeyCode == Keys.M && hero.inventory.getPotionCount("mana") > 0)
+                    if (e.KeyCode == Keys.M && hero.inventory.getPotionCount("mana") > 0)
                     {
                         if (hero.mana.mana < hero.mana.maxMana)
                         {
@@ -11854,7 +11864,7 @@ namespace General
                             hero.inventory.removePotion("mana");
                         }
                     }
-                    if(e.KeyCode == Keys.D5 && hero.inventory.getPotionCount("suspicious") > 0)
+                    if (e.KeyCode == Keys.D5 && hero.inventory.getPotionCount("suspicious") > 0)
                     {
                         hero.useSuspiciousPotion();
                         hero.inventory.removePotion("suspicious");
@@ -11873,12 +11883,12 @@ namespace General
                                         hero.coins -= levels.levels[levels.currentLevel].teleporter.requiredCoins;
                                     }
                                 }
-                                 else
-                                 {
-                                     int oldLevel = levels.currentLevel;
-                                     levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms , this.ClientSize.Height , this.ClientSize.Width);
+                                else
+                                {
+                                    int oldLevel = levels.currentLevel;
+                                    levels.nextLevel(hero, enemyController.enemies, ladders, tiles, droppedCoins, droppedPotions, movingPlatforms, this.ClientSize.Height, this.ClientSize.Width);
 
-                                     if (levels.currentLevel != oldLevel)
+                                    if (levels.currentLevel != oldLevel)
                                     {
                                         hero.R.X = levels.getNewHeroX();
                                         hero.R.Y = levels.getNewHeroY();
@@ -11909,7 +11919,7 @@ namespace General
                 }
             }
         }
-        
+
         private void Timer_Tick(object sender, EventArgs e)
         {
             if (hasStarted == true)
@@ -11985,7 +11995,7 @@ namespace General
                     {
                         hero.handleFallDamage();
                     }
-                    for(int i =0; i< tiles.Count; i++)
+                    for (int i = 0; i < tiles.Count; i++)
                     {
                         tiles[i].checkHero(hero);
                     }
@@ -12002,7 +12012,7 @@ namespace General
                         movingPlatforms[i].move();
                     }
 
-                    hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth , movingPlatforms);
+                    hero.move(tiles, ladders, levels.levels[levels.currentLevel].worldWidth, movingPlatforms);
                     hero.collectDroppedCoins(droppedCoins);
                     hero.collectDroppedPotions(droppedPotions);
 
@@ -12014,7 +12024,7 @@ namespace General
                     hero.removebeams();
 
                     hero.mana.tick();
-                    if(levels.shop != null)
+                    if (levels.shop != null)
                     {
                         levels.shop.shopCheck(hero);
                     }
@@ -12056,7 +12066,7 @@ namespace General
             initButtons();
             initMenu();
 
-            levels = new levelController(this.ClientSize.Height , this.ClientSize.Width);
+            levels = new levelController(this.ClientSize.Height, this.ClientSize.Width);
 
             //hero = new Hero(30, this.ClientSize.Height - 150 - 30, 150, 150);
 
@@ -12108,7 +12118,7 @@ namespace General
 
 
                     // if teh bg width is lesser than the worldW we divide the camX by the ratio to move it correctly
-                   
+
                     float divideX = bg.Width / worldW;
                     float divideY = bg.Height / worldH;
 
@@ -12125,7 +12135,7 @@ namespace General
 
                     for (int i = 0; i < tiles.Count; i++)
                     {
-                        tiles[i].draw(g,camX, camY , showRanges);
+                        tiles[i].draw(g, camX, camY, showRanges);
                     }
                     for (int i = 0; i < ladders.Count; i++)
                     {
@@ -12134,7 +12144,7 @@ namespace General
                     enemyController.Draw(g, showRanges, camX, camY);
                     for (int i = 0; i < droppedCoins.Count; i++)
                     {
-                        droppedCoins[i].draw(g , camX, camY);
+                        droppedCoins[i].draw(g, camX, camY);
                     }
                     for (int i = 0; i < droppedPotions.Count; i++)
                     {
@@ -12151,9 +12161,9 @@ namespace General
                         currentBoss.Draw(g, showRanges, camX, camY);
                     }
 
-                    if(levels.shop != null)
+                    if (levels.shop != null)
                     {
-                        levels.shop.draw(g , showRanges);
+                        levels.shop.draw(g, showRanges);
                     }
 
                     hero.Draw(g, showRanges, camX, camY);
@@ -12213,7 +12223,7 @@ namespace General
                     }
 
                     save.autoSave(hero, enemyController.enemies, levels, levels.currentLevel, g, this.ClientSize.Height);
-                    
+
                 }
 
                 if (isLevelIntroVisible == true)
@@ -12403,7 +12413,8 @@ namespace General
                 hero.moving = ' ';
                 hero.isRunning = false;
                 hero.stopFireball();
-                while(hero.fireballs.Count > 0){
+                while (hero.fireballs.Count > 0)
+                {
                     hero.fireballs.RemoveAt(0);
                 }
                 hero.isCastingAbility = false;
@@ -12533,11 +12544,11 @@ namespace General
 
             G.DrawImage(slot, x + width - 120 - 20, currentY, 120, 120);
             G.DrawImage(heroColors[hero.ColorIdx].frames[0], x + width - 120 - 20, currentY - 20, 120, 120);
-            G.DrawString(levels.getCurrentLevelTitle()+ " (lvl:" + (levels.currentLevel+1).ToString() + ")", normalFont, white, x + width - 120 - 20, currentY + 120);
-            
+            G.DrawString(levels.getCurrentLevelTitle() + " (lvl:" + (levels.currentLevel + 1).ToString() + ")", normalFont, white, x + width - 120 - 20, currentY + 120);
+
             currentY += 40;
 
-            
+
             G.DrawString("Coins : " + hero.coins, normalFont, white, textX, currentY);
 
             currentY += 35;
@@ -12810,7 +12821,7 @@ namespace General
             }
             else if (currPauseBtn == 1 && PauseBtns.Count == 3)
             {
-                save.save(hero, enemyController.enemies , levels, levels.currentLevel);
+                save.save(hero, enemyController.enemies, levels, levels.currentLevel);
                 PauseBtns.RemoveAt(1);
                 drawDubb(this.CreateGraphics());
 
@@ -12998,7 +13009,7 @@ namespace General
             }
             return false;
         }
-        
+
         bool IsLeftMenu(int i)
         {
             if (i >= 0 && i <= 3) return true;
@@ -13088,7 +13099,7 @@ namespace General
 
 
             Animation heroBlue = new Animation();
-            for(int i =1; i<= 6; i++)
+            for (int i = 1; i <= 6; i++)
             {
                 string path = "characters/Hero/Blue/idle/left/" + i.ToString() + ".png";
                 Bitmap frame = new Bitmap(path);
@@ -13134,7 +13145,7 @@ namespace General
             }
             heroColors.Add(heroRed);
         }
-        
+
         void initButtons()
         {
             int w = 300, h = 60;
@@ -13165,93 +13176,93 @@ namespace General
             btns.Add(btn);
 
         }
-        
+
         void displayMenu(Graphics G)
-{
-    int spacing = 20;
-    int pad = 20;
-
-    G.DrawImage(menuImgs[0],
-        new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height),
-        new Rectangle(0, 0, menuImgs[0].Width, menuImgs[0].Height),
-        GraphicsUnit.Pixel);
-
-    G.DrawImage(menuImgs[1],
-        new Rectangle(spacing, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
-        new Rectangle(0, 0, menuImgs[1].Width, menuImgs[1].Height),
-        GraphicsUnit.Pixel);
-
-    G.DrawImage(menuImgs[2],
-        new Rectangle(this.ClientSize.Width / 2, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
-        new Rectangle(0, 0, menuImgs[2].Width, menuImgs[2].Height),
-        GraphicsUnit.Pixel);
-
-    int borderW = this.ClientSize.Width / 2 - pad * 2;
-    int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
-
-    G.DrawImage(menuImgs[4],
-        new Rectangle(pad + 5, spacing + pad / 2, borderW, borderHeight),
-        new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
-        GraphicsUnit.Pixel);
-
-    G.DrawImage(menuImgs[3],
-        new Rectangle(spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400),
-        new Rectangle(0, 0, menuImgs[3].Width, menuImgs[3].Height),
-        GraphicsUnit.Pixel);
-
-    int borderX = this.ClientSize.Width / 2 + pad;
-    int borderY = spacing + pad / 2;
-
-    G.DrawImage(menuImgs[4],
-        new Rectangle(borderX, borderY, borderW, borderHeight),
-        new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
-        GraphicsUnit.Pixel);
-
-    int iconW = 100;
-
-    G.DrawImage(menuImgs[5],
-        new Rectangle(borderX + 60, borderY + 60, iconW, iconW),
-        new Rectangle(0, 0, menuImgs[5].Width, menuImgs[5].Height),
-        GraphicsUnit.Pixel);
-
-    Font f = new Font("System", 18, FontStyle.Bold);
-    SolidBrush bsh = new SolidBrush(Color.White);
-
-    for (int i = 0; i < btns.Count; i++)
-    {
-        bool isIt = false;
-
-        if (i == currentButton) isIt = true;
-
-        Button btn = btns[i];
-
-        if (i != btns.Count - 1)
         {
-            btn.draw(button, G, f, bsh, isIt);
+            int spacing = 20;
+            int pad = 20;
+
+            G.DrawImage(menuImgs[0],
+                new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height),
+                new Rectangle(0, 0, menuImgs[0].Width, menuImgs[0].Height),
+                GraphicsUnit.Pixel);
+
+            G.DrawImage(menuImgs[1],
+                new Rectangle(spacing, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
+                new Rectangle(0, 0, menuImgs[1].Width, menuImgs[1].Height),
+                GraphicsUnit.Pixel);
+
+            G.DrawImage(menuImgs[2],
+                new Rectangle(this.ClientSize.Width / 2, spacing, this.ClientSize.Width / 2 - spacing, this.ClientSize.Height - spacing * 2),
+                new Rectangle(0, 0, menuImgs[2].Width, menuImgs[2].Height),
+                GraphicsUnit.Pixel);
+
+            int borderW = this.ClientSize.Width / 2 - pad * 2;
+            int borderHeight = this.ClientSize.Height - spacing * 2 - pad * 2 - 5;
+
+            G.DrawImage(menuImgs[4],
+                new Rectangle(pad + 5, spacing + pad / 2, borderW, borderHeight),
+                new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
+                GraphicsUnit.Pixel);
+
+            G.DrawImage(menuImgs[3],
+                new Rectangle(spacing + 20, spacing + 20, this.ClientSize.Width / 2 - spacing - 50, 400),
+                new Rectangle(0, 0, menuImgs[3].Width, menuImgs[3].Height),
+                GraphicsUnit.Pixel);
+
+            int borderX = this.ClientSize.Width / 2 + pad;
+            int borderY = spacing + pad / 2;
+
+            G.DrawImage(menuImgs[4],
+                new Rectangle(borderX, borderY, borderW, borderHeight),
+                new Rectangle(0, 0, menuImgs[4].Width, menuImgs[4].Height),
+                GraphicsUnit.Pixel);
+
+            int iconW = 100;
+
+            G.DrawImage(menuImgs[5],
+                new Rectangle(borderX + 60, borderY + 60, iconW, iconW),
+                new Rectangle(0, 0, menuImgs[5].Width, menuImgs[5].Height),
+                GraphicsUnit.Pixel);
+
+            Font f = new Font("System", 18, FontStyle.Bold);
+            SolidBrush bsh = new SolidBrush(Color.White);
+
+            for (int i = 0; i < btns.Count; i++)
+            {
+                bool isIt = false;
+
+                if (i == currentButton) isIt = true;
+
+                Button btn = btns[i];
+
+                if (i != btns.Count - 1)
+                {
+                    btn.draw(button, G, f, bsh, isIt);
+                }
+            }
+
+            Button startBtn = btns[btns.Count - 1];
+
+            bool startSelected = false;
+
+            if (currentButton == btns.Count - 1) startSelected = true;
+
+            if (currentButton == 0 || currentButton == btns.Count - 1)
+            {
+                startBtn.draw(button, G, f, bsh, startSelected);
+            }
+
+            if (currentButton == 1)
+            {
+                if (IsSaveAvailable() == true)
+                {
+                    startBtn.draw(button, G, f, bsh, startSelected);
+                }
+            }
+
+            loadScreen(G, borderX + 60, borderY + 160, borderW - (100), borderHeight - 60);
         }
-    }
-
-    Button startBtn = btns[btns.Count - 1];
-
-    bool startSelected = false;
-
-    if (currentButton == btns.Count - 1) startSelected = true;
-
-    if (currentButton == 0 || currentButton == btns.Count - 1)
-    {
-        startBtn.draw(button, G, f, bsh, startSelected);
-    }
-
-    if (currentButton == 1)
-    {
-        if (IsSaveAvailable() == true)
-        {
-            startBtn.draw(button, G, f, bsh, startSelected);
-        }
-    }
-
-    loadScreen(G, borderX + 60, borderY + 160, borderW - (100), borderHeight - 60);
-}
         void loadScreen(Graphics G, int x, int y, int width, int height)
         {
             int screen = currentButton;
@@ -13267,7 +13278,7 @@ namespace General
 
             SolidBrush white = new SolidBrush(Color.White);
             SolidBrush gold = new SolidBrush(Color.FromArgb(255, 220, 120));
-            
+
             Bitmap slot = new Bitmap("ui/menu/slot.png");
             Bitmap selectedSlot = new Bitmap("ui/menu/slotSelected.png");
 
@@ -13276,7 +13287,7 @@ namespace General
 
             if (screen == 0)
             {
-                drawNewGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold , slot , selectedSlot);
+                drawNewGameScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold, slot, selectedSlot);
             }
             else if (screen == 1)
             {
@@ -13284,17 +13295,17 @@ namespace General
             }
             else if (screen == 2)
             {
-                drawControlsScreen(G, x, y, width, height, titleFont, normalFont,smallFont, white, gold);
+                drawControlsScreen(G, x, y, width, height, titleFont, normalFont, smallFont, white, gold);
             }
             else if (screen == 3)
             {
                 drawCreditsScreen(G, x, y, width, height, titleFont, normalFont, white, gold);
             }
         }
-        
+
         bool IsSaveAvailable()
         {
-            if(hero == null || hero.isDead == true)
+            if (hero == null || hero.isDead == true)
             {
                 return false;
             }
@@ -13317,7 +13328,7 @@ namespace General
             levels.loadEnemies(enemyController.enemies);
             levels.loadPlatforms(movingPlatforms);
             hero = load.load(hero, enemyController.enemies, this.ClientSize.Height, levels);
-        }    
+        }
 
         void startNewGame()
         {
@@ -13343,4 +13354,3 @@ namespace General
 
     }
 }
-    
