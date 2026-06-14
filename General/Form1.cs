@@ -1956,6 +1956,7 @@ namespace General
 
         public bool isFiring = false;
         public bool contracting = false;
+        public bool shouldLockMovement => active && !contracting;
 
         public int chargeTimer = 0;
         public int chargeMax = 15;
@@ -1989,9 +1990,35 @@ namespace General
             circleRadius = 0f;
         }
 
+        public void copyState(Kamehameha other)
+        {
+            active = other.active;
+            dir = other.dir;
+            startX = other.startX;
+            startY = other.startY;
+            currentLength = other.currentLength;
+            maxLength = other.maxLength;
+            beamHeight = other.beamHeight;
+            state = other.state;
+            isFiring = other.isFiring;
+            contracting = other.contracting;
+            chargeTimer = other.chargeTimer;
+            colorIdx = other.colorIdx;
+            tickCount = other.tickCount;
+            tickTimer = other.tickTimer;
+            circleRadius = other.circleRadius;
+        }
+
         public void stop()
         {
-            reset();
+            if (active && isFiring)
+            {
+                contracting = true;
+            }
+            else
+            {
+                reset();
+            }
         }
 
         bool overlapsBeamBand(rectF target)
@@ -2114,11 +2141,6 @@ namespace General
             colorIdx = heroColorIdx;
         }
 
-        public void startContracting()
-        {
-            contracting = true;
-        }
-
         void dealDamage(List<Enemy> enemies, boss currentBoss)
         {
             rectF beamRect = getBeamRect();
@@ -2160,6 +2182,33 @@ namespace General
         public void update(Hero hero, List<Enemy> enemies, boss currentBoss, List<tile> tiles, float camX, float screenWidth)
         {
             if (active == false) return;
+
+            if (contracting)
+            {
+                float shrink = 20f;
+                if (dir == 'r')
+                {
+                    startX += shrink;
+                }
+                else
+                {
+                    startX -= shrink;
+                }
+                currentLength -= shrink;
+
+                tickTimer++;
+                if (tickTimer >= tickDelay)
+                {
+                    tickTimer = 0;
+                    dealDamage(enemies, currentBoss);
+                }
+
+                if (currentLength <= 0f)
+                {
+                    reset();
+                }
+                return;
+            }
 
             dir = hero.facing;
 
@@ -2578,6 +2627,7 @@ namespace General
 
         public List<Fireball> fireballs = new List<Fireball>();
         public Kamehameha kamehameha = new Kamehameha();
+        public Kamehameha fadingBeam = new Kamehameha();
         public Random rnd = new Random();
 
         public bool isSpellCasting = false;
@@ -2779,6 +2829,7 @@ namespace General
                 }
             }
 
+            fadingBeam.draw(g, camX, camY);
             kamehameha.draw(g, camX, camY);
 
             UI.draw(g, HP, mana, coins);
@@ -3150,20 +3201,27 @@ namespace General
                     return;
                 }
 
-                anim.changeAnimation("spell_cast", -1);
-
-                if (anim.currIdx < 2)
+                if (kamehameha.contracting)
                 {
-                    anim.currIdx = 2;
-                    anim.frameDelayCount = 0;
+                    isLaserCasting = false;
                 }
-                else if (anim.currIdx > 4)
+                else
                 {
-                    anim.currIdx = 2;
-                    anim.frameDelayCount = 0;
-                }
+                    anim.changeAnimation("spell_cast", -1);
 
-                return;
+                    if (anim.currIdx < 2)
+                    {
+                        anim.currIdx = 2;
+                        anim.frameDelayCount = 0;
+                    }
+                    else if (anim.currIdx > 4)
+                    {
+                        anim.currIdx = 2;
+                        anim.frameDelayCount = 0;
+                    }
+
+                    return;
+                }
             }
 
             if (isLaserCastFinishing)
@@ -3561,6 +3619,7 @@ namespace General
         {
             isLaserCasting = false;
             isLaserCastFinishing = false;
+            fadingBeam.stop();
             kamehameha.stop();
         }
 
@@ -8045,7 +8104,7 @@ namespace General
 
             pnn = new tile();
             pnn.interact = true;
-            pnn.init(200, height - 230, 250, 30, false);
+            pnn.init(200, height - 200, 250, 30, false);
             pnn.AddImg(tile2);
             levels[0].tiles.Add(pnn);
 
@@ -9494,6 +9553,7 @@ namespace General
                 if (distanceY <= 200)
                 {
                     startFight = true;
+                    attackCooldown = 0;
                 }
             }
         }
@@ -9519,7 +9579,7 @@ namespace General
                 {
                     isAttacking = false;
                     attackDamageDone = false;
-                    attackCooldown = 80;
+                    attackCooldown = 40;
                 }
                 else
                 {
@@ -11381,6 +11441,7 @@ namespace General
 
             if (e.KeyCode == Keys.R)
             {
+                hero.fadingBeam.stop();
                 hero.kamehameha.stop();
             }
 
@@ -11630,7 +11691,16 @@ namespace General
                     }
                     if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
                     {
-                        if (hero.kamehameha.active == true)
+                        if (hero.kamehameha.active && hero.facing != 'r')
+                        {
+                            hero.fadingBeam.copyState(hero.kamehameha);
+                            hero.fadingBeam.stop();
+                            hero.facing = 'r';
+                            float sx = hero.R.X + hero.R.Width;
+                            float sy = hero.R.Y + hero.R.Height * 0.4f;
+                            hero.kamehameha.activate(sx, sy, 'r', this.ClientSize.Width, hero.ColorIdx);
+                        }
+                        else if (hero.kamehameha.shouldLockMovement)
                         {
                             hero.facing = 'r';
                         }
@@ -11642,7 +11712,16 @@ namespace General
                     }
                     if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
                     {
-                        if (hero.kamehameha.active == true)
+                        if (hero.kamehameha.active && hero.facing != 'l')
+                        {
+                            hero.fadingBeam.copyState(hero.kamehameha);
+                            hero.fadingBeam.stop();
+                            hero.facing = 'l';
+                            float sx = hero.R.X;
+                            float sy = hero.R.Y + hero.R.Height * 0.4f;
+                            hero.kamehameha.activate(sx, sy, 'l', this.ClientSize.Width, hero.ColorIdx);
+                        }
+                        else if (hero.kamehameha.shouldLockMovement)
                         {
                             hero.facing = 'l';
                         }
@@ -11656,7 +11735,7 @@ namespace General
                     {
                         hero.checkUnder(tiles, ladders);
                     }
-                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && hero.kamehameha.active == false)
+                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && hero.kamehameha.shouldLockMovement == false)
                     {
                         if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
@@ -11680,7 +11759,7 @@ namespace General
                         }
                     }
 
-                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && hero.kamehameha.active == false)
+                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && hero.kamehameha.shouldLockMovement == false)
                     {
                         hero.isRunning = true;
                     }
@@ -11915,6 +11994,7 @@ namespace General
 
                     hero.updateFireballCast(enemyController.enemies, currentBoss, tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
+                    hero.fadingBeam.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
                     hero.kamehameha.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
 
                     hero.mana.tick();
