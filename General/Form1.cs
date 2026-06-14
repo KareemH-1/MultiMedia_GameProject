@@ -1956,8 +1956,7 @@ namespace General
 
         public bool isFiring = false;
         public bool contracting = false;
-        public bool shouldLockMovement => active && !contracting;
-
+        public bool finishing = false;
         public int chargeTimer = 0;
         public int chargeMax = 15;
 
@@ -1982,6 +1981,7 @@ namespace General
             active = false;
             isFiring = false;
             contracting = false;
+            finishing = false;
             state = "done";
             chargeTimer = 0;
             currentLength = 0f;
@@ -1990,30 +1990,25 @@ namespace General
             circleRadius = 0f;
         }
 
-        public void copyState(Kamehameha other)
-        {
-            active = other.active;
-            dir = other.dir;
-            startX = other.startX;
-            startY = other.startY;
-            currentLength = other.currentLength;
-            maxLength = other.maxLength;
-            beamHeight = other.beamHeight;
-            state = other.state;
-            isFiring = other.isFiring;
-            contracting = other.contracting;
-            chargeTimer = other.chargeTimer;
-            colorIdx = other.colorIdx;
-            tickCount = other.tickCount;
-            tickTimer = other.tickTimer;
-            circleRadius = other.circleRadius;
-        }
-
         public void stop()
         {
             if (active && isFiring)
             {
                 contracting = true;
+            }
+            else
+            {
+                reset();
+            }
+        }
+
+        public void drift()
+        {
+            if (active)
+            {
+                finishing = true;
+                isFiring = false;
+                state = "firing";
             }
             else
             {
@@ -2210,35 +2205,25 @@ namespace General
                 return;
             }
 
-            dir = hero.facing;
-
-            if (dir == 'r')
+            if (finishing)
             {
-                startX = hero.R.X + hero.R.Width;
-            }
-            else
-            {
-                startX = hero.R.X;
-            }
+                float driftSpeed = 20f;
+                if (dir == 'r')
+                    startX += driftSpeed;
+                else
+                    startX -= driftSpeed;
 
-            startY = hero.R.Y + hero.R.Height * 0.4f;
-
-            if (hero.mana.mana <= 0f)
-            {
-                stop();
+                tickTimer++;
+                if (tickTimer >= tickDelay)
+                {
+                    tickTimer = 0;
+                    dealDamage(enemies, currentBoss);
+                }
                 return;
             }
 
             if (state == "charging")
             {
-                hero.mana.use(1);
-
-                if (hero.mana.mana <= 0f)
-                {
-                    stop();
-                    return;
-                }
-
                 chargeTimer++;
 
                 circleRadius = maxCircleRadius * chargeTimer / chargeMax;
@@ -2251,25 +2236,15 @@ namespace General
             }
             else if (isFiring == true)
             {
-                hero.mana.use(1);
+                dir = hero.facing;
+                if (dir == 'r')
+                    startX = hero.R.X + hero.R.Width;
+                else
+                    startX = hero.R.X;
+                startY = hero.R.Y + hero.R.Height * 0.4f;
 
-                if (hero.mana.mana <= 0f)
-                {
-                    stop();
-                    return;
-                }
-
-                float collisionLimit = getCollisionLimit(tiles);
-
-                if (currentLength < collisionLimit)
-                {
+                if (currentLength < maxLength)
                     currentLength += expandSpeed;
-                }
-
-                if (currentLength > collisionLimit)
-                {
-                    currentLength = collisionLimit;
-                }
 
                 tickTimer++;
 
@@ -2314,7 +2289,7 @@ namespace General
                 g.FillEllipse(bsh, cx - circleRadius, cy - circleRadius, circleRadius * 2, circleRadius * 2);
             }
 
-            if (isFiring == true)
+            if (isFiring == true || finishing == true)
             {
                 rectF beam = getBeamRect();
 
@@ -2626,8 +2601,7 @@ namespace General
 
 
         public List<Fireball> fireballs = new List<Fireball>();
-        public Kamehameha kamehameha = new Kamehameha();
-        public Kamehameha fadingBeam = new Kamehameha();
+        public List<Kamehameha> beams = new List<Kamehameha>();
         public Random rnd = new Random();
 
         public bool isSpellCasting = false;
@@ -2667,6 +2641,59 @@ namespace General
         public int shieldAnimFrame = 0; 
         public Animation shieldEffectAnimation;
 
+        public bool lockmovement()
+        {
+            for (int i = 0; i < beams.Count; i++)
+                if (beams[i].active && !beams[i].contracting && !beams[i].finishing) return true;
+            return false;
+        }
+
+        public void fireBeam(char facing, float worldWidth, int colorIdx)
+        {
+            for (int i = 0; i < beams.Count; i++)
+                if (!beams[i].finishing && !beams[i].contracting)
+                    beams[i].drift();
+            Kamehameha beam = new Kamehameha();
+            float sx;
+            if (facing == 'r')
+                sx = R.X + R.Width;
+            else
+                sx = R.X;
+            float sy = R.Y + R.Height * 0.4f;
+            beam.activate(sx, sy, facing, worldWidth, colorIdx);
+            beams.Add(beam);
+        }
+
+        public void removebeams()
+        {
+            for (int i = beams.Count - 1; i >= 0; i--)
+            {
+                if (!beams[i].active)
+                {
+                    beams.RemoveAt(i);
+                }
+                else if (beams[i].finishing)
+                {
+                    if (beams[i].dir == 'r' && beams[i].startX > beams[i].maxLength)
+                    {
+                        beams.RemoveAt(i);
+                    }
+                    else if (beams[i].dir == 'l' && beams[i].startX - beams[i].currentLength < 0f)
+                    {
+                        beams.RemoveAt(i);
+                    }
+                }
+            }
+        }
+
+        public bool checkactivebeam()
+        {
+            for (int i = 0; i < beams.Count; i++)
+            {
+                if (beams[i].active) return true;
+            }
+            return false;
+        }
 
         //General
         public Hero(int startX, int startY, int w, int h, int colorIdx)
@@ -2829,8 +2856,8 @@ namespace General
                 }
             }
 
-            fadingBeam.draw(g, camX, camY);
-            kamehameha.draw(g, camX, camY);
+            for (int i = 0; i < beams.Count; i++)
+                beams[i].draw(g, camX, camY);
 
             UI.draw(g, HP, mana, coins);
             UI.drawWeaponsUI(g, Weapons, currentWeapon);
@@ -3188,7 +3215,12 @@ namespace General
 
             if (isLaserCasting)
             {
-                if (kamehameha.active == false)
+                bool anyActive = false;
+                for (int i = 0; i < beams.Count; i++)
+                {
+                    if (beams[i].active) { anyActive = true; break; }
+                }
+                if (!anyActive)
                 {
                     isLaserCasting = false;
                     isLaserCastFinishing = true;
@@ -3201,7 +3233,7 @@ namespace General
                     return;
                 }
 
-                if (kamehameha.contracting)
+                if (lockmovement() == false)
                 {
                     isLaserCasting = false;
                 }
@@ -3619,8 +3651,10 @@ namespace General
         {
             isLaserCasting = false;
             isLaserCastFinishing = false;
-            fadingBeam.stop();
-            kamehameha.stop();
+            for (int i = 0; i < beams.Count; i++)
+            {
+                beams[i].stop();
+            }
         }
 
         public void updateFireballCast(List<Enemy> enemies, boss currentBoss, List<tile> tiles)
@@ -3839,7 +3873,7 @@ namespace General
                 updateAnimation();
                 return;
             }
-            if (kamehameha.active == true && kamehameha.contracting == false)
+            if (lockmovement())
             {
                 moving = ' ';
                 isAttacking = false;
@@ -8099,7 +8133,7 @@ namespace General
             pnn.changeColor(Color.Black);
             levels[0].tiles.Add(pnn);
 
-            Bitmap tile2 = new Bitmap("Tile2.png");
+            Bitmap tile2 = new Bitmap("Tiles/First-Flore/Tile2.png");
             tile2.MakeTransparent(tile2.GetPixel(0, 0));
 
             pnn = new tile();
@@ -11441,8 +11475,11 @@ namespace General
 
             if (e.KeyCode == Keys.R)
             {
-                hero.fadingBeam.stop();
-                hero.kamehameha.stop();
+                hero.isLaserCasting = false;
+                for (int i = 0; i < hero.beams.Count; i++)
+                {
+                    hero.beams[i].drift();
+                }
             }
 
             if (e.KeyCode == Keys.E)
@@ -11691,16 +11728,12 @@ namespace General
                     }
                     if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && hero.isDead == false)
                     {
-                        if (hero.kamehameha.active && hero.facing != 'r')
+                        if (hero.isLaserCasting && hero.facing != 'r')
                         {
-                            hero.fadingBeam.copyState(hero.kamehameha);
-                            hero.fadingBeam.stop();
+                            hero.fireBeam('r', levels.levels[levels.currentLevel].worldWidth, hero.ColorIdx);
                             hero.facing = 'r';
-                            float sx = hero.R.X + hero.R.Width;
-                            float sy = hero.R.Y + hero.R.Height * 0.4f;
-                            hero.kamehameha.activate(sx, sy, 'r', this.ClientSize.Width, hero.ColorIdx);
                         }
-                        else if (hero.kamehameha.shouldLockMovement)
+                        else if (hero.lockmovement())
                         {
                             hero.facing = 'r';
                         }
@@ -11712,16 +11745,12 @@ namespace General
                     }
                     if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && hero.isDead == false)
                     {
-                        if (hero.kamehameha.active && hero.facing != 'l')
+                        if (hero.isLaserCasting && hero.facing != 'l')
                         {
-                            hero.fadingBeam.copyState(hero.kamehameha);
-                            hero.fadingBeam.stop();
+                            hero.fireBeam('l', levels.levels[levels.currentLevel].worldWidth, hero.ColorIdx);
                             hero.facing = 'l';
-                            float sx = hero.R.X;
-                            float sy = hero.R.Y + hero.R.Height * 0.4f;
-                            hero.kamehameha.activate(sx, sy, 'l', this.ClientSize.Width, hero.ColorIdx);
                         }
-                        else if (hero.kamehameha.shouldLockMovement)
+                        else if (hero.lockmovement())
                         {
                             hero.facing = 'l';
                         }
@@ -11735,7 +11764,7 @@ namespace General
                     {
                         hero.checkUnder(tiles, ladders);
                     }
-                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && hero.kamehameha.shouldLockMovement == false)
+                    if ((e.KeyCode == Keys.Space || e.KeyCode == Keys.W || e.KeyCode == Keys.Up) && hero.lockmovement() == false)
                     {
                         if (e.KeyCode == Keys.W || e.KeyCode == Keys.Up)
                         {
@@ -11759,7 +11788,7 @@ namespace General
                         }
                     }
 
-                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && hero.kamehameha.shouldLockMovement == false)
+                    if (e.KeyCode == Keys.ShiftKey && hero.isAttacking == false && hero.lockmovement() == false)
                     {
                         hero.isRunning = true;
                     }
@@ -11786,26 +11815,11 @@ namespace General
                         {
                             hero.isDead = false;
                         }
-                        else if (hero.kamehameha.active == false)
+                        else if (hero.isLaserCasting == false && hero.mana.mana > 0f)
                         {
-                            if (hero.mana.mana > 0f)
-                            {
-                                hero.isLaserCasting = true;
-                                hero.isLaserCastFinishing = false;
-
-                                float startX = 0f;
-                                if (hero.facing == 'r')
-                                {
-                                    startX = hero.R.X + hero.R.Width;
-                                }
-                                else
-                                {
-                                    startX = hero.R.X;
-                                }
-
-                                float startY = hero.R.Y + hero.R.Height * 0.4f;
-                                hero.kamehameha.activate(startX, startY, hero.facing, this.ClientSize.Width, hero.ColorIdx);
-                            }
+                            hero.isLaserCasting = true;
+                            hero.isLaserCastFinishing = false;
+                            hero.fireBeam(hero.facing, levels.levels[levels.currentLevel].worldWidth, hero.ColorIdx);
                         }
                     }
 
@@ -11994,8 +12008,10 @@ namespace General
 
                     hero.updateFireballCast(enemyController.enemies, currentBoss, tiles);
                     hero.updateSingleFireballAbility(enemyController.enemies, tiles);
-                    hero.fadingBeam.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
-                    hero.kamehameha.update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
+                    for (int i = 0; i < hero.beams.Count; i++)
+                        hero.beams[i].update(hero, enemyController.enemies, currentBoss, tiles, camX, this.ClientSize.Width);
+                    if (hero.lockmovement()) hero.mana.use(1);
+                    hero.removebeams();
 
                     hero.mana.tick();
                     if(levels.shop != null)
