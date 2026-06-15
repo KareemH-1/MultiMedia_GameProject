@@ -7890,9 +7890,9 @@ namespace General
         {
             Ladder ladder;
 
-            ladder = new Ladder(1916, 645, 330, true);
+            //ladder = new Ladder(1916, 645, 330, true);
 
-            levels[2].ladders.Add(ladder);
+            //levels[2].ladders.Add(ladder);
 
             ladder = new Ladder(1420, 320, 325, false);
 
@@ -7900,6 +7900,11 @@ namespace General
         }
         void initLadders0(int height)
         {
+
+
+            Ladder ladder = new Ladder(380, 382, 210, true);
+
+            levels[0].ladders.Add(ladder);
         }
 
         int getAboveGroundLoc(int enemyH, int Height)
@@ -7982,9 +7987,18 @@ namespace General
             levels[2].enemies.Add(en);
         }
 
+
+
         void initPlatforms()
         {
+            levels[0].addMovingPlatform(new MovingPlatform(560, 385, 80, 30, 100, 1));
+
+
+            levels[2].addMovingPlatform(new MovingPlatform(1914, 645, 72, 20, 330, 3));
+            levels[2].addMovingPlatform(new MovingPlatform(2407, 323, 332, 20, 325, 3));
+
         }
+
 
         void initTiles(int height)
         {
