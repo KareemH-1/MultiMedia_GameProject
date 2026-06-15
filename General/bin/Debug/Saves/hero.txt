@@ -1,5 +1,5 @@
 hero_color:0
-X,Y:30,661
+X,Y:30,613
 Moving: 
 ySpeed:0
 jumpsUsed:0
