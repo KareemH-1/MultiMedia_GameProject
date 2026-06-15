@@ -4314,16 +4314,11 @@ namespace General
             {
                 MovingPlatform p = movingPlatforms[i];
 
-                bool overlappingX =
-                    R.X + R.Width > p.R.X &&
-                    R.X < p.R.X + p.R.Width;
-
-                bool fallingOntoPlatform =
+                if (R.X + R.Width > p.R.X &&
+                    R.X < p.R.X + p.R.Width &&
                     ySpeed >= 0 &&
                     prevBottom <= p.lastY &&
-                    R.Y + R.Height >= p.R.Y;
-
-                if (overlappingX && fallingOntoPlatform)
+                    R.Y + R.Height >= p.R.Y)
                 {
                     R.Y = p.R.Y - R.Height;
 
@@ -4516,15 +4511,8 @@ namespace General
 
                 if (t.interact == true)
                 {
-                    bool overlappingX = false;
-
                     if (R.X + R.Width > t.R.X &&
                         R.X < t.R.X + t.R.Width)
-                    {
-                        overlappingX = true;
-                    }
-
-                    if (overlappingX == true)
                     {
                         if (t.jumpThrough == true)
                         {
@@ -4538,15 +4526,8 @@ namespace General
                         }
                         else
                         {
-                            bool overlappingY = false;
-
                             if (R.Y + R.Height > t.R.Y &&
                                 R.Y < t.R.Y + t.R.Height)
-                            {
-                                overlappingY = true;
-                            }
-
-                            if (overlappingY)
                             {
                                 if (velocityY > 0)
                                 {
@@ -4663,8 +4644,7 @@ namespace General
                     }
                     else
                     {
-                        bool overlappingY = R.Y + R.Height > t.R.Y && R.Y < t.R.Y + t.R.Height;
-                        if (overlappingY)
+                        if (R.Y + R.Height > t.R.Y && R.Y < t.R.Y + t.R.Height)
                         {
                             if (velocityY > 0)
                             {
@@ -5374,15 +5354,8 @@ namespace General
 
                 if (t.interact == true)
                 {
-                    bool overlappingX = false;
-
                     if (R.X + R.Width > t.R.X &&
                         R.X < t.R.X + t.R.Width)
-                    {
-                        overlappingX = true;
-                    }
-
-                    if (overlappingX)
                     {
                         if (t.jumpThrough == true)
                         {
@@ -5397,15 +5370,8 @@ namespace General
                         }
                         else
                         {
-                            bool overlappingY = false;
-
                             if (R.Y + R.Height > t.R.Y &&
                                 R.Y < t.R.Y + t.R.Height)
-                            {
-                                overlappingY = true;
-                            }
-
-                            if (overlappingY)
                             {
                                 if (velocityY > 0)
                                 {
@@ -6363,9 +6329,8 @@ namespace General
                 tile t = tiles[i];
                 if (t.interact && !t.jumpThrough)
                 {
-                    bool overlappingX = e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width;
-                    bool overlappingY = e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height;
-                    if (overlappingX && overlappingY)
+                    if (e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width &&
+                        e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height)
                     {
                         float overlapTop = e.R.Y;
                         if (t.R.Y > overlapTop) overlapTop = t.R.Y;
@@ -7429,9 +7394,8 @@ namespace General
                 tile t = tiles[i];
                 if (t.interact && !t.jumpThrough)
                 {
-                    bool overlappingX = e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width;
-                    bool overlappingY = e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height;
-                    if (overlappingX && overlappingY)
+                    if (e.R.X + e.R.Width > t.R.X && e.R.X < t.R.X + t.R.Width &&
+                        e.R.Y + e.R.Height > t.R.Y && e.R.Y < t.R.Y + t.R.Height)
                     {
                         float overlapTop = e.R.Y;
                         if (t.R.Y > overlapTop) overlapTop = t.R.Y;
@@ -11155,7 +11119,7 @@ namespace General
                         int dropC = -1, dropR = -1;
                         float panX = hero.inventory.getPanX(this.ClientSize.Width);
                         float panY = hero.inventory.getPanY(this.ClientSize.Height);
-                        for (int c = 0; c < 5; c++)
+                        for (int c = 0; c < 5 && dropC == -1; c++)
                         {
                             for (int r = 0; r < 5; r++)
                             {
@@ -11165,11 +11129,10 @@ namespace General
                                 {
                                     dropC = c;
                                     dropR = r;
-                                    goto foundDrop;
+                                    break;
                                 }
                             }
                         }
-                    foundDrop:
                         if (dropC >= 1 && dropC <= 4 && dropR == 4)
                         {
                             int qi = dropC - 1;
@@ -11304,7 +11267,7 @@ namespace General
                         int c = -1, r = -1;
                         float panX = hero.inventory.getPanX(this.ClientSize.Width);
                         float panY = hero.inventory.getPanY(this.ClientSize.Height);
-                        for (int ci = 0; ci < 5; ci++)
+                        for (int ci = 0; ci < 5 && c == -1; ci++)
                         {
                             for (int ri = 0; ri < 5; ri++)
                             {
@@ -11314,11 +11277,10 @@ namespace General
                                 {
                                     c = ci;
                                     r = ri;
-                                    goto foundCell;
+                                    break;
                                 }
                             }
                         }
-                    foundCell:
                         if (c >= 0 && r >= 0)
                         {
                             hero.inventory.dragCol = c;
@@ -11332,7 +11294,7 @@ namespace General
                         int c = -1, r = -1;
                         float panX = hero.inventory.getPanX(this.ClientSize.Width);
                         float panY = hero.inventory.getPanY(this.ClientSize.Height);
-                        for (int ci = 0; ci < 5; ci++)
+                        for (int ci = 0; ci < 5 && c == -1; ci++)
                         {
                             for (int ri = 0; ri < 5; ri++)
                             {
@@ -11342,11 +11304,10 @@ namespace General
                                 {
                                     c = ci;
                                     r = ri;
-                                    goto foundRightCell;
+                                    break;
                                 }
                             }
                         }
-                    foundRightCell:
                         if (r == 4 && c >= 1 && c <= 4)
                         {
                             int qi = c - 1;
@@ -12333,7 +12294,7 @@ namespace General
                     float sx = panX + hero.inventory.cellCX[col] * 3f - hero.inventory.slotRenderSize / 2f;
                     float sy = panY + hero.inventory.cellCY[row] * 3f - hero.inventory.slotRenderSize / 2f;
 
-                    Image slotToDraw = hero.inventory.slotImg;
+                    Bitmap slotToDraw = hero.inventory.slotImg;
                     if ((col == hero.inventory.hoveredCol && row == hero.inventory.hoveredRow) || (col == 0 && row < hero.Weapons.Count && row == hero.currentWeapon))
                         slotToDraw = hero.inventory.slotSelectedImg;
 
