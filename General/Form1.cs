@@ -4633,10 +4633,9 @@ namespace General
             else if (type == "largeHealth") file = "Collectables/Potions/L-HP.png";
             else if (type == "largeMana") file = "Collectables/Potions/L-MP.png";
 
-            if (System.IO.File.Exists(file))
-            {
-                frames.Add(new Bitmap(file));
-            }
+            
+            frames.Add(new Bitmap(file));
+            
         }
 
         public void update(List<tile> tiles)
@@ -7622,10 +7621,10 @@ namespace General
             dy = R.Y - lastY;
         }
 
-        public void draw(Graphics g, float camX)
+        public void draw(Graphics g, float camX , float camY)
         {
-            g.FillRectangle(platformBrush, R.X - camX, R.Y, R.Width, R.Height);
-            g.DrawRectangle(platformPen, R.X - camX, R.Y, R.Width, R.Height);
+            g.FillRectangle(platformBrush, R.X - camX, R.Y - camY, R.Width, R.Height);
+            g.DrawRectangle(platformPen, R.X - camX, R.Y - camY, R.Width, R.Height);
         }
     }
     public class Button
@@ -7890,13 +7889,13 @@ namespace General
         {
             Ladder ladder;
 
-            //ladder = new Ladder(1916, 645, 330, true);
-
-            //levels[2].ladders.Add(ladder);
-
-            ladder = new Ladder(1420, 320, 325, false);
+            ladder = new Ladder(1916, 645, 330, true);
 
             levels[2].ladders.Add(ladder);
+
+            //ladder = new Ladder(1420, 320, 325, false);
+
+            //levels[2].ladders.Add(ladder);
         }
         void initLadders0(int height)
         {
@@ -7993,9 +7992,12 @@ namespace General
         {
             levels[0].addMovingPlatform(new MovingPlatform(560, 385, 80, 30, 100, 1));
 
+            Ladder ladder = new Ladder(1420, 320, 325, false);
 
-            levels[2].addMovingPlatform(new MovingPlatform(1914, 645, 72, 20, 330, 3));
-            levels[2].addMovingPlatform(new MovingPlatform(2407, 323, 332, 20, 325, 3));
+            //levels[2].ladders.Add(ladder);
+            levels[2].addMovingPlatform(new MovingPlatform(1420, 645, 70, 20, 325, 3));
+
+            levels[2].addMovingPlatform(new MovingPlatform(2404, 323 + 323, 332, 20, 325, 3));
 
         }
 
@@ -8259,10 +8261,7 @@ namespace General
                 movingPlatforms.RemoveAt(0);
             }
 
-            if (currentLevel < 0 || currentLevel >= levels.Count)
-            {
-                return;
-            }
+            
 
             level curLvl = levels[currentLevel];
 
@@ -8300,7 +8299,7 @@ namespace General
             }
         }
 
-        public void assignAll(List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, int width, int height)
+        public void assignAll(List<Enemy> enemies, List<MovingPlatform> platforms ,  List<Ladder> ladders, List<tile> tiles, int width, int height)
         {
             level curLvl = levels[currentLevel];
 
@@ -8315,6 +8314,10 @@ namespace General
             while (tiles.Count > 0)
             {
                 tiles.RemoveAt(0);
+            }
+            while(platforms.Count > 0)
+            {
+                platforms.RemoveAt(0);
             }
 
             for (int i = 0; i < curLvl.enemies.Count; i++)
@@ -8335,6 +8338,11 @@ namespace General
                 tiles.Add(temp);
             }
 
+            for (int i = 0; i < curLvl.movingPlatforms.Count; i++)
+            {
+                MovingPlatform temp = curLvl.movingPlatforms[i];
+                platforms.Add(temp);
+            }
             addShop(height, width);
         }
         public void nextLevel(Hero hero, List<Enemy> enemies, List<Ladder> ladders, List<tile> tiles, List<DroppedCoin> coins, List<DroppedPotion> potions, List<MovingPlatform> movingPlatforms, int height, int width)
@@ -8347,7 +8355,7 @@ namespace General
                     hero.stopLaserCast();
                 }
                 removeAll(enemies, ladders, tiles, coins, potions);
-                assignAll(enemies, ladders, tiles, width, height);
+                assignAll(enemies, movingPlatforms, ladders, tiles, width, height);
                 loadPlatforms(movingPlatforms);
             }
         }
@@ -12166,7 +12174,7 @@ namespace General
                     }
                     for (int i = 0; i < movingPlatforms.Count; i++)
                     {
-                        movingPlatforms[i].draw(g, camX);
+                        movingPlatforms[i].draw(g, camX , camY);
                     }
 
                     boss currentBoss = levels.getCurrentBoss();
